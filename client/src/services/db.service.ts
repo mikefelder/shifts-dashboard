@@ -21,6 +21,7 @@ interface ShiftboardDB extends DBSchema {
     metadata: {
         key: string;
         value: {
+            key: string;
             lastSync: Date;
         };
     };

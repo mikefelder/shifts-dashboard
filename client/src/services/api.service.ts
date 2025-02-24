@@ -46,7 +46,7 @@ export const getWorkgroupShifts = async (forceSync = false): Promise<WhosOnRespo
         };
     } catch (error) {
         console.error('API/DB Error:', error);
-        throw new Error(`Failed to fetch shifts data: ${error.message}`);
+        throw new Error(`Failed to fetch shifts data: ${(error as any).message}`);
     }
 };
 
@@ -56,6 +56,6 @@ export const getAccountDetails = async (accountId: string) => {
         return response.data;
     } catch (error) {
         console.error('API Error fetching account:', error);
-        throw new Error(`Failed to fetch account data: ${error.message}`);
+        throw new Error(`Failed to fetch account data: ${(error as any).message}`);
     }
 };
