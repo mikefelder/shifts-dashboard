@@ -1,6 +1,13 @@
-# hlsr-shiftboard-reporting-api
+# HLSR Shiftboard Reporting API
 
-A Node.js application for interacting with the Shiftboard API.
+Web application for viewing and managing HLSR Information Technology Committee shifts.
+
+## Features
+
+- Real-time shift calendar view
+- Clock-in status tracking
+- Workgroup filtering for IT Committee
+- Responsive design for desktop/mobile
 
 ## Installing Node.js and npm
 
@@ -39,11 +46,33 @@ A Node.js application for interacting with the Shiftboard API.
 npm install
 ```
 
-2. Create a `.env` file in the root directory with your Shiftboard API credentials:
-```bash
-SHIFTBOARD_ACCESS_KEY_ID=your_access_key_id
-SHIFTBOARD_SECRET_KEY=your_secret_key
+2. Create `.env` file with Shiftboard credentials:
 ```
+SHIFTBOARD_ACCESS_KEY_ID=your_key
+SHIFTBOARD_SECRET_KEY=your_secret
+```
+
+3. Start development server:
+```bash
+npm run dev
+```
+
+## API Endpoints
+
+### GET /api/shifts/whos-on
+
+Returns active shifts with:
+- Shift details (time, location, etc.)
+- Member assignments
+- Clock-in status
+- Workgroup information
+
+## Tech Stack
+
+- React + TypeScript
+- Material-UI
+- Node.js + Express
+- Shiftboard API Integration
 
 ## Project Structure
 

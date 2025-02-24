@@ -1,8 +1,14 @@
+/**
+ * Member status for a shift including clock-in state
+ */
 export interface ShiftMember {
     id: string;
     clocked_in: boolean;
 }
 
+/**
+ * Complete shift information from Shiftboard API
+ */
 export interface Shift {
     id: string;
     absent_operation_utc: string | null;
@@ -54,10 +60,15 @@ export interface Shift {
     use_time: string;
     workgroup: string;
     zipcode: string;
+    /** Whether the member can clock in/out for this shift */
     can_clock_in_out: boolean;
+    /** Current clock-in status for the shift */
     clocked_in: boolean;
 }
 
+/**
+ * Account information for shift members
+ */
 export interface Account {
     external_id: string;
     first_name: string;
@@ -68,11 +79,17 @@ export interface Account {
     clocked_in: boolean;
 }
 
+/**
+ * Workgroup information
+ */
 export interface Workgroup {
     id: string;
     name: string;
 }
 
+/**
+ * API response structure for who's on data
+ */
 export interface WhosOnResponse {
     result: {
         shifts: Shift[];
