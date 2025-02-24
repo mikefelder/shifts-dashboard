@@ -98,8 +98,6 @@ npm start
 npm run prod
 ```
 
-This will execute the account list query and display the results in JSON format.
-
 ## Requirements
 
 - Node.js 14 or higher
