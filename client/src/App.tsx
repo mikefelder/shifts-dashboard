@@ -7,8 +7,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import CssBaseline from '@mui/material/CssBaseline';
 
 function App() {
-    console.log('App component rendering');
-    
     return (
         <ErrorBoundary>
             <ThemeProvider theme={theme}>

@@ -18,19 +18,10 @@ async function shiftWhosOn(params = {}) {
 
     try {
         while (hasMorePages) {
-            console.log(`Fetching page with start: ${params.page.start}`)
             const response = await shiftboardAPI('shift.whosOn', params)
             
             if (!response?.result?.shifts) {
                 throw new Error('Invalid API response structure')
-            }
-
-            // Add debug logging for account data
-            if (response?.result?.referenced_objects?.account) {
-                console.log('Account clock status:', response.result.referenced_objects.account.map(acc => ({
-                    name: acc.screen_name || `${acc.first_name} ${acc.last_name}`,
-                    clocked_in: acc.clocked_in
-                })));
             }
 
             // Accumulate results
@@ -45,7 +36,6 @@ async function shiftWhosOn(params = {}) {
             // Check for next page
             if (response.result.page && response.result.page.next) {
                 params.page = response.result.page.next
-                console.log(`Next page available, batch: ${params.page.batch}, start: ${params.page.start}`)
             } else {
                 hasMorePages = false
             }
