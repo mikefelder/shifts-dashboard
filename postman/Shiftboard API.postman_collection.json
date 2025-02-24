@@ -1,0 +1,593 @@
+{
+	"info": {
+		"_postman_id": "8e94dc70-f5d0-42d5-9af9-63789c8ad495",
+		"name": "Shiftboard API",
+		"description": "This is a Postman collection for interacting with the API service for  \n[Shiftboard](https://shiftboard.com). The collection may be used directly, or as an example for  \ndeveloping custom code using data from Shiftboard.\n\nTo make use of the script you will need an active account on [Shiftboard](https://shiftboard.com),  \nan API Access Key, and Signature Key enabled in your account.\n\nFor more information on the Shiftboard APIs, see the [documentation](http://www.shiftdata.com).\n\n## Instructions\n\n1. Import this collection (_Shiftboard-API.postman_collection.json_) into your workspace\n    \n2. Select a request in the collection, or create a new one\n    \n3. Set the URI to **{{shiftboardUriToken}}**\n    \n4. Fill out `method` with the Shiftboard API method you are using, e.g., **account.get**\n    \n5. Fill out `params` _(optional)_, e.g. **{\"id\":108}**\n    \n6. Select an HTTP method, either `GET` or `POST`.\n    \n    - For `POST` requests, set the request _Body_ to **{{postData}}**\n        \n7. Set your _Environment_ (see below)\n    \n8. Hit _Send_\n    \n\n## Environment\n\nTo use these requests, you must have an _Environment_ with three keys and values:\n\n- `accessKeyId` - your unique API key from Shiftboard\n    \n- `secretKey` - your secret key from Shiftboard\n    \n- `shiftboardUri` - the URI for the API, e.g.:\n    \n    - Shiftboard in U.S. / Canada: [<b>https://api.shiftdata.com/</b>](https://api.shiftdata.com/)\n        \n    - Shiftboard in E.U.: [<b>https://api-data.eu.shiftboard.com/</b>](https://api-data.eu.shiftboard.com/)\n        \n\n## Technical Notes\n\nEach request uses the _Pre-request Script_ in the collection to manage packaging up the request. It adds additional query parameters, encodes the `params`, does authentication, signs the request, and so on.\n\n### LICENSE\n\nMIT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3805875"
+	},
+	"item": [
+		{
+			"name": "account",
+			"item": [
+				{
+					"name": "account.self",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=account.self&params={\"extended\":true,\"user_actions\":true}",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "account.self"
+								},
+								{
+									"key": "params",
+									"value": "{\"extended\":true,\"user_actions\":true}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "account.list",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=account.list&params={\"page\": {\"batch\": 3, \"start\": 17 } }",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "account.list"
+								},
+								{
+									"key": "params",
+									"value": "{\"page\": {\"batch\": 3, \"start\": 17 } }"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "account.listByWorkgroup",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=account.list&params={\"page\": {\"batch\": 3, \"start\": 17 } }",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "account.list"
+								},
+								{
+									"key": "params",
+									"value": "{\"page\": {\"batch\": 3, \"start\": 17 } }"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "calendar",
+			"item": [
+				{
+					"name": "calendar.summary",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=account.list&params={\"page\": {\"batch\": 3, \"start\": 17 } }",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "account.list"
+								},
+								{
+									"key": "params",
+									"value": "{\"page\": {\"batch\": 3, \"start\": 17 } }"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "role",
+			"item": [
+				{
+					"name": "role.get",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=role.get&params={\"id\":98826}",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "role.get"
+								},
+								{
+									"key": "params",
+									"value": "{\"id\":98826}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "role.list",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=role.get&params={\"id\":98826}",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "role.get"
+								},
+								{
+									"key": "params",
+									"value": "{\"id\":98826}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "workgroup",
+			"item": [
+				{
+					"name": "workgroup.list",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=workgroup.list&params={\"extended\":true, \"page\": {\"batch\": 100, \"start\": 301 }}",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "workgroup.list"
+								},
+								{
+									"key": "params",
+									"value": "{\"extended\":true, \"page\": {\"batch\": 100, \"start\": 301 }}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "workgroup.listRoles",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=workgroup.list&params={\"extended\":true, \"page\": {\"batch\": 100, \"start\": 301 }}",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "workgroup.list"
+								},
+								{
+									"key": "params",
+									"value": "{\"extended\":true, \"page\": {\"batch\": 100, \"start\": 301 }}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "shift",
+			"item": [
+				{
+					"name": "shift.list",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=shift.list&params={\"select\":{\"workgroup\" : \"5676546\"}}",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "shift.list"
+								},
+								{
+									"key": "params",
+									"value": "{\"select\":{\"workgroup\" : \"5676546\"}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "shift.whosOn",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{postData}}"
+						},
+						"url": {
+							"raw": "{{shiftboardUri}}?method=shift.whosOn&params={\"select\":{\"workgroup\" : \"5676546\"}}",
+							"host": [
+								"{{shiftboardUri}}"
+							],
+							"query": [
+								{
+									"key": "method",
+									"value": "shift.whosOn"
+								},
+								{
+									"key": "params",
+									"value": "{\"select\":{\"workgroup\" : \"5676546\"}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "system.echo",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{{postData}}"
+				},
+				"url": {
+					"raw": "{{shiftboardUri}}?method=system.echo&params={\"foo\":\"bar\"}",
+					"host": [
+						"{{shiftboardUri}}"
+					],
+					"query": [
+						{
+							"key": "method",
+							"value": "system.echo"
+						},
+						{
+							"key": "params",
+							"value": "{\"foo\":\"bar\"}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"var accessKeyID = pm.environment.get('accessKeyId');",
+					"var secretKey = pm.environment.get('secretKey');",
+					"",
+					"console.log(\"Access Key ID:\", accessKeyID ? \"Loaded\" : \"Not Found\");",
+					"console.log(\"Secret Key:\", secretKey ? \"Loaded\" : \"Not Found\");",
+					"",
+					"var CryptoJS = require('crypto-js');",
+					"",
+					"const query = pm.request.url.query;",
+					"const apiMethod = query.find(x => x.key == 'method').value;",
+					"fixBadParams(query);",
+					"const params = query.find(x => x.key == 'params').value;",
+					"",
+					"var shaData, queryString;",
+					"",
+					"if (request.method == 'POST') {",
+					"    var postData = JSON.stringify({ 'id': 1, 'jsonrpc': '2.0', 'method': apiMethod, 'params': JSON.parse(params) })",
+					"    shaData = postData;",
+					"    pm.globals.set('postData', postData);",
+					"    queryString = 'access_key_id=' + encodeURIComponent(accessKeyID);",
+					"}",
+					"else if (request.method == 'GET') {",
+					"    pm.request.url.addQueryParams('access_key_id=' + encodeURIComponent(accessKeyID));",
+					"    pm.request.url.addQueryParams('jsonrpc=2.0');",
+					"    pm.request.url.addQueryParams('id=1');",
+					"",
+					"    queryString = query.filter(x => !x.disabled).map(x => x.key + '=' + encodeURIComponent(x.key == 'params' ? btoa(params) : x.value )).join('&');",
+					"    shaData = 'method' + apiMethod + 'params' + params;",
+					"}",
+					"",
+					"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA1(shaData, secretKey));",
+					"queryString += '&signature=' + encodeURIComponent(signature);",
+					"",
+					"pm.request.url.query = queryString;",
+					"",
+					"// handle missing / disabled / empty params",
+					"function fixBadParams(query) {",
+					"    // if missing, add",
+					"    if (!query.find(x => x.key == 'params')) {",
+					"        pm.request.url.addQueryParams('params={}');",
+					"    }",
+					"    var qParams = query.find(x => x.key == 'params');",
+					"    // if disabled, enable but make it empty",
+					"    if (qParams.disabled) {",
+					"        qParams.value = '{}';",
+					"        qParams.disabled = false;",
+					"    }",
+					"    // if no value, give default value",
+					"    else if (!qParams.value) {",
+					"        qParams.value = '{}';",
+					"    }",
+					"}",
+					"",
+					"function btoa(str) {",
+					"    var buffer;",
+					"",
+					"    if (str instanceof Buffer) {",
+					"        buffer = str;",
+					"    } else {",
+					"        buffer = Buffer.from(str.toString(), 'binary');",
+					"    }",
+					"",
+					"    return buffer.toString('base64');",
+					"}",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
