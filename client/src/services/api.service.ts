@@ -15,11 +15,13 @@ export const getWorkgroupShifts = async (forceSync = false): Promise<WhosOnRespo
         const lastSync = await dbService.getLastSync();
         const shouldSync = forceSync || 
             !lastSync || 
-            (new Date().getTime() - lastSync.getTime() > 5 * 60 * 1000); // 5 minutes
+            (new Date().getTime() - lastSync.getTime() > 60 * 1000); // 1 minute
 
         if (shouldSync) {
             console.log('Fetching fresh data from API...');
-            const response = await api.get('/shifts/whos-on');
+            const response = await api.get('/shifts/whos-on', {
+                timeout: 60000 // 60 seconds timeout
+            });
             
             // Store the data
             await dbService.storeShifts(response.data.result.shifts);

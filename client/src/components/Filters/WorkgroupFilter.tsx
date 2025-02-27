@@ -8,13 +8,11 @@ interface WorkgroupFilterProps {
 }
 
 export const WorkgroupFilter = ({ selectedWorkgroup, onWorkgroupChange, workgroups }: WorkgroupFilterProps) => {
-    const filteredWorkgroups = workgroups
-        .filter(wg => wg.name.includes('Information Technology'))
-        .sort((a, b) => a.name.localeCompare(b.name));
+    const sortedWorkgroups = workgroups.sort((a, b) => a.name.localeCompare(b.name));
     
     const allWorkgroups = [
-        { id: '', name: 'All IT Workgroups' },
-        ...filteredWorkgroups
+        { id: '', name: 'All Workgroups' },
+        ...sortedWorkgroups
     ];
 
     return (
@@ -22,20 +20,43 @@ export const WorkgroupFilter = ({ selectedWorkgroup, onWorkgroupChange, workgrou
             variant="outlined" 
             size="small" 
             sx={{ 
-                minWidth: 200, 
-                mb: 2,
+                minWidth: 200,
                 '& .MuiInputLabel-root': {
-                    backgroundColor: 'white',
-                    px: 0.5,
-                    transform: 'translate(14px, -9px) scale(0.75) !important'
+                    color: 'white',
+                    '&.MuiInputLabel-shrink': {
+                        backgroundColor: 'primary.main',
+                        padding: '0 8px',
+                        marginLeft: '-4px'
+                    }
                 },
-                '& .MuiInputLabel-shrink': {
-                    backgroundColor: 'white',
-                    transform: 'translate(14px, -9px) scale(0.75) !important'
+                '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                        borderWidth: '1px',
+                    },
+                    '&:hover fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                    },
+                    '&.Mui-focused fieldset': {
+                        borderColor: 'white',
+                    }
+                },
+                '& .MuiSvgIcon-root': {
+                    color: 'white',
                 }
             }}
         >
-            <InputLabel>Workgroup</InputLabel>
+            <InputLabel 
+                sx={{ 
+                    '&.Mui-focused': { color: 'white' },
+                    '&.MuiInputLabel-shrink': {
+                        transform: 'translate(14px, -6px) scale(0.75)'
+                    }
+                }}
+            >
+                Workgroup Filter
+            </InputLabel>
             <Select
                 value={selectedWorkgroup}
                 onChange={(e) => onWorkgroupChange(e.target.value)}
@@ -43,13 +64,27 @@ export const WorkgroupFilter = ({ selectedWorkgroup, onWorkgroupChange, workgrou
                 displayEmpty
                 defaultValue=""
                 renderValue={(value) => {
+                    if (!value) return '';
                     const selected = allWorkgroups.find(wg => wg.id === value);
-                    return selected ? selected.name : 'All IT Workgroups';
+                    return selected?.name || '';
                 }}
-                sx={{
-                    '& .MuiSelect-select': {
-                        color: 'text.primary',
-                        fontWeight: 500
+                MenuProps={{
+                    PaperProps: {
+                        sx: {
+                            backgroundColor: 'primary.main',
+                            '& .MuiMenuItem-root': {
+                                color: 'white',
+                                '&:hover': {
+                                    backgroundColor: 'primary.dark',
+                                },
+                                '&.Mui-selected': {
+                                    backgroundColor: 'primary.dark',
+                                    '&:hover': {
+                                        backgroundColor: 'primary.dark',
+                                    }
+                                }
+                            }
+                        }
                     }
                 }}
             >

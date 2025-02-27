@@ -1,6 +1,7 @@
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, FormControl, InputLabel, Select, MenuItem, Box, Typography, useTheme } from '@mui/material';
 import { Schedule } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import ViewDayIcon from '@mui/icons-material/ViewDay';
 
 interface SidebarProps {
   refreshInterval: number;
@@ -20,7 +21,11 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
         '& .MuiDrawer-paper': {
           width: 240,
           boxSizing: 'border-box',
-          mt: '64px',
+          borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+          top: '64px', // Match AppBar height
+          height: 'calc(100% - 64px)', // Subtract AppBar height
+          paddingLeft: 0, // No extra padding
+          paddingRight: 0,
         },
       }}
     >
@@ -29,7 +34,13 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
           <ListItemIcon>
             <Schedule />
           </ListItemIcon>
-          <ListItemText primary="Current Shift" />
+          <ListItemText primary="Current Shifts" />
+        </ListItem>
+        <ListItem button onClick={() => navigate('/full-day')}>
+          <ListItemIcon>
+            <ViewDayIcon />
+          </ListItemIcon>
+          <ListItemText primary="Full Day View" />
         </ListItem>
       </List>
       

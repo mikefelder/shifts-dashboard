@@ -40,9 +40,17 @@ const dbPromise = openDB<ShiftboardDB>('shiftboard-store', 1, {
 });
 
 export const dbService = {
+    async clearStore(storeName: 'shifts' | 'accounts' | 'workgroups') {
+        const db = await dbPromise;
+        const tx = db.transaction(storeName, 'readwrite');
+        await tx.objectStore(storeName).clear();
+        await tx.done;
+    },
+
     async storeShifts(shifts: Shift[]) {
         const db = await dbPromise;
         const tx = db.transaction('shifts', 'readwrite');
+        await tx.objectStore('shifts').clear(); // Clear old data first
         await Promise.all(shifts.map(shift => tx.store.put(shift)));
         await tx.done;
     },
@@ -50,6 +58,7 @@ export const dbService = {
     async storeAccounts(accounts: Account[]) {
         const db = await dbPromise;
         const tx = db.transaction('accounts', 'readwrite');
+        await tx.objectStore('accounts').clear(); // Clear old data first
         await Promise.all(accounts.map(account => tx.store.put(account)));
         await tx.done;
     },
@@ -57,6 +66,7 @@ export const dbService = {
     async storeWorkgroups(workgroups: Workgroup[]) {
         const db = await dbPromise;
         const tx = db.transaction('workgroups', 'readwrite');
+        await tx.objectStore('workgroups').clear(); // Clear old data first
         await Promise.all(workgroups.map(workgroup => tx.store.put(workgroup)));
         await tx.done;
     },

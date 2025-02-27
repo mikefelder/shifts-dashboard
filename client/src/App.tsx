@@ -5,21 +5,26 @@ import { AppLayout } from './components/Layout/AppLayout';
 import { CalendarPage } from './pages/Calendar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import CssBaseline from '@mui/material/CssBaseline';
+import { FullDayView } from './components/Calendar/FullDayView';
+import { WorkgroupProvider } from './contexts/WorkgroupContext';
 
 function App() {
     return (
         <ErrorBoundary>
-            <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <BrowserRouter>
-                    <Routes>
-                        <Route element={<AppLayout />}>
-                            <Route path="/" element={<CalendarPage />} />
-                            <Route path="*" element={<CalendarPage />} />
-                        </Route>
-                    </Routes>
-                </BrowserRouter>
-            </ThemeProvider>
+            <WorkgroupProvider>
+                <ThemeProvider theme={theme}>
+                    <CssBaseline />
+                    <BrowserRouter>
+                        <Routes>
+                            <Route element={<AppLayout />}>
+                                <Route path="/" element={<CalendarPage />} />
+                                <Route path="/full-day" element={<FullDayView />} />
+                                <Route path="*" element={<CalendarPage />} />
+                            </Route>
+                        </Routes>
+                    </BrowserRouter>
+                </ThemeProvider>
+            </WorkgroupProvider>
         </ErrorBoundary>
     );
 }

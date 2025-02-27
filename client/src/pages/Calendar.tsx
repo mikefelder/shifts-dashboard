@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { DayView } from '../components/Calendar/DayView';
 import { getWorkgroupShifts, getAccountDetails } from '../services/api.service';
 import { WhosOnResponse } from '../types/shift.types';
-import { WorkgroupFilter } from '../components/Filters/WorkgroupFilter';
+import { useWorkgroup } from '../contexts/WorkgroupContext';
 
 interface ContextType {
   refreshInterval: number;
@@ -14,11 +14,11 @@ interface ContextType {
 export const CalendarPage = () => {
     console.log('Calendar page rendering...');
     const { refreshInterval } = useOutletContext<ContextType>();
+    const { selectedWorkgroup, setWorkgroups } = useWorkgroup();
     const [data, setData] = useState<WhosOnResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-    const [selectedWorkgroup, setSelectedWorkgroup] = useState('');
 
     const fetchShifts = async () => {
         console.log('Fetching shifts at:', new Date().toISOString());
@@ -26,6 +26,7 @@ export const CalendarPage = () => {
             setLastRefresh(new Date());
             const response = await getWorkgroupShifts();
             setData(response);
+            setWorkgroups(response.result.referenced_objects.workgroup);
             setError(null);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load shifts';
@@ -42,7 +43,7 @@ export const CalendarPage = () => {
 
     useEffect(() => {
         fetchShifts();
-    }, [selectedWorkgroup]); // Add selectedWorkgroup as dependency
+    }, [selectedWorkgroup]); // Keep this dependency
 
     useEffect(() => {
         if (!refreshInterval) return;
@@ -69,24 +70,25 @@ export const CalendarPage = () => {
 
     const filteredShifts = selectedWorkgroup
         ? data.result.shifts.filter(shift => shift.workgroup === selectedWorkgroup)
-        : data.result.shifts.filter(shift => {
-            const workgroup = data.result.referenced_objects.workgroup.find(
-                wg => wg.id === shift.workgroup
-            );
-            return workgroup?.name.includes('Information Technology');
-        });
+        : data.result.shifts;  // Show all shifts when no workgroup is selected
 
     return (
-        <Container maxWidth="lg">
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Container 
+            maxWidth={false}
+            disableGutters
+            sx={{ 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                maxWidth: '100%', // Prevent overflow
+                overflowX: 'hidden' // Prevent horizontal scrolling
+            }}
+        >
+            <Box sx={{ mb: 2, ml: 2 }}> {/* Add margin-left to timestamp */}
                 <Typography variant="caption" color="textSecondary">
                     Last updated: {format(lastRefresh, 'h:mm:ss a')}
                 </Typography>
-                <WorkgroupFilter
-                    selectedWorkgroup={selectedWorkgroup}
-                    onWorkgroupChange={setSelectedWorkgroup}
-                    workgroups={data?.result?.referenced_objects?.workgroup || []}
-                />
             </Box>
             <DayView 
                 shifts={filteredShifts || []} 
