@@ -7,6 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import CssBaseline from '@mui/material/CssBaseline';
 import { FullDayView } from './components/Calendar/FullDayView';
 import { WorkgroupProvider } from './contexts/WorkgroupContext';
+import { ActiveShiftsView } from './components/Calendar/ActiveShiftsView'; // Updated import if needed
 
 function App() {
     return (

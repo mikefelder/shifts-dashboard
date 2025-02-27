@@ -6,6 +6,7 @@ import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
 import { WhosOnResponse } from '../../types/shift.types';
 import { getWorkgroupShifts } from '../../services/api.service';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
+import { ActiveShiftsView } from './ActiveShiftsView'; // Updated import if needed
 
 export const FullDayView = () => {
     const { selectedWorkgroup, setWorkgroups } = useWorkgroup();

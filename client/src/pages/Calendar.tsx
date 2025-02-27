@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Container, CircularProgress, Alert, Box, Typography } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import { format } from 'date-fns';
-import { DayView } from '../components/Calendar/DayView';
+import { ActiveShiftsView } from '../components/Calendar/ActiveShiftsView'; // Updated import
 import { getWorkgroupShifts, getAccountDetails } from '../services/api.service';
 import { WhosOnResponse } from '../types/shift.types';
 import { useWorkgroup } from '../contexts/WorkgroupContext';
@@ -90,7 +90,7 @@ export const CalendarPage = () => {
                     Last updated: {format(lastRefresh, 'h:mm:ss a')}
                 </Typography>
             </Box>
-            <DayView 
+            <ActiveShiftsView // Use renamed component here
                 shifts={filteredShifts || []} 
                 accounts={data.result.referenced_objects?.account || []} 
             />
