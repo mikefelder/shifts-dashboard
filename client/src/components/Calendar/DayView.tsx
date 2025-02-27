@@ -205,12 +205,16 @@ export const DayView = ({ shifts, accounts, date = new Date(), showFullDay = fal
                     const adjustedEnd = Math.min(endHour - timeWindow.start, windowDuration);
                     const adjustedDuration = adjustedEnd - adjustedStart;
                     
+                    // Calculate z-index based on start time: later shifts get higher z-index
+                    // This ensures shifts starting later are drawn on top
+                    const zIndex = Math.floor(startHour * 10) + 1;
+                    
                     positionMap.set(shift.groupId, {
                         top: `${(adjustedStart / windowDuration) * 100}%`,
                         height: `${(adjustedDuration / windowDuration) * 100}%`,
                         left: `${(index / totalShifts) * 100}%`,
                         width: `calc(100% / ${totalShifts})`,
-                        zIndex: 1
+                        zIndex
                     });
                 } catch (error) {
                     console.error('Error calculating position for shift:', error);
