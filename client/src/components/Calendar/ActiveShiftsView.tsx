@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Paper, Typography, Grid, Box, useTheme } from '@mui/material';
+import { Paper, Typography, Grid, Box, useTheme, Button } from '@mui/material';
 import { format, parseISO, isValid } from 'date-fns';
 import { Shift, Account } from '../../types/shift.types';
 import { ShiftDetailModal } from './ShiftDetailModal';
+import FilterListIcon from '@mui/icons-material/FilterList';
 
 interface ActiveShiftsViewProps {
     shifts: Shift[];
@@ -11,21 +12,24 @@ interface ActiveShiftsViewProps {
     showFullDay?: boolean;
 }
 
-export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFullDay = false }: ActiveShiftsViewProps) => {
+interface GroupedShift extends Shift {
+    assignedPeople: string[];
+    clockStatuses: boolean[];
+}
+
+export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({ 
+    shifts, 
+    accounts, 
+    date = new Date(), 
+    showFullDay = false 
+}) => {
     const theme = useTheme();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedShift, setSelectedShift] = useState<(Shift & { 
-        groupId: string, 
-        covering_members: string[], 
-        clock_statuses: boolean[] 
-    }) | null>(null);
+    const [selectedShift, setSelectedShift] = useState<GroupedShift | null>(null);
+    const [forceDisplay, setForceDisplay] = useState(false);
 
-    const handleShiftClick = (shift: Shift & { 
-        groupId: string, 
-        covering_members: string[], 
-        clock_statuses: boolean[] 
-    }) => {
+    const handleShiftClick = (shift: GroupedShift) => {
         setSelectedShift(shift);
         setModalOpen(true);
     };
@@ -34,8 +38,43 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
         setModalOpen(false);
     };
 
+    // Group shifts by common attributes (same shift with different people)
+    const groupShiftsByAttributes = (inputShifts: Shift[]): GroupedShift[] => {
+        const shiftGroups: { [key: string]: GroupedShift } = {};
+        
+        inputShifts.forEach(shift => {
+            try {
+                // Create a unique key for each distinct shift (excluding who is assigned)
+                const shiftKey = `${shift.name}-${shift.local_start_date}-${shift.local_end_date}-${shift.workgroup}-${shift.subject}-${shift.location}`;
+                
+                if (!shiftGroups[shiftKey]) {
+                    // Create a new group with the first person
+                    shiftGroups[shiftKey] = {
+                        ...shift,
+                        assignedPeople: shift.covering_member ? [shift.covering_member] : [],
+                        clockStatuses: shift.clocked_in !== undefined ? [shift.clocked_in] : []
+                    };
+                } else {
+                    // Add this person to the existing group if they're not already included
+                    if (shift.covering_member && !shiftGroups[shiftKey].assignedPeople.includes(shift.covering_member)) {
+                        shiftGroups[shiftKey].assignedPeople.push(shift.covering_member);
+                        shiftGroups[shiftKey].clockStatuses.push(shift.clocked_in !== undefined ? shift.clocked_in : false);
+                    }
+                }
+            } catch (error) {
+                console.error('Error grouping shifts:', error);
+            }
+        });
+        
+        return Object.values(shiftGroups);
+    };
+    
+    // Group shifts by common attributes
+    const groupedShifts = React.useMemo(() => {
+        return groupShiftsByAttributes(shifts);
+    }, [shifts]);
+
     const getTimeWindow = () => {
-        // For full day view, always show full 24 hours
         if (showFullDay) {
             return {
                 start: 0,
@@ -43,15 +82,18 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
             };
         }
 
-        // For active view, calculate dynamic window
         const now = new Date();
         const currentHour = now.getHours();
 
         // Find currently active shifts
-        const activeShifts = shifts.filter(shift => {
-            const start = parseISO(shift.local_start_date);
-            const end = parseISO(shift.local_end_date);
-            return start <= now && end >= now;
+        const activeShifts = groupedShifts.filter(shift => {
+            try {
+                const start = parseISO(shift.local_start_date);
+                const end = parseISO(shift.local_end_date);
+                return start <= now && end >= now;
+            } catch (error) {
+                return false;
+            }
         });
 
         if (activeShifts.length === 0) {
@@ -63,12 +105,16 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
 
         // Find earliest start and latest end of active shifts
         const times = activeShifts.reduce((acc, shift) => {
-            const start = parseISO(shift.local_start_date);
-            const end = parseISO(shift.local_end_date);
-            return {
-                earliest: Math.min(acc.earliest, start.getHours()),
-                latest: Math.max(acc.latest, end.getHours())
-            };
+            try {
+                const start = parseISO(shift.local_start_date);
+                const end = parseISO(shift.local_end_date);
+                return {
+                    earliest: Math.min(acc.earliest, start.getHours()),
+                    latest: Math.max(acc.latest, end.getHours())
+                };
+            } catch (error) {
+                return acc;
+            }
         }, { earliest: 24, latest: 0 });
 
         return {
@@ -85,7 +131,6 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
 
     const hourHeight = 'calc((80vh - 120px) / ' + (timeWindow.end - timeWindow.start) + ')';
 
-    // Update time window every minute
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
@@ -93,7 +138,6 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
         return () => clearInterval(timer);
     }, []);
 
-    // Modify position calculations to use window-relative positions
     const getCurrentTimePosition = () => {
         const hours = currentTime.getHours();
         const minutes = currentTime.getMinutes();
@@ -102,260 +146,326 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
         return `${(hoursSinceStart / windowDuration) * 100}%`;
     };
 
-    const getOverlappingShifts = (shift: Shift, allShifts: Shift[]) => {
-        const currentStart = parseISO(shift.local_start_date);
-        const currentEnd = parseISO(shift.local_end_date);
+    // Position shifts with minimal overlap
+    const positionShiftsWithMinimalOverlap = () => {
+        // Track used horizontal space at different times
+        const timeSlots: {[hour: number]: {left: number, shifts: GroupedShift[]}[]} = {};
+        const positionedResults: {shift: GroupedShift, position: React.CSSProperties}[] = [];
         
-        return allShifts
-            .filter(s => {
-                if (s.id === shift.id) return false;
-                const start = parseISO(s.local_start_date);
-                const end = parseISO(s.local_end_date);
-                return (start < currentEnd && end > currentStart);
+        // Initialize time slots for each hour in our window
+        for (let hour = timeWindow.start; hour < timeWindow.end; hour++) {
+            timeSlots[hour] = [];
+        }
+        
+        // Sort all shifts by start time first
+        const sortedShifts = [...groupedShifts]
+            .filter(shift => {
+                try {
+                    const startTime = parseISO(shift.local_start_date);
+                    const endTime = parseISO(shift.local_end_date);
+                    
+                    if (!isValid(startTime) || !isValid(endTime)) {
+                        return false;
+                    }
+                    
+                    const startHour = startTime.getHours() + startTime.getMinutes() / 60;
+                    const endHour = endTime.getHours() + endTime.getMinutes() / 60;
+                    
+                    // Skip shifts outside visible window
+                    return !(endHour < timeWindow.start || startHour > timeWindow.end);
+                } catch (error) {
+                    return false;
+                }
             })
-            .sort((a, b) => a.id.localeCompare(b.id)); // Stable sorting by ID
-    };
-
-    // Improved function to handle overlapping shifts
-    const calculatePositionsForOverlappingGroups = (allShifts: (Shift & { groupId: string, covering_members: string[], clock_statuses: boolean[] })[]) => {
-        // Create a map to store the position information for each shift
-        const positionMap = new Map();
+            .sort((a, b) => {
+                try {
+                    // Sort by duration (longer shifts first)
+                    const aStart = parseISO(a.local_start_date);
+                    const aEnd = parseISO(a.local_end_date);
+                    const bStart = parseISO(b.local_start_date);
+                    const bEnd = parseISO(b.local_end_date);
+                    
+                    const aDuration = aEnd.getTime() - aStart.getTime();
+                    const bDuration = bEnd.getTime() - bStart.getTime();
+                    
+                    // Place longer shifts first
+                    return bDuration - aDuration;
+                } catch (error) {
+                    return 0;
+                }
+            });
         
-        // Group shifts by their overlapping time windows
-        const timeWindows: {
-            shifts: typeof allShifts,
-            start: number,
-            end: number
-        }[] = [];
-        
-        allShifts.forEach(shift => {
+        // For each shift, find the best horizontal position
+        sortedShifts.forEach(shift => {
             try {
                 const startDate = parseISO(shift.local_start_date);
                 const endDate = parseISO(shift.local_end_date);
-                const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-                const endHour = endDate.getHours() + endDate.getMinutes() / 60;
+                const startHour = Math.max(Math.floor(startDate.getHours()), timeWindow.start);
+                const endHour = Math.min(Math.ceil(endDate.getHours()), timeWindow.end);
                 
-                // Skip shifts outside the visible window
-                if (endHour < timeWindow.start || startHour > timeWindow.end) {
-                    return;
-                }
+                // Calculate a sensible width based on content
+                const nameLength = shift.name ? shift.name.length : 0;
+                const subjectLength = shift.subject ? shift.subject.length : 0;
+                const peopleCount = shift.assignedPeople ? shift.assignedPeople.length : 0;
                 
-                // Find a time window group this shift belongs to
-                let foundGroup = false;
-                for (const window of timeWindows) {
-                    // Check if this shift overlaps with any shift in the window
-                    const overlapsWithGroup = window.shifts.some(existingShift => {
-                        const existingStart = parseISO(existingShift.local_start_date);
-                        const existingEnd = parseISO(existingShift.local_end_date);
-                        const existingStartHour = existingStart.getHours() + existingStart.getMinutes() / 60;
-                        const existingEndHour = existingEnd.getHours() + existingEnd.getMinutes() / 60;
-                        
-                        return (startHour < existingEndHour && endHour > existingStartHour);
-                    });
+                let contentBasedWidth = 150 + Math.min(nameLength * 8, 150) + 
+                    Math.min(subjectLength * 5, 100) + (peopleCount * 30);
+                
+                const containerWidth = 1100; // estimated container width in px
+                let widthPercentage = Math.min((contentBasedWidth / containerWidth) * 100, 30); // max 30% width
+                
+                // Find the best horizontal position with minimal overlap
+                let bestPosition = 0;
+                let minOverlap = Infinity;
+                
+                // Try different left positions to find minimal overlap
+                for (let leftPos = 0; leftPos <= 70; leftPos += 5) {
+                    let totalOverlap = 0;
                     
-                    if (overlapsWithGroup) {
-                        window.shifts.push(shift);
-                        window.start = Math.min(window.start, startHour);
-                        window.end = Math.max(window.end, endHour);
-                        foundGroup = true;
-                        break;
+                    // Check overlap at each hour this shift spans
+                    for (let hour = startHour; hour < endHour; hour++) {
+                        if (!timeSlots[hour]) continue;
+                        
+                        // Check overlap with existing shifts at this hour
+                        for (const occupiedSlot of timeSlots[hour]) {
+                            // Calculate overlap between this potential position and existing shifts
+                            const rightEdge = leftPos + widthPercentage;
+                            const existingRightEdge = occupiedSlot.left + 
+                                (occupiedSlot.shifts[0] ? calculateShiftWidth(occupiedSlot.shifts[0]) : 0);
+                            
+                            // If they overlap horizontally
+                            if (leftPos < existingRightEdge && rightEdge > occupiedSlot.left) {
+                                // Add to total overlap
+                                totalOverlap += Math.min(rightEdge, existingRightEdge) - 
+                                    Math.max(leftPos, occupiedSlot.left);
+                            }
+                        }
+                    }
+                    
+                    // Update best position if this has less overlap
+                    if (totalOverlap < minOverlap) {
+                        minOverlap = totalOverlap;
+                        bestPosition = leftPos;
+                        
+                        // If we found a position with no overlap, stop searching
+                        if (minOverlap === 0) break;
                     }
                 }
                 
-                // If no overlapping group found, create a new one
-                if (!foundGroup) {
-                    timeWindows.push({
-                        shifts: [shift],
-                        start: startHour,
-                        end: endHour
-                    });
-                }
-            } catch (error) {
-                console.error('Error processing shift for overlap calculation:', error);
-            }
-        });
-        
-        // Process each group to assign positions
-        timeWindows.forEach(window => {
-            const totalShifts = window.shifts.length;
-            
-            // Sort shifts by start time and then by ID for consistent ordering
-            window.shifts.sort((a, b) => {
-                const aStart = parseISO(a.local_start_date);
-                const bStart = parseISO(b.local_start_date);
+                // Calculate vertical position
+                const windowDuration = timeWindow.end - timeWindow.start;
+                const startMinutes = startDate.getMinutes() / 60;
+                const adjustedStart = Math.max((startHour - timeWindow.start) + startMinutes, 0);
+                const endMinutes = endDate.getMinutes() / 60;
+                const adjustedEnd = Math.min((endHour - timeWindow.start) + endMinutes, windowDuration);
+                const adjustedDuration = adjustedEnd - adjustedStart;
                 
-                // Sort by start time
-                if (aStart < bStart) return -1;
-                if (aStart > bStart) return 1;
-                
-                // If same start time, sort by ID
-                return a.id.localeCompare(b.id);
-            });
-            
-            // Assign positions within the group
-            window.shifts.forEach((shift, index) => {
-                try {
-                    const startDate = parseISO(shift.local_start_date);
-                    const endDate = parseISO(shift.local_end_date);
-                    const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-                    const endHour = endDate.getHours() + endDate.getMinutes() / 60;
-                    
-                    const windowDuration = timeWindow.end - timeWindow.start;
-                    const adjustedStart = Math.max(startHour - timeWindow.start, 0);
-                    const adjustedEnd = Math.min(endHour - timeWindow.start, windowDuration);
-                    const adjustedDuration = adjustedEnd - adjustedStart;
-                    
-                    // Calculate z-index based on start time: later shifts get higher z-index
-                    // This ensures shifts starting later are drawn on top
-                    const zIndex = Math.floor(startHour * 10) + 1;
-                    
-                    positionMap.set(shift.groupId, {
-                        top: `${(adjustedStart / windowDuration) * 100}%`,
-                        height: `${(adjustedDuration / windowDuration) * 100}%`,
-                        left: `${(index / totalShifts) * 100}%`,
-                        width: `calc(100% / ${totalShifts})`,
-                        zIndex
-                    });
-                } catch (error) {
-                    console.error('Error calculating position for shift:', error);
-                }
-            });
-        });
-        
-        return positionMap;
-    };
-
-    const groupShifts = (shifts: Shift[]) => {
-        return shifts.reduce((acc, shift) => {
-            // Group by shift properties excluding covering_member
-            const key = `${shift.local_start_date}-${shift.local_end_date}-${shift.name}-${shift.subject}-${shift.location}-${shift.workgroup}`;
-            
-            if (!acc[key]) {
-                acc[key] = {
-                    ...shift,
-                    groupId: key,
-                    covering_members: [shift.covering_member],
-                    clock_statuses: [shift.clocked_in]
+                // Create the position object
+                const position = {
+                    top: `${(adjustedStart / windowDuration) * 100}%`,
+                    height: `${(adjustedDuration / windowDuration) * 100}%`,
+                    left: `${bestPosition}%`,
+                    width: `${widthPercentage}%`,
+                    zIndex: 10 + positionedResults.length, // Ensure consistent stacking
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                 };
-            } else {
-                // Avoid duplicate members
-                if (!acc[key].covering_members.includes(shift.covering_member)) {
-                    acc[key].covering_members.push(shift.covering_member);
-                    acc[key].clock_statuses.push(shift.clocked_in);
-                }
-            }
-            return acc;
-        }, {} as { [key: string]: Shift & { groupId: string, covering_members: string[], clock_statuses: boolean[] } });
-    };
-
-    const groupedShifts = React.useMemo(() => 
-        Object.values(groupShifts(shifts)), 
-        [shifts]
-    );
-
-    // Filter shifts to only include those in the current time window
-    const visibleShifts = React.useMemo(() => {
-        return groupedShifts.filter(shift => {
-            try {
-                const startDate = parseISO(shift.local_start_date);
-                const endDate = parseISO(shift.local_end_date);
-                const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-                const endHour = endDate.getHours() + endDate.getMinutes() / 60;
                 
-                // Show shift if it overlaps with the window
-                return !(endHour < timeWindow.start || startHour > timeWindow.end);
+                // Register this shift's position in all hours it spans
+                for (let hour = startHour; hour < endHour; hour++) {
+                    if (timeSlots[hour]) {
+                        timeSlots[hour].push({
+                            left: bestPosition,
+                            shifts: [shift]
+                        });
+                    }
+                }
+                
+                // Add to results
+                positionedResults.push({
+                    shift,
+                    position
+                });
+                
             } catch (error) {
-                return false;
+                console.error('Error positioning shift:', error);
             }
         });
-    }, [groupedShifts, timeWindow]);
-
-    // Calculate positions for visible shifts only
-    const positionMap = React.useMemo(() => 
-        calculatePositionsForOverlappingGroups(visibleShifts), 
-        [visibleShifts, timeWindow]
-    );
+        
+        return positionedResults;
+    };
     
-    // Get position for an individual shift
-    const getShiftPosition = (shift: Shift & { groupId: string }) => {
-        return positionMap.get(shift.groupId);
+    // Helper to calculate a shift's width percentage
+    const calculateShiftWidth = (shift: GroupedShift): number => {
+        if (!shift) return 20; // Default width
+        
+        const nameLength = shift.name ? shift.name.length : 0;
+        const subjectLength = shift.subject ? shift.subject.length : 0;
+        const peopleCount = shift.assignedPeople ? shift.assignedPeople.length : 0;
+        
+        let contentBasedWidth = 150 + Math.min(nameLength * 8, 150) + 
+            Math.min(subjectLength * 5, 100) + (peopleCount * 30);
+        
+        const containerWidth = 1100;
+        return Math.min((contentBasedWidth / containerWidth) * 100, 30);
+    };
+    
+    // Get positioned shifts with minimal overlap
+    const positionedShifts = React.useMemo(() => {
+        return positionShiftsWithMinimalOverlap();
+    }, [groupedShifts, timeWindow, showFullDay]);
+
+    // Reset force display when shifts change
+    useEffect(() => {
+        setForceDisplay(false);
+    }, [shifts]);
+
+    // Check if there are too many shifts to display
+    const tooManyShifts = !forceDisplay && positionedShifts.length > 25;
+
+    // Fix the alignment by ensuring consistent calculation of hour positions
+    const calculateHourPosition = (hour: number): string => {
+        const hourPosition = (hour - timeWindow.start) / (timeWindow.end - timeWindow.start);
+        return `${hourPosition * 100}%`;
     };
 
-    // Update the shift count check to use visible shifts instead of raw shifts
-    if (visibleShifts.length > 50) {
+    // If there are too many shifts, render a message instead of the calendar
+    if (tooManyShifts) {
         return (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="h6" color="primary" gutterBottom>
+            <Paper 
+                sx={{ 
+                    p: 4, 
+                    textAlign: 'center', 
+                    minHeight: '50vh', 
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}
+            >
+                <FilterListIcon 
+                    sx={{ 
+                        fontSize: '4rem', 
+                        color: 'primary.main',
+                        mb: 2
+                    }} 
+                />
+                
+                <Typography 
+                    variant="h5" 
+                    color="primary" 
+                    gutterBottom
+                    sx={{ fontWeight: 'bold' }}
+                >
                     Too Many Shifts to Display
                 </Typography>
-                <Typography variant="body1">
-                    Please use the workgroup filter to narrow down the shifts.
+                
+                <Typography variant="body1" sx={{ maxWidth: '600px', mb: 3 }}>
+                    There are {positionedShifts.length} shifts currently in view. 
+                    Please use the workgroup filter to narrow down the display 
+                    for better performance and readability.
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    Current shifts: {visibleShifts.length}
+                
+                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                    <Button 
+                        variant="outlined" 
+                        color="primary"
+                        onClick={() => setForceDisplay(true)}
+                    >
+                        Show Anyway
+                    </Button>
+                </Box>
+                
+                <Typography 
+                    variant="caption" 
+                    color="text.secondary" 
+                    sx={{ mt: 4 }}
+                >
+                    Note: Displaying too many shifts at once may cause performance issues.
                 </Typography>
             </Paper>
         );
     }
 
     return (
-        <>
-            <Paper 
-                sx={{ 
-                    p: 2, 
-                    minHeight: '85vh',
-                    overflow: 'hidden',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    width: '100%',
-                    maxWidth: '100%'
-                }}
-            >
-                <Box sx={{ mb: 3 }}>
-                    <Typography 
-                        variant="h6" 
-                        sx={{ 
-                            color: 'primary.main',
-                            fontWeight: 600
-                        }}
-                    >
-                        {format(date, 'EEEE, MMMM d, yyyy')} - Active Shifts
-                        <Typography component="span" variant="caption" sx={{ ml: 2, color: 'text.secondary' }}>
-                            ({visibleShifts.length} shifts)
-                        </Typography>
+        <Paper 
+            sx={{ 
+                p: 2, 
+                minHeight: '85vh',
+                overflow: 'hidden',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                maxWidth: '100%'
+            }}
+        >
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography 
+                    variant="h6" 
+                    sx={{ 
+                        color: 'primary.main',
+                        fontWeight: 600
+                    }}
+                >
+                    {format(date, 'EEEE, MMMM d, yyyy')} - {showFullDay ? 'Full Day' : 'Active Shifts'}
+                    <Typography component="span" variant="caption" sx={{ ml: 2, color: 'text.secondary' }}>
+                        ({positionedShifts.length} shifts)
                     </Typography>
-                </Box>
+                </Typography>
+                
+                {forceDisplay && (
+                    <Typography 
+                        variant="caption" 
+                        color="error" 
+                        sx={{ fontWeight: 'bold' }}
+                    >
+                        Displaying {positionedShifts.length} shifts - Consider using filters for better performance
+                    </Typography>
+                )}
+            </Box>
 
-                <Grid container sx={{ 
-                    flex: 1,
-                    position: 'relative',
-                    height: '100%',
-                    minHeight: '70vh',
-                    maxWidth: '100%',
-                    overflowX: 'hidden',
-                    overflowY: 'auto'
-                }}>
-                    <Grid item xs={1}>
-                        {hours.map(hour => (
-                            <Box
-                                key={hour}
-                                sx={{
-                                    height: hourHeight,
-                                    borderBottom: '1px solid #eee',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    pr: 1
-                                }}
-                            >
-                                {format(new Date().setHours(hour, 0), 'ha')}
-                            </Box>
-                        ))}
-                    </Grid>
+            <Grid container sx={{ 
+                flex: 1,
+                position: 'relative',
+                height: '100%',
+                minHeight: '70vh',
+                maxWidth: '100%',
+                overflowX: 'hidden',
+                overflowY: 'auto'
+            }}>
+                <Grid item xs={1} sx={{ position: 'relative', pr: 1 }}>
+                    <Box sx={{ 
+                        position: 'absolute', 
+                        top: 0, 
+                        bottom: 0, 
+                        right: 0, 
+                        width: '1px', 
+                        backgroundColor: '#ddd' 
+                    }} />
                     
-                    <Grid item xs={11} sx={{ position: 'relative' }}>
+                    {hours.map(hour => (
+                        <Box
+                            key={hour}
+                            sx={{
+                                position: 'absolute',
+                                top: calculateHourPosition(hour),
+                                transform: 'translateY(-50%)',
+                                width: '100%',
+                                pr: 2,
+                                textAlign: 'right',
+                                color: 'text.secondary',
+                                fontSize: '0.8rem',
+                                fontWeight: 500
+                            }}
+                        >
+                            {format(new Date().setHours(hour, 0), 'ha')}
+                        </Box>
+                    ))}
+                </Grid>
+                
+                <Grid item xs={11} sx={{ position: 'relative' }}>
+                    {!showFullDay && (
                         <Box
                             sx={{
                                 position: 'absolute',
@@ -364,7 +474,7 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
                                 top: getCurrentTimePosition(),
                                 height: '2px',
                                 backgroundColor: theme.palette.primary.main,
-                                zIndex: 2,
+                                zIndex: 1000,
                                 '&::before': {
                                     content: '""',
                                     position: 'absolute',
@@ -377,94 +487,150 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
                                 }
                             }}
                         />
+                    )}
+                    
+                    {/* Hour lines for better visibility */}
+                    {hours.map(hour => (
+                        <Box
+                            key={`line-${hour}`}
+                            sx={{
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                top: calculateHourPosition(hour),
+                                height: '1px',
+                                backgroundColor: hour % 3 === 0 ? '#ddd' : '#eee',
+                                zIndex: 1
+                            }}
+                        />
+                    ))}
+                    
+                    {/* Half-hour markers */}
+                    {hours.map(hour => (
+                        <Box
+                            key={`half-line-${hour}`}
+                            sx={{
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                top: `calc(${calculateHourPosition(hour)} + ${50 / (timeWindow.end - timeWindow.start)}%)`,
+                                height: '1px',
+                                backgroundColor: '#f5f5f5',
+                                zIndex: 1,
+                                borderTop: '1px dashed #eee'
+                            }}
+                        />
+                    ))}
+                    
+                    {positionedShifts.map(({ shift, position }) => {
+                        // Get all assigned people for this shift
+                        const assignedPeople = shift.assignedPeople
+                            .map(memberId => accounts.find(acc => acc.id === memberId))
+                            .filter(Boolean);
                         
-                        {visibleShifts.map(shift => {
-                            const position = getShiftPosition(shift);
-                            if (!position) return null;
-
-                            const assignedPeople = shift.covering_members
-                                .map(memberId => accounts.find(acc => acc.id === memberId))
-                                .filter(Boolean);
-
-                            return (
-                                <Paper
-                                    key={shift.groupId}
-                                    elevation={3}
-                                    onClick={() => handleShiftClick(shift)}
-                                    sx={{
-                                        position: 'absolute',
-                                        padding: 1.5,
-                                        backgroundColor: 'secondary.main',
-                                        color: 'white',
-                                        borderRadius: '4px',
-                                        transition: 'all 0.2s ease',
-                                        overflow: 'hidden',
-                                        boxSizing: 'border-box',
-                                        cursor: 'pointer',
-                                        '&:hover': {
-                                            backgroundColor: 'secondary.dark',
-                                            transform: 'scale(1.1)',
-                                            zIndex: 100,
-                                            overflow: 'visible',
-                                            maxHeight: 'none',
-                                            minWidth: '250px',
-                                            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                                            '& .MuiTypography-root': {
-                                                whiteSpace: 'normal',
-                                                overflow: 'visible',
-                                                textOverflow: 'clip'
-                                            }
-                                        },
-                                        '& .MuiTypography-root': {
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis'
-                                        },
-                                        ...position,
-                                    }}
+                        // Theme colors for shadow effect
+                        const shadowColor = theme.palette.primary.light;
+                        const shadowAlpha = '0.5'; // Semi-transparent
+                        
+                        return (
+                            <Paper
+                                key={`${shift.id}-${shift.assignedPeople.join('-')}`}
+                                elevation={0} // Remove default elevation
+                                onClick={() => handleShiftClick(shift)}
+                                sx={{
+                                    position: 'absolute',
+                                    padding: 1.5,
+                                    backgroundColor: 'secondary.main',
+                                    color: 'white',
+                                    borderRadius: '4px',
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                    overflow: 'hidden',
+                                    boxSizing: 'border-box',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap', // Prevent text wrapping
+                                    boxShadow: `
+                                        0 1px 2px rgba(0,0,0,0.1),
+                                        0 0 0 1px ${shadowColor}${shadowAlpha},
+                                        0 2px 6px ${shadowColor}${shadowAlpha}
+                                    `, // Themed shadow effect
+                                    '&:hover': {
+                                        backgroundColor: 'secondary.dark',
+                                        transform: 'scale(1.05) translateY(-2px)',
+                                        zIndex: 1000,
+                                        overflow: 'visible',
+                                        maxHeight: 'none',
+                                        minWidth: 'auto',
+                                        whiteSpace: 'normal',
+                                        boxShadow: `
+                                            0 4px 12px rgba(0,0,0,0.15),
+                                            0 0 0 2px ${theme.palette.primary.main}${shadowAlpha},
+                                            0 6px 15px ${theme.palette.primary.main}40
+                                        `, // Enhanced shadow on hover
+                                    },
+                                    ...position,
+                                }}
+                            >
+                                <Typography 
+                                    variant="subtitle2" 
+                                    noWrap 
+                                    title={shift.name}
+                                    sx={{ fontWeight: 600 }}
                                 >
-                                    <Typography variant="subtitle2" title={shift.name}>
-                                        {shift.name}
+                                    {shift.name}
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography 
+                                        variant="caption" 
+                                        noWrap 
+                                        title={shift.subject}
+                                        sx={{ maxWidth: '100%', flexGrow: 1 }}
+                                    >
+                                        {shift.subject}
                                     </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography variant="caption" title={shift.subject}>
-                                            {shift.subject}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                                            • {shift.display_time}
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ mt: 1 }}>
-                                        {assignedPeople.map((person, index) => (
+                                    <Typography 
+                                        variant="caption" 
+                                        sx={{ opacity: 0.9, flexShrink: 0 }}
+                                    >
+                                        • {shift.display_time}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ mt: 1 }}>
+                                    {assignedPeople.map((person, index) => (
+                                        <Typography 
+                                            key={person?.id}
+                                            variant="body2" 
+                                            noWrap
+                                            title={person?.screen_name || `${person?.first_name} ${person?.last_name}`}
+                                            sx={{ 
+                                                fontWeight: 500,
+                                                mt: index > 0 ? 0.5 : 0
+                                            }}
+                                        >
+                                            {person?.screen_name || `${person?.first_name} ${person?.last_name}`}
+                                            {' '}
                                             <Typography 
-                                                key={person?.id} 
-                                                variant="body2" 
+                                                component="span" 
+                                                variant="caption" 
                                                 sx={{ 
-                                                    fontWeight: 500,
-                                                    mt: index > 0 ? 0.5 : 0
+                                                    opacity: 0.9,
+                                                    fontStyle: 'italic'
                                                 }}
                                             >
-                                                {person?.screen_name || `${person?.first_name} ${person?.last_name}`}
-                                                {' '}
-                                                <Typography 
-                                                    component="span" 
-                                                    variant="caption" 
-                                                    sx={{ 
-                                                        opacity: 0.9,
-                                                        fontStyle: 'italic'
-                                                    }}
-                                                >
-                                                    ({shift.clock_statuses[index] ? 'Clocked In' : 'Not Clocked In'})
-                                                </Typography>
+                                                ({shift.clockStatuses[index] ? 'Clocked In' : 'Not Clocked In'})
                                             </Typography>
-                                        ))}
-                                    </Box>
-                                </Paper>
-                            );
-                        })}
-                    </Grid>
+                                        </Typography>
+                                    ))}
+                                    {assignedPeople.length === 0 && (
+                                        <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                                            No one assigned
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Paper>
+                        );
+                    })}
                 </Grid>
-            </Paper>
+            </Grid>
             
             {selectedShift && (
                 <ShiftDetailModal
@@ -474,6 +640,6 @@ export const ActiveShiftsView = ({ shifts, accounts, date = new Date(), showFull
                     accounts={accounts}
                 />
             )}
-        </>
+        </Paper>
     );
 };

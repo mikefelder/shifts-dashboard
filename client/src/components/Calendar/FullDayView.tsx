@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Container, Box, Typography, CircularProgress } from '@mui/material';
 import { format } from 'date-fns';
-import { FullDayCalendar } from './FullDayCalendar';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
 import { WhosOnResponse } from '../../types/shift.types';
 import { getWorkgroupShifts } from '../../services/api.service';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
-import { ActiveShiftsView } from './ActiveShiftsView'; // Updated import if needed
+import { ActiveShiftsView } from './ActiveShiftsView';
 
 export const FullDayView = () => {
     const { selectedWorkgroup, setWorkgroups } = useWorkgroup();
@@ -17,7 +16,7 @@ export const FullDayView = () => {
 
     useEffect(() => {
         loadData();
-    }, [selectedWorkgroup]); // Add selectedWorkgroup as dependency
+    }, [selectedWorkgroup]);
 
     const loadData = async () => {
         try {
@@ -25,6 +24,7 @@ export const FullDayView = () => {
             const response = await getWorkgroupShifts(true);
             setData(response);
             setWorkgroups(response.result.referenced_objects.workgroup);
+            setLastRefresh(new Date());
         } catch (err) {
             setError('Failed to load shifts');
             console.error(err);
@@ -60,18 +60,21 @@ export const FullDayView = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 width: '100%',
-                maxWidth: '100%', // Prevent overflow
-                overflowX: 'hidden' // Prevent horizontal scrolling
+                maxWidth: '100%',
+                overflowX: 'hidden'
             }}
         >
-            <Box sx={{ mb: 2, ml: 2 }}> {/* Add margin-left to timestamp */}
+            <Box sx={{ mb: 2, ml: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" color="textSecondary">
                     Last updated: {format(lastRefresh, 'h:mm:ss a')}
                 </Typography>
             </Box>
-            <FullDayCalendar 
+
+            <ActiveShiftsView 
                 shifts={filteredShifts} 
                 accounts={data.result.referenced_objects.account}
+                showFullDay={true}
+                date={new Date()}
             />
         </Container>
     );
