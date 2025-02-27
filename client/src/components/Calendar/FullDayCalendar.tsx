@@ -77,22 +77,6 @@ export const FullDayCalendar = ({ shifts, accounts, date = new Date() }: FullDay
         setModalOpen(false);
     };
 
-    if (shifts.length > 50) {
-        return (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="h6" color="primary" gutterBottom>
-                    Too Many Shifts to Display
-                </Typography>
-                <Typography variant="body1">
-                    Please use the workgroup filter to narrow down the shifts.
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    Current shifts: {shifts.length}
-                </Typography>
-            </Paper>
-        );
-    }
-
     // Improved function to handle overlapping shifts
     const calculatePositionsForOverlappingGroups = (allShifts: (Shift & { groupId: string, covering_members: string[], clock_statuses: boolean[] })[]) => {
         // Create a map to store the position information for each shift
@@ -203,6 +187,28 @@ export const FullDayCalendar = ({ shifts, accounts, date = new Date() }: FullDay
         return positionMap.get(shift.groupId);
     };
 
+    // Count only shifts that have positions
+    const visibleShifts = React.useMemo(() => {
+        return groupedShifts.filter(shift => positionMap.has(shift.groupId));
+    }, [groupedShifts, positionMap]);
+
+    // Check visible shift count instead of raw shifts
+    if (visibleShifts.length > 50) {
+        return (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="primary" gutterBottom>
+                    Too Many Shifts to Display
+                </Typography>
+                <Typography variant="body1">
+                    Please use the workgroup filter to narrow down the shifts.
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Current shifts: {visibleShifts.length}
+                </Typography>
+            </Paper>
+        );
+    }
+
     return (
         <>
             <Box sx={{ 
@@ -223,6 +229,9 @@ export const FullDayCalendar = ({ shifts, accounts, date = new Date() }: FullDay
                 }}>
                     <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
                         {format(date, 'EEEE, MMMM d, yyyy')} - Full Day Schedule
+                        <Typography component="span" variant="caption" sx={{ ml: 2, color: 'text.secondary' }}>
+                            ({visibleShifts.length} shifts)
+                        </Typography>
                     </Typography>
 
                     <Grid container sx={{ 
@@ -268,7 +277,7 @@ export const FullDayCalendar = ({ shifts, accounts, date = new Date() }: FullDay
                                 }
                             }} />
 
-                            {groupedShifts.map(shift => {
+                            {visibleShifts.map(shift => {
                                 const position = getShiftPosition(shift);
                                 if (!position) return null;
 
