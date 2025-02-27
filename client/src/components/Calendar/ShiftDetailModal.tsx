@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
     Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, Typography, Box, Divider, Chip, Grid
+    Button, Typography, Box, Divider, Chip, Grid, useTheme
 } from '@mui/material';
 import { format, parseISO } from 'date-fns';
 import { Shift, Account } from '../../types/shift.types';
@@ -28,6 +28,8 @@ export const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({
     shift, 
     accounts 
 }) => {
+    const theme = useTheme();
+    
     // Get assigned people from either the new format or legacy format
     const getAssignedPeople = () => {
         if (shift.assignedPeople && Array.isArray(shift.assignedPeople)) {
@@ -56,6 +58,9 @@ export const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({
             return dateString;
         }
     };
+
+    // Define navy blue color from theme
+    const navyBlue = theme.palette.primary.dark;
 
     return (
         <Dialog 
@@ -113,7 +118,14 @@ export const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({
                     
                     <Grid item xs={12} md={6}>
                         {/* Right Column - Assigned People */}
-                        <Typography variant="h6" sx={{ mb: 2 }}>
+                        <Typography 
+                            variant="h6" 
+                            sx={{ 
+                                mb: 2, 
+                                color: navyBlue,
+                                fontWeight: 600
+                            }}
+                        >
                             Assigned People ({assignedPeople.length})
                         </Typography>
                         
@@ -133,12 +145,19 @@ export const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({
                                             p: 1.5,
                                             bgcolor: 'background.paper',
                                             borderRadius: 1,
-                                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                            borderLeft: `4px solid ${navyBlue}`
                                         }}
                                     >
-                                        <PersonIcon sx={{ mr: 2, color: 'text.secondary' }} />
+                                        <PersonIcon sx={{ mr: 2, color: navyBlue }} />
                                         <Box sx={{ flexGrow: 1 }}>
-                                            <Typography variant="body1">
+                                            <Typography 
+                                                variant="body1"
+                                                sx={{ 
+                                                    color: navyBlue,
+                                                    fontWeight: 500
+                                                }}
+                                            >
                                                 {person.account?.screen_name || 
                                                   `${person.account?.first_name} ${person.account?.last_name}`}
                                             </Typography>
@@ -160,7 +179,20 @@ export const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({
             </DialogContent>
             
             <DialogActions>
-                <Button onClick={onClose} variant="outlined">Close</Button>
+                <Button 
+                    onClick={onClose} 
+                    variant="outlined"
+                    sx={{ 
+                        color: navyBlue,
+                        borderColor: navyBlue,
+                        '&:hover': {
+                            borderColor: navyBlue,
+                            backgroundColor: `${navyBlue}0A`
+                        }
+                    }}
+                >
+                    Close
+                </Button>
             </DialogActions>
         </Dialog>
     );
