@@ -1,6 +1,6 @@
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, FormControl, InputLabel, Select, MenuItem, Box, Typography, useTheme } from '@mui/material';
 import { Schedule } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ViewDayIcon from '@mui/icons-material/ViewDay';
 
 interface SidebarProps {
@@ -10,7 +10,13 @@ interface SidebarProps {
 
 const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
+
+  // Check which route is active
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <Drawer
@@ -30,13 +36,43 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
       }}
     >
       <List>
-        <ListItem onClick={() => navigate('/')}>
+        <ListItem 
+          onClick={() => navigate('/')}
+          selected={isActive('/')}
+          sx={{ 
+            cursor: 'pointer', // Show pointer cursor on hover
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            },
+            '&.Mui-selected': {
+              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.12)',
+              }
+            }
+          }}
+        >
           <ListItemIcon>
             <Schedule />
           </ListItemIcon>
           <ListItemText primary="Current Shifts" />
         </ListItem>
-        <ListItem onClick={() => navigate('/tabular-view')}>
+        <ListItem 
+          onClick={() => navigate('/tabular-view')}
+          selected={isActive('/tabular-view')}
+          sx={{ 
+            cursor: 'pointer', // Show pointer cursor on hover
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            },
+            '&.Mui-selected': {
+              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.12)',
+              }
+            }
+          }}
+        >
           <ListItemIcon>
             <ViewDayIcon />
           </ListItemIcon>

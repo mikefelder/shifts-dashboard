@@ -232,6 +232,37 @@ export const TabularShiftView = () => {
         }
     };
 
+    // Success color for clocked-in styling
+    const successColor = theme.palette.success.main;
+    const successDarkColor = theme.palette.success.dark;
+
+    // Function to render a person chip with correct styling based on clocked-in status
+    const renderPersonChip = (name: string, isClocked: boolean, index: number) => {
+        return (
+            <Chip 
+                key={index}
+                size="small"
+                icon={<PersonIcon sx={{ color: isClocked ? 'white' : undefined }} />}
+                label={name}
+                sx={{ 
+                    backgroundColor: isClocked 
+                        ? successColor 
+                        : undefined,
+                    color: isClocked ? 'white' : 'text.primary',
+                    fontWeight: isClocked ? 600 : 400,
+                    '& .MuiChip-icon': {
+                        color: isClocked ? 'white !important' : undefined,
+                    },
+                    '&:hover': {
+                        backgroundColor: isClocked 
+                            ? successDarkColor
+                            : undefined,
+                    }
+                }}
+            />
+        );
+    };
+
     if (loading) return (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
             <CircularProgress />
@@ -395,19 +426,13 @@ export const TabularShiftView = () => {
                                                 </Typography>
                                             ) : (
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {shift.assignedPersonNames.map((name, index) => (
-                                                        <Chip 
-                                                            key={index}
-                                                            size="small"
-                                                            icon={<PersonIcon />}
-                                                            label={name}
-                                                            sx={{ 
-                                                                backgroundColor: shift.clockStatuses && shift.clockStatuses[index] 
-                                                                    ? `${theme.palette.success.main}20` 
-                                                                    : undefined
-                                                            }}
-                                                        />
-                                                    ))}
+                                                    {shift.assignedPersonNames.map((name, index) => 
+                                                        renderPersonChip(
+                                                            name, 
+                                                            shift.clockStatuses && shift.clockStatuses[index], 
+                                                            index
+                                                        )
+                                                    )}
                                                 </Box>
                                             )}
                                         </TableCell>
