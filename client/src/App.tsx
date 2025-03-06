@@ -5,7 +5,7 @@ import { AppLayout } from './components/Layout/AppLayout';
 import { CalendarPage } from './pages/Calendar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import CssBaseline from '@mui/material/CssBaseline';
-import { FullDayView } from './components/Calendar/FullDayView';
+import { TabularShiftView } from './components/Calendar/TabularShiftView';
 import { WorkgroupProvider } from './contexts/WorkgroupContext';
 
 function App() {
@@ -18,7 +18,7 @@ function App() {
                         <Routes>
                             <Route element={<AppLayout />}>
                                 <Route path="/" element={<CalendarPage />} />
-                                <Route path="/full-day" element={<FullDayView />} />
+                                <Route path="/tabular-view" element={<TabularShiftView />} />
                                 <Route path="*" element={<CalendarPage />} />
                             </Route>
                         </Routes>
