@@ -30,17 +30,17 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
       }}
     >
       <List>
-        <ListItem button onClick={() => navigate('/')}>
+        <ListItem onClick={() => navigate('/')}>
           <ListItemIcon>
             <Schedule />
           </ListItemIcon>
           <ListItemText primary="Current Shifts" />
         </ListItem>
-        <ListItem button onClick={() => navigate('/full-day')}>
+        <ListItem onClick={() => navigate('/tabular-view')}>
           <ListItemIcon>
             <ViewDayIcon />
           </ListItemIcon>
-          <ListItemText primary="Full Day View" />
+          <ListItemText primary="Tabular View" />
         </ListItem>
       </List>
       
