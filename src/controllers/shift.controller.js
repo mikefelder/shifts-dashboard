@@ -10,37 +10,51 @@ async function listShifts(req, res) {
 }
 
 /**
- * Get shifts that are currently active or will start soon
- * By default loads all pages
+ * Get shifts that are currently active (who's on)
+ * @param {*} req - Express request object
+ * @param {*} res - Express response object
  */
 async function whosOn(req, res) {
     try {
-        // Start time for performance tracking
         const startTime = Date.now();
         
-        // Forward all query parameters to service
-        // The service will handle pagination and determine if single_page or all_pages should be used
+        console.log('WhosOn API request received:', req.query);
+        
+        // Always ensure timeclock_status is true (will be handled in service)
+        // This is already taken care of in the service, just log the request
+        
+        // Get shifts with who's on data
         const result = await shiftWhosOn(req.query.workgroup, req.query);
         
-        // End time for performance tracking
-        const endTime = Date.now();
-        const duration = endTime - startTime;
-        
-        // Add timing info to response
+        // Calculate duration and add timing information
+        const duration = Date.now() - startTime;
         result.timing = {
             duration_ms: duration,
             timestamp: new Date().toISOString()
         };
         
-        // Log performance metrics
-        console.log(`WhosOn request completed in ${duration}ms, returned ${result.result.shifts.length} shifts`);
+        // Summary of shifts
+        const shifts = result.result.shifts || [];
+        const clockedInCount = shifts.reduce((count, shift) => {
+            const shiftClockedIn = (shift.clockStatuses || []).filter(Boolean).length;
+            return count + shiftClockedIn;
+        }, 0);
+        
+        const totalAssigned = shifts.reduce((count, shift) => {
+            return count + (shift.assignedPeople?.length || 0);
+        }, 0);
+        
+        console.log(`API response ready: ${shifts.length} shifts with ${clockedInCount}/${totalAssigned} people clocked in`);
         
         res.json(result);
     } catch (error) {
-        console.error('Error in whosOn controller:', error.message);
+        console.error('Error in whosOn controller:', error);
+        
+        // Send a more detailed error response
         res.status(500).json({ 
             error: 'Failed to fetch shift data',
-            details: error.message
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 }

@@ -69,53 +69,123 @@ async function shiftList(workgroupId, queryParams = {}) {
  */
 async function shiftWhosOn(workgroupId, queryParams = {}) {
     try {
-        // Base parameters (non-pagination)
-        const baseParams = {};
+        // Base parameters - ALWAYS include timeclock_status
+        const baseParams = {
+            // Explicitly set timeclock_status to true
+            timeclock_status: true
+        };
         
         // Add workgroup filter if provided
         if (workgroupId) {
             baseParams.select = { workgroup: workgroupId };
         }
         
-        // Additional parameters for the whosOn API
-        if (queryParams.include_clocked_in !== undefined) {
-            baseParams.include_clocked_in = queryParams.include_clocked_in === 'true';
-        }
+        console.log('Using parameters for whosOn API call:', JSON.stringify(baseParams));
         
         // Start time for performance tracking
         const fetchStartTime = Date.now();
         
-        // Fetch all pages
+        // Fetch a single page first to verify parameters are working
         const initialBatchSize = parseInt(queryParams.batch) || 100;
-        console.log(`Fetching ALL shift pages with initial batch size ${initialBatchSize}`);
+        baseParams.page = {
+            start: 0,
+            batch: initialBatchSize
+        };
         
-        const rawData = await fetchAllPages('shift.whosOn', baseParams, initialBatchSize);
+        // Log the exact parameters we're sending
+        console.log(`Making initial API call with parameters:`, JSON.stringify(baseParams));
         
+        // Make a direct API call first to test parameters
+        const url = buildAuthenticatedUrl('shift.whosOn', baseParams);
+        console.log(`Generated URL: ${url}`);
+        
+        const response = await axios.get(url);
+        
+        // Check if we got clock-in data in the first page
+        if (response.data.result?.shifts) {
+            const clockedInShifts = response.data.result.shifts.filter(s => s.clocked_in === true);
+            console.log(`Found ${clockedInShifts.length} clocked-in shifts out of ${response.data.result.shifts.length}`);
+            
+            // If no shifts have clock-in data, try alternative format
+            if (response.data.result.shifts.length > 0 && clockedInShifts.length === 0) {
+                console.log('No clocked-in shifts found, trying with string "true"');
+                baseParams.timeclock_status = "true";
+                
+                // Try again with string "true"
+                const altUrl = buildAuthenticatedUrl('shift.whosOn', baseParams);
+                const altResponse = await axios.get(altUrl);
+                
+                // Use this response if it contains clocked-in shifts
+                if (altResponse.data.result?.shifts) {
+                    const altClockedInShifts = altResponse.data.result.shifts.filter(s => s.clocked_in === true);
+                    if (altClockedInShifts.length > 0) {
+                        console.log(`String "true" worked! Found ${altClockedInShifts.length} clocked-in shifts`);
+                        // Use this response for the rest of the processing
+                        response.data = altResponse.data;
+                    }
+                }
+            }
+        }
+        
+        // Now proceed with full pagination using the working parameter format
         const fetchEndTime = Date.now();
-        console.log(`Fetched all pages in ${fetchEndTime - fetchStartTime}ms`);
+        console.log(`Initial page fetch time: ${fetchEndTime - fetchStartTime}ms`);
         
-        // Get account and shift data
-        const accounts = rawData.result?.referenced_objects?.account || [];
-        const shifts = rawData.result?.shifts || [];
+        // Continue with pagination if needed
+        let allResults = response.data.result.shifts || [];
+        const allReferencedObjects = response.data.result.referenced_objects || {};
         
-        console.log(`Retrieved ${shifts.length} total shifts from Shiftboard whosOn API`);
+        // If there are more pages, fetch them using the same parameter format
+        if (response.data.result?.page?.next) {
+            console.log('Fetching additional pages with working parameter format');
+            const remainingPages = await fetchRemainingPages(
+                'shift.whosOn', 
+                baseParams, 
+                response.data.result.page.next
+            );
+            
+            // Merge results
+            allResults = allResults.concat(remainingPages.shifts || []);
+            
+            // Merge referenced objects
+            Object.entries(remainingPages.referencedObjects || {}).forEach(([objectType, objects]) => {
+                if (!allReferencedObjects[objectType]) {
+                    allReferencedObjects[objectType] = [];
+                }
+                
+                objects.forEach(obj => {
+                    if (!allReferencedObjects[objectType].some(existing => existing.id === obj.id)) {
+                        allReferencedObjects[objectType].push(obj);
+                    }
+                });
+            });
+        }
+        
+        // Finish time for data fetching
+        const completeEndTime = Date.now();
+        console.log(`All data fetched in ${completeEndTime - fetchStartTime}ms`);
+        console.log(`Retrieved ${allResults.length} total shifts`);
         
         // Process and group shifts
         const groupingStartTime = Date.now();
-        const groupedShifts = groupShiftsByAttributes(shifts, accounts);
+        const accounts = allReferencedObjects.account || [];
+        const groupedShifts = groupShiftsByAttributes(allResults, accounts);
         const groupingEndTime = Date.now();
         
-        console.log(`Grouped ${shifts.length} shifts into ${groupedShifts.length} distinct shifts in ${groupingEndTime - groupingStartTime}ms`);
+        // Clock in status summary
+        const clockedInCount = allResults.filter(s => s.clocked_in === true).length;
+        console.log(`Clock-in status: ${clockedInCount} of ${allResults.length} shifts clocked in (${Math.round(clockedInCount/allResults.length*100)}%)`);
         
         // Create the final result object with timing information
         const result = {
             result: {
                 shifts: groupedShifts,
-                referenced_objects: rawData.result.referenced_objects,
+                referenced_objects: allReferencedObjects,
                 metrics: {
-                    original_shift_count: shifts.length,
+                    original_shift_count: allResults.length,
+                    clocked_in_count: clockedInCount,
                     grouped_shift_count: groupedShifts.length,
-                    fetch_time_ms: fetchEndTime - fetchStartTime,
+                    fetch_time_ms: completeEndTime - fetchStartTime,
                     grouping_time_ms: groupingEndTime - groupingStartTime,
                     total_time_ms: Date.now() - fetchStartTime
                 }
@@ -127,6 +197,75 @@ async function shiftWhosOn(workgroupId, queryParams = {}) {
         console.error('Error in shiftWhosOn service:', error);
         throw error;
     }
+}
+
+/**
+ * Helper function to fetch remaining pages
+ */
+async function fetchRemainingPages(method, baseParams, nextPageInfo) {
+    let allShifts = [];
+    let allReferencedObjects = {};
+    let hasMorePages = true;
+    let currentPage = nextPageInfo;
+    let pageCount = 1; // Start from 1 because we already fetched the first page
+    
+    while (hasMorePages) {
+        pageCount++;
+        try {
+            // Use the same baseParams but update the page info
+            const params = {
+                ...baseParams,
+                page: currentPage
+            };
+            
+            const url = buildAuthenticatedUrl(method, params);
+            const response = await axios.get(url);
+            
+            // Add shifts to the result
+            if (response.data.result?.shifts) {
+                allShifts = allShifts.concat(response.data.result.shifts);
+            }
+            
+            // Merge referenced objects
+            if (response.data.result?.referenced_objects) {
+                Object.entries(response.data.result.referenced_objects).forEach(([objectType, objects]) => {
+                    if (!allReferencedObjects[objectType]) {
+                        allReferencedObjects[objectType] = [];
+                    }
+                    
+                    objects.forEach(obj => {
+                        if (!allReferencedObjects[objectType].some(existing => existing.id === obj.id)) {
+                            allReferencedObjects[objectType].push(obj);
+                        }
+                    });
+                });
+            }
+            
+            // Check for more pages
+            if (response.data.result?.page?.next) {
+                currentPage = response.data.result.page.next;
+                hasMorePages = true;
+            } else {
+                hasMorePages = false;
+            }
+            
+            // Safety check
+            if (pageCount >= 100) {
+                console.warn('Reached maximum page count (100). Breaking pagination loop.');
+                hasMorePages = false;
+            }
+            
+        } catch (error) {
+            console.error(`Error fetching page ${pageCount}:`, error);
+            hasMorePages = false;
+        }
+    }
+    
+    console.log(`Fetched ${pageCount} additional pages with ${allShifts.length} shifts`);
+    return {
+        shifts: allShifts,
+        referencedObjects: allReferencedObjects
+    };
 }
 
 module.exports = {
