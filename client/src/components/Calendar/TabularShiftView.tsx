@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { 
     Container, Box, Typography, CircularProgress,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    TableSortLabel, Chip, IconButton, Paper, useTheme, Button, Pagination
+    TableSortLabel, Chip, IconButton, Paper, useTheme, Button, Pagination,
+    Fade, Grow
 } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { format, parseISO } from 'date-fns';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
 import { WhosOnResponse, Shift, Account, PaginationOptions } from '../../types/shift.types';
@@ -54,6 +56,8 @@ export const TabularShiftView = () => {
     const [rowsPerPage, setRowsPerPage] = useState(25);
     const [lastApiRefresh, setLastApiRefresh] = useState<string>('Never');
     const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+    const [loadingType, setLoadingType] = useState<'initial' | 'refresh'>('initial');
+    const [animateRows, setAnimateRows] = useState(false);
     
     // Initial effect to load last API refresh time
     useEffect(() => {
@@ -67,6 +71,7 @@ export const TabularShiftView = () => {
     // Effect for initial data load
     useEffect(() => {
         if (!initialDataLoaded) {
+            setLoadingType('initial');
             loadData(true); // Force sync on first load
             setInitialDataLoaded(true);
         }
@@ -80,10 +85,24 @@ export const TabularShiftView = () => {
 
     const loadData = async (forceSync = false) => {
         try {
+            // Set loading type based on whether we have data already
+            if (data?.result) {
+                setLoadingType('refresh');
+            } else {
+                setLoadingType('initial');
+            }
+            
             setLoading(true);
             
             // Pass the selected workgroup ID to the API service
             const response = await getWorkgroupShifts(forceSync, selectedWorkgroup);
+            
+            // Get ready to animate changes
+            if (data?.result) {
+                setAnimateRows(true);
+                // Reset animation flag after animation completes
+                setTimeout(() => setAnimateRows(false), 1000);
+            }
             
             setData(response);
             setWorkgroups(response.result.referenced_objects.workgroup);
@@ -233,26 +252,29 @@ export const TabularShiftView = () => {
         setPage(value - 1); // Convert 1-based to 0-based
     };
 
-    if (loading) return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-            <CircularProgress />
-        </Box>
-    );
+    // Show initial loading spinner if we don't have any data yet
+    if (loadingType === 'initial' && loading && !data?.result) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+                <CircularProgress />
+            </Box>
+        );
+    }
     
-    if (error) return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-            <Typography color="error">{error}</Typography>
-        </Box>
-    );
+    if (error && !data?.result) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+                <Typography color="error">{error}</Typography>
+            </Box>
+        );
+    }
 
-    if (!data?.result) return null;
-
-    // Filter shifts by workgroup if selected
-    const filteredShifts = selectedWorkgroup
+    // Initialize data array even if result is not yet available
+    const filteredShifts = selectedWorkgroup && data?.result
         ? data.result.shifts.filter(shift => shift.workgroup === selectedWorkgroup)
-        : data.result.shifts;
-
-    // Sort the pre-grouped shifts from the backend
+        : data?.result?.shifts || [];
+        
+    // Sort the pre-grouped shifts
     const sortedShifts = filteredShifts.sort((a, b) => {
         const valueA = getSortValue(a, orderBy);
         const valueB = getSortValue(b, orderBy);
@@ -303,18 +325,27 @@ export const TabularShiftView = () => {
                 flexWrap: 'wrap',
                 gap: 1
             }}>
-                <Typography variant="caption" color="textSecondary">
-                    Last synced with API: {lastApiRefresh}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ mr: 1 }}>
+                        Last synced with API: {lastApiRefresh}
+                    </Typography>
+                    
+                    {/* Show inline loading indicator during refresh */}
+                    {loadingType === 'refresh' && loading && (
+                        <Fade in={true}>
+                            <CircularProgress size={16} sx={{ ml: 1 }} />
+                        </Fade>
+                    )}
+                </Box>
                 
                 <Button 
                     size="small"
                     variant="outlined"
                     onClick={refreshData}
                     disabled={loading}
-                    startIcon={loading ? <CircularProgress size={16} /> : null}
+                    startIcon={loading && loadingType === 'initial' ? <CircularProgress size={16} /> : <RefreshIcon />}
                 >
-                    {loading ? 'Refreshing...' : 'Refresh Data'}
+                    {loading && loadingType === 'initial' ? 'Loading...' : 'Refresh Data'}
                 </Button>
             </Box>
 
@@ -385,56 +416,68 @@ export const TabularShiftView = () => {
                         </TableHead>
                         <TableBody>
                             {paginatedShifts.length > 0 ? (
-                                paginatedShifts.map((shift) => (
-                                    <TableRow
+                                paginatedShifts.map((shift, index) => (
+                                    <Grow
                                         key={`${shift.id}-${(shift.assignedPeople || []).join('-')}`}
-                                        hover
-                                        sx={{ 
-                                            '&:nth-of-type(odd)': { backgroundColor: 'rgba(0,0,0,0.02)' },
-                                            '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' }
+                                        in={!loading || loadingType === 'refresh'}
+                                        style={{ 
+                                            transformOrigin: '0 0 0',
+                                            // Stagger animation for rows 
+                                            transitionDelay: animateRows ? `${Math.min(index * 30, 300)}ms` : '0ms' 
                                         }}
+                                        timeout={animateRows ? 500 : 0}
                                     >
-                                        <TableCell>{formatTime(shift.local_start_date)}</TableCell>
-                                        <TableCell>{formatTime(shift.local_end_date)}</TableCell>
-                                        <TableCell sx={{ fontWeight: 500 }}>{shift.name}</TableCell>
-                                        <TableCell>{shift.subject}</TableCell>
-                                        <TableCell>{shift.location}</TableCell>
-                                        <TableCell>
-                                            {(!shift.assignedPersonNames || shift.assignedPersonNames.length === 0) ? (
-                                                <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                                                    No one assigned
-                                                </Typography>
-                                            ) : (
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {shift.assignedPersonNames.map((name, index) => 
-                                                        renderPersonChip(
-                                                            name, 
-                                                            shift.clockStatuses?.[index] || false, 
-                                                            index
-                                                        )
-                                                    )}
-                                                </Box>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {renderStatusChip(shift)}
-                                        </TableCell>
-                                        <TableCell>
-                                            <IconButton 
-                                                size="small" 
-                                                onClick={() => handleShiftClick(shift)}
-                                                sx={{ color: navyBlue }}
-                                            >
-                                                <InfoIcon />
-                                            </IconButton>
-                                        </TableCell>
-                                    </TableRow>
+                                        <TableRow
+                                            hover
+                                            sx={{ 
+                                                '&:nth-of-type(odd)': { backgroundColor: 'rgba(0,0,0,0.02)' },
+                                                '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+                                                // Add transition for smooth updates
+                                                transition: 'background-color 0.3s ease'
+                                            }}
+                                        >
+                                            <TableCell>{formatTime(shift.local_start_date)}</TableCell>
+                                            <TableCell>{formatTime(shift.local_end_date)}</TableCell>
+                                            <TableCell sx={{ fontWeight: 500 }}>{shift.name}</TableCell>
+                                            <TableCell>{shift.subject}</TableCell>
+                                            <TableCell>{shift.location}</TableCell>
+                                            <TableCell>
+                                                {(!shift.assignedPersonNames || shift.assignedPersonNames.length === 0) ? (
+                                                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                                                        No one assigned
+                                                    </Typography>
+                                                ) : (
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {shift.assignedPersonNames.map((name, index) => 
+                                                            renderPersonChip(
+                                                                name, 
+                                                                shift.clockStatuses?.[index] || false, 
+                                                                index
+                                                            )
+                                                        )}
+                                                    </Box>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {renderStatusChip(shift)}
+                                            </TableCell>
+                                            <TableCell>
+                                                <IconButton 
+                                                    size="small" 
+                                                    onClick={() => handleShiftClick(shift)}
+                                                    sx={{ color: navyBlue }}
+                                                >
+                                                    <InfoIcon />
+                                                </IconButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    </Grow>
                                 ))
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
                                         <Typography variant="body1" color="text.secondary">
-                                            No shifts scheduled for this day
+                                            {loading ? 'Loading shifts...' : 'No shifts scheduled for this day'}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
@@ -442,6 +485,26 @@ export const TabularShiftView = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {/* Overlay loading indicator only during initial load with data */}
+                {loadingType === 'initial' && loading && data?.result && (
+                    <Box 
+                        sx={{ 
+                            position: 'absolute', 
+                            top: 0, 
+                            left: 0, 
+                            right: 0, 
+                            bottom: 0, 
+                            display: 'flex', 
+                            justifyContent: 'center', 
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                            zIndex: 10
+                        }}
+                    >
+                        <CircularProgress />
+                    </Box>
+                )}
             </Paper>
 
             {totalPages > 1 && (
@@ -467,7 +530,7 @@ export const TabularShiftView = () => {
                     open={modalOpen}
                     onClose={handleCloseModal}
                     shift={selectedShift}
-                    accounts={data.result.referenced_objects.account}
+                    accounts={data?.result?.referenced_objects.account || []}
                 />
             )}
         </Container>

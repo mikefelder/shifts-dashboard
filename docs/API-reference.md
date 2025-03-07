@@ -1,8 +1,77 @@
-# API Reference
+# HLSR Shiftboard Reporting API Reference
 
 ## Base URL
 ```
 http://localhost:3000/api
+```
+
+## Shifts
+
+### Who's On
+```http
+GET /shifts/whos-on
+```
+
+Query Parameters:
+- `workgroup`: Workgroup ID (required)
+
+Response:
+```json
+{
+    "result": {
+        "shifts": [...],
+        "accounts": [...]
+    }
+}
+```
+
+### List Shifts
+```http
+GET /shifts/list
+```
+
+Query Parameters:
+- `workgroup`: Workgroup ID (required)
+
+Response:
+```json
+{
+    "result": {
+        "shifts": [...]
+    }
+}
+```
+
+Reference Shift Object:
+```json
+{
+  "id": "12345",
+  "covered": true,
+  "covering_member": "12345",
+  "display_date": "2024-03-06",
+  "display_time": "4pm (Thurs) - 12pm (Fri)",
+  "local_start_date": "2024-03-06T16:00:00",
+  "local_end_date": "2024-03-07T12:00:00",
+  "location": "Main Gate",
+  "name": "Security",
+  "subject": "Main Gate Entrance",
+  "timezone": "America/Chicago",
+  "workgroup": "12345",
+  "clocked_in": false,
+  "can_clock_in_out": true
+}
+```
+
+Reference Account Object:
+```json
+{
+  "external_id": "12345",
+  "first_name": "John",
+  "last_name": "Smith",
+  "id": "12345",
+  "screen_name": "John Smith",
+  "seniority_order": "12015-09-21 00:03:42"
+}
 ```
 
 ## Accounts
@@ -138,43 +207,6 @@ Response:
 }
 ```
 
-## Shifts
-
-### List Shifts
-```http
-GET /shifts/list
-```
-
-Query Parameters:
-- `workgroup`: Workgroup ID (required)
-
-Response:
-```json
-{
-    "result": {
-        "shifts": [...]
-    }
-}
-```
-
-### Who's On
-```http
-GET /shifts/whos-on
-```
-
-Query Parameters:
-- `workgroup`: Workgroup ID (required)
-
-Response:
-```json
-{
-    "result": {
-        "shifts": [...],
-        "accounts": [...]
-    }
-}
-```
-
 ## Calendar
 
 ### Get Calendar Summary
@@ -231,3 +263,4 @@ HTTP Status Codes:
 - `403`: Forbidden
 - `404`: Not Found
 - `500`: Internal Server Error
+```
