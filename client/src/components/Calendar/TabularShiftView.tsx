@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { 
     Container, Box, Typography, CircularProgress,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    TableSortLabel, Chip, IconButton, Paper, useTheme
+    TableSortLabel, Chip, IconButton, Paper, useTheme, Button, Pagination
 } from '@mui/material';
 import { format, parseISO } from 'date-fns';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
-import { WhosOnResponse, Shift, Account } from '../../types/shift.types';
+import { WhosOnResponse, Shift, Account, PaginationOptions } from '../../types/shift.types';
 import { getWorkgroupShifts } from '../../services/api.service';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
 import { ShiftDetailModal } from './ShiftDetailModal';
@@ -14,13 +14,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-
-// GroupedShift interface for combining shift data
-interface GroupedShift extends Shift {
-    assignedPeople: string[];
-    clockStatuses: boolean[];
-    assignedPersonNames: string[];
-}
+import { dbService } from '../../services/db.service';
 
 // Sort direction type
 type SortDirection = 'asc' | 'desc';
@@ -53,27 +47,62 @@ export const TabularShiftView = () => {
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedShift, setSelectedShift] = useState<GroupedShift | null>(null);
+    const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [orderBy, setOrderBy] = useState<string>('startTime');
     const [order, setOrder] = useState<SortDirection>('asc');
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(25);
+    const [lastApiRefresh, setLastApiRefresh] = useState<string>('Never');
+    const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+    
+    // Initial effect to load last API refresh time
+    useEffect(() => {
+        async function loadLastRefreshTime() {
+            const formattedTime = await dbService.getLastSyncFormatted();
+            setLastApiRefresh(formattedTime);
+        }
+        loadLastRefreshTime();
+    }, []);
+
+    // Effect for initial data load
+    useEffect(() => {
+        if (!initialDataLoaded) {
+            loadData(true); // Force sync on first load
+            setInitialDataLoaded(true);
+        }
+    }, []);
 
     useEffect(() => {
-        loadData();
-    }, [selectedWorkgroup]);
+        if (initialDataLoaded) {
+            loadData(false); // Don't force sync when just filtering
+        }
+    }, [selectedWorkgroup, initialDataLoaded]);
 
-    const loadData = async () => {
+    const loadData = async (forceSync = false) => {
         try {
             setLoading(true);
-            const response = await getWorkgroupShifts(true);
+            
+            // Pass the selected workgroup ID to the API service
+            const response = await getWorkgroupShifts(forceSync, selectedWorkgroup);
+            
             setData(response);
             setWorkgroups(response.result.referenced_objects.workgroup);
-            setLastRefresh(new Date());
+            
+            // Only update the lastApiRefresh timestamp if fresh data was fetched
+            if (response.isFreshData) {
+                const formattedTime = await dbService.getLastSyncFormatted();
+                setLastApiRefresh(formattedTime);
+            }
         } catch (err) {
             setError('Failed to load shifts');
             console.error(err);
         } finally {
             setLoading(false);
         }
+    };
+
+    const refreshData = () => {
+        loadData(true); // Force refresh from API
     };
 
     // Handler for click on table header for sorting
@@ -84,7 +113,7 @@ export const TabularShiftView = () => {
     };
 
     // Handler for info button click to show shift details
-    const handleShiftClick = (shift: GroupedShift) => {
+    const handleShiftClick = (shift: Shift) => {
         setSelectedShift(shift);
         setModalOpen(true);
     };
@@ -93,73 +122,8 @@ export const TabularShiftView = () => {
         setModalOpen(false);
     };
 
-    // Group shifts by common attributes (same shift with different people)
-    const groupShiftsByAttributes = (inputShifts: Shift[], accountsList: Account[]): GroupedShift[] => {
-        if (!Array.isArray(inputShifts)) {
-            console.error('Input shifts is not an array');
-            return [];
-        }
-        
-        if (!Array.isArray(accountsList)) {
-            console.error('Accounts is not an array');
-            return [];
-        }
-        
-        const shiftGroups: { [key: string]: GroupedShift } = {};
-        
-        inputShifts.forEach(shift => {
-            // Skip invalid shifts
-            if (!shift || typeof shift !== 'object') return;
-            
-            try {
-                // Ensure required properties exist
-                const shiftName = shift.name || 'Unnamed Shift';
-                const startDate = shift.local_start_date || new Date().toISOString();
-                const endDate = shift.local_end_date || new Date().toISOString();
-                const workgroup = shift.workgroup || '';
-                const subject = shift.subject || '';
-                const location = shift.location || '';
-                
-                // Create a unique key for each distinct shift (excluding who is assigned)
-                const shiftKey = `${shiftName}-${startDate}-${endDate}-${workgroup}-${subject}-${location}`;
-                
-                // Find person name from accounts
-                const person = accountsList.find(acc => acc && acc.id === shift.covering_member);
-                const personName = person 
-                    ? (person.screen_name || `${person.first_name} ${person.last_name}`) 
-                    : 'Unassigned';
-                
-                if (!shiftGroups[shiftKey]) {
-                    // Create a new group with the first person
-                    shiftGroups[shiftKey] = {
-                        ...shift,
-                        assignedPeople: shift.covering_member ? [shift.covering_member] : [],
-                        clockStatuses: shift.clocked_in !== undefined ? [shift.clocked_in] : [],
-                        assignedPersonNames: personName !== 'Unassigned' ? [personName] : []
-                    };
-                } else {
-                    // Add this person to the existing group if they're not already included
-                    if (shift.covering_member && 
-                        !shiftGroups[shiftKey].assignedPeople.includes(shift.covering_member)) {
-                        shiftGroups[shiftKey].assignedPeople.push(shift.covering_member);
-                        shiftGroups[shiftKey].clockStatuses.push(
-                            shift.clocked_in !== undefined ? shift.clocked_in : false
-                        );
-                        if (personName !== 'Unassigned') {
-                            shiftGroups[shiftKey].assignedPersonNames.push(personName);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error processing shift:', error, shift);
-            }
-        });
-        
-        return Object.values(shiftGroups);
-    };
-
     // Function to determine sort value based on column
-    const getSortValue = (shift: GroupedShift, column: string) => {
+    const getSortValue = (shift: Shift, column: string) => {
         switch (column) {
             case 'startTime':
                 return shift.local_start_date || '';
@@ -176,7 +140,8 @@ export const TabularShiftView = () => {
             case 'status':
                 // Sort by percentage of clocked in people
                 const clockedIn = (shift.clockStatuses || []).filter(Boolean).length;
-                return clockedIn / Math.max(1, (shift.assignedPeople || []).length);
+                const total = (shift.assignedPeople || []).length;
+                return clockedIn / Math.max(1, total);
             default:
                 return '';
         }
@@ -194,7 +159,7 @@ export const TabularShiftView = () => {
     };
 
     // Define status chip based on clock-in status
-    const renderStatusChip = (shift: GroupedShift) => {
+    const renderStatusChip = (shift: Shift) => {
         if (!shift.assignedPeople || shift.assignedPeople.length === 0) {
             return <Chip size="small" label="Unassigned" color="default" />;
         }
@@ -263,6 +228,11 @@ export const TabularShiftView = () => {
         );
     };
 
+    // Handle page change
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value - 1); // Convert 1-based to 0-based
+    };
+
     if (loading) return (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
             <CircularProgress />
@@ -282,30 +252,30 @@ export const TabularShiftView = () => {
         ? data.result.shifts.filter(shift => shift.workgroup === selectedWorkgroup)
         : data.result.shifts;
 
-    // Create grouped shifts and sort them
-    const groupedShifts = (() => {
-        try {
-            const groups = groupShiftsByAttributes(filteredShifts, data.result.referenced_objects.account);
-            
-            return groups.sort((a, b) => {
-                const valueA = getSortValue(a, orderBy);
-                const valueB = getSortValue(b, orderBy);
+    // Sort the pre-grouped shifts from the backend
+    const sortedShifts = filteredShifts.sort((a, b) => {
+        const valueA = getSortValue(a, orderBy);
+        const valueB = getSortValue(b, orderBy);
 
-                if (order === 'asc') {
-                    if (valueA < valueB) return -1;
-                    if (valueA > valueB) return 1;
-                    return 0;
-                } else {
-                    if (valueA > valueB) return -1;
-                    if (valueA < valueB) return 1;
-                    return 0;
-                }
-            });
-        } catch (error) {
-            console.error('Error in groupedShifts:', error);
-            return [];
+        if (order === 'asc') {
+            if (valueA < valueB) return -1;
+            if (valueA > valueB) return 1;
+            return 0;
+        } else {
+            if (valueA > valueB) return -1;
+            if (valueA < valueB) return 1;
+            return 0;
         }
-    })();
+    });
+
+    // Client-side pagination for UI display only
+    const paginatedShifts = sortedShifts.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage
+    );
+    
+    // Calculate total pages for client-side pagination controls
+    const totalPages = Math.ceil(sortedShifts.length / rowsPerPage);
 
     // Navy blue color from theme
     const navyBlue = theme.palette.primary.dark;
@@ -334,8 +304,18 @@ export const TabularShiftView = () => {
                 gap: 1
             }}>
                 <Typography variant="caption" color="textSecondary">
-                    Last updated: {format(lastRefresh, 'h:mm:ss a')}
+                    Last synced with API: {lastApiRefresh}
                 </Typography>
+                
+                <Button 
+                    size="small"
+                    variant="outlined"
+                    onClick={refreshData}
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={16} /> : null}
+                >
+                    {loading ? 'Refreshing...' : 'Refresh Data'}
+                </Button>
             </Box>
 
             <Paper sx={{ 
@@ -354,7 +334,7 @@ export const TabularShiftView = () => {
                     >
                         {format(new Date(), 'EEEE, MMMM d, yyyy')} - Daily Schedule
                         <Typography component="span" variant="caption" sx={{ ml: 2, color: 'text.secondary' }}>
-                            ({groupedShifts.length} shifts)
+                            ({sortedShifts.length} shifts)
                         </Typography>
                     </Typography>
                 </Box>
@@ -404,8 +384,8 @@ export const TabularShiftView = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {groupedShifts.length > 0 ? (
-                                groupedShifts.map((shift) => (
+                            {paginatedShifts.length > 0 ? (
+                                paginatedShifts.map((shift) => (
                                     <TableRow
                                         key={`${shift.id}-${(shift.assignedPeople || []).join('-')}`}
                                         hover
@@ -429,7 +409,7 @@ export const TabularShiftView = () => {
                                                     {shift.assignedPersonNames.map((name, index) => 
                                                         renderPersonChip(
                                                             name, 
-                                                            shift.clockStatuses && shift.clockStatuses[index], 
+                                                            shift.clockStatuses?.[index] || false, 
                                                             index
                                                         )
                                                     )}
@@ -463,6 +443,24 @@ export const TabularShiftView = () => {
                     </Table>
                 </TableContainer>
             </Paper>
+
+            {totalPages > 1 && (
+                <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    mt: 2, 
+                    mb: 2 
+                }}>
+                    <Pagination
+                        count={totalPages}
+                        page={page + 1} // Convert 0-based to 1-based
+                        onChange={handlePageChange}
+                        color="primary"
+                        showFirstButton
+                        showLastButton
+                    />
+                </Box>
+            )}
 
             {selectedShift && (
                 <ShiftDetailModal

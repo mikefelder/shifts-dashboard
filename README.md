@@ -61,11 +61,14 @@ npm run dev
 
 ### GET /api/shifts/whos-on
 
-Returns active shifts with:
-- Shift details (time, location, etc.)
-- Member assignments
-- Clock-in status
-- Workgroup information
+Returns all active shifts from Shiftboard with the following enhancements:
+- Fetches all pages automatically (no pagination needed)
+- Groups shifts with multiple members into single shift records
+- Includes clock-in status for each person
+- Performance metrics for large datasets
+
+**Example Response:**
+```
 
 ## Tech Stack
 

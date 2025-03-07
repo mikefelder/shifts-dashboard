@@ -1,11 +1,30 @@
 #!/usr/local/bin/node
 
-require('dotenv').config()
-const express = require('express')
-const cors = require('cors')
-const helmet = require('helmet')
-const morgan = require('morgan')
-const errorHandler = require('./middleware/error.middleware')
+// Load environment variables first, before any other imports
+require('dotenv').config();
+
+// Log the module path so we can debug import issues
+console.log('Node module paths:', module.paths);
+
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const path = require('path');
+
+// Add this to help with module resolution
+module.paths.push(path.join(__dirname, '..', 'node_modules'));
+
+// Test the import of critical modules
+try {
+    const { groupShiftsByAttributes } = require('./utils/shift.utils');
+    console.log('Successfully loaded shift.utils module');
+} catch (error) {
+    console.error('Failed to load shift.utils module:', error);
+}
+
+const errorHandler = require('./middleware/error.middleware');
+const config = require('./config/api.config');
 
 const app = express()
 

@@ -12,11 +12,6 @@ interface ActiveShiftsViewProps {
     showFullDay?: boolean;
 }
 
-interface GroupedShift extends Shift {
-    assignedPeople: string[];
-    clockStatuses: boolean[];
-}
-
 export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({ 
     shifts, 
     accounts, 
@@ -26,10 +21,10 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
     const theme = useTheme();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedShift, setSelectedShift] = useState<GroupedShift | null>(null);
+    const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [forceDisplay, setForceDisplay] = useState(false);
 
-    const handleShiftClick = (shift: GroupedShift) => {
+    const handleShiftClick = (shift: Shift) => {
         setSelectedShift(shift);
         setModalOpen(true);
     };
@@ -38,41 +33,8 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
         setModalOpen(false);
     };
 
-    // Group shifts by common attributes (same shift with different people)
-    const groupShiftsByAttributes = (inputShifts: Shift[]): GroupedShift[] => {
-        const shiftGroups: { [key: string]: GroupedShift } = {};
-        
-        inputShifts.forEach(shift => {
-            try {
-                // Create a unique key for each distinct shift (excluding who is assigned)
-                const shiftKey = `${shift.name}-${shift.local_start_date}-${shift.local_end_date}-${shift.workgroup}-${shift.subject}-${shift.location}`;
-                
-                if (!shiftGroups[shiftKey]) {
-                    // Create a new group with the first person
-                    shiftGroups[shiftKey] = {
-                        ...shift,
-                        assignedPeople: shift.covering_member ? [shift.covering_member] : [],
-                        clockStatuses: shift.clocked_in !== undefined ? [shift.clocked_in] : []
-                    };
-                } else {
-                    // Add this person to the existing group if they're not already included
-                    if (shift.covering_member && !shiftGroups[shiftKey].assignedPeople.includes(shift.covering_member)) {
-                        shiftGroups[shiftKey].assignedPeople.push(shift.covering_member);
-                        shiftGroups[shiftKey].clockStatuses.push(shift.clocked_in !== undefined ? shift.clocked_in : false);
-                    }
-                }
-            } catch (error) {
-                console.error('Error grouping shifts:', error);
-            }
-        });
-        
-        return Object.values(shiftGroups);
-    };
-    
-    // Group shifts by common attributes
-    const groupedShifts = React.useMemo(() => {
-        return groupShiftsByAttributes(shifts);
-    }, [shifts]);
+    // No need to re-group shifts - they're already grouped by the backend
+    const groupedShifts = shifts;
 
     const getTimeWindow = () => {
         if (showFullDay) {
@@ -149,8 +111,8 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
     // Position shifts with minimal overlap
     const positionShiftsWithMinimalOverlap = () => {
         // Track used horizontal space at different times
-        const timeSlots: {[hour: number]: {left: number, shifts: GroupedShift[]}[]} = {};
-        const positionedResults: {shift: GroupedShift, position: React.CSSProperties}[] = [];
+        const timeSlots: {[hour: number]: {left: number, shifts: Shift[]}[]} = {};
+        const positionedResults: {shift: Shift, position: React.CSSProperties}[] = [];
         
         // Initialize time slots for each hour in our window
         for (let hour = timeWindow.start; hour < timeWindow.end; hour++) {
@@ -295,7 +257,7 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
     };
     
     // Helper to calculate a shift's width percentage
-    const calculateShiftWidth = (shift: GroupedShift): number => {
+    const calculateShiftWidth = (shift: Shift): number => {
         if (!shift) return 20; // Default width
         
         const nameLength = shift.name ? shift.name.length : 0;
@@ -523,10 +485,12 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
                     ))}
                     
                     {positionedShifts.map(({ shift, position }) => {
-                        // Get all assigned people for this shift
-                        const assignedPeople = shift.assignedPeople
-                            .map(memberId => accounts.find(acc => acc.id === memberId))
-                            .filter(Boolean);
+                        // Get all assigned people for this shift with null check
+                        const assignedPeople = shift.assignedPeople 
+                            ? shift.assignedPeople
+                                .map(memberId => accounts.find(acc => acc.id === memberId))
+                                .filter(Boolean)
+                            : [];
                         
                         // Theme colors for shadow effect
                         const shadowColor = theme.palette.primary.light;
@@ -534,7 +498,7 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
                         
                         return (
                             <Paper
-                                key={`${shift.id}-${shift.assignedPeople.join('-')}`}
+                                key={`${shift.id}-${shift.assignedPeople?.join('-') || 'unassigned'}`}
                                 elevation={0} // Remove default elevation
                                 onClick={() => handleShiftClick(shift)}
                                 sx={{
@@ -597,16 +561,16 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
                                 <Box sx={{ mt: 1 }}>
                                     {assignedPeople.map((person, index) => (
                                         <Typography 
-                                            key={person?.id}
+                                            key={person?.id || `unassigned-${index}`}
                                             variant="body2" 
                                             noWrap
-                                            title={person?.screen_name || `${person?.first_name} ${person?.last_name}`}
+                                            title={person?.screen_name || `${person?.first_name || ''} ${person?.last_name || ''}`}
                                             sx={{ 
                                                 fontWeight: 500,
                                                 mt: index > 0 ? 0.5 : 0
                                             }}
                                         >
-                                            {person?.screen_name || `${person?.first_name} ${person?.last_name}`}
+                                            {person?.screen_name || `${person?.first_name || ''} ${person?.last_name || ''}`}
                                             {' '}
                                             <Typography 
                                                 component="span" 
@@ -616,11 +580,12 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
                                                     fontStyle: 'italic'
                                                 }}
                                             >
-                                                ({shift.clockStatuses[index] ? 'Clocked In' : 'Not Clocked In'})
+                                                ({(shift.clockStatuses && shift.clockStatuses[index]) 
+                                                    ? 'Clocked In' : 'Not Clocked In'})
                                             </Typography>
                                         </Typography>
                                     ))}
-                                    {assignedPeople.length === 0 && (
+                                    {(assignedPeople.length === 0) && (
                                         <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
                                             No one assigned
                                         </Typography>
