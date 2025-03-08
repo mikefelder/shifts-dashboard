@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
     Container, Box, Typography, CircularProgress,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    TableSortLabel, Chip, IconButton, Paper, useTheme, Pagination,
+    TableSortLabel, Chip, IconButton, Paper, useTheme,
     Fade, Grow
 } from '@mui/material';
 import { format, parseISO } from 'date-fns';
@@ -58,8 +58,6 @@ export const TabularShiftView = () => {
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [orderBy, setOrderBy] = useState<string>('startTime');
     const [order, setOrder] = useState<SortDirection>('asc');
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(25);
     const [lastApiRefresh, setLastApiRefresh] = useState<string>('Never');
     const [initialDataLoaded, setInitialDataLoaded] = useState(false);
     const [loadingType, setLoadingType] = useState<'initial' | 'refresh'>('initial');
@@ -266,11 +264,6 @@ export const TabularShiftView = () => {
         );
     };
 
-    // Handle page change
-    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
-        setPage(value - 1); // Convert 1-based to 0-based
-    };
-
     // Show initial loading spinner if we don't have any data yet
     if (loadingType === 'initial' && loading && !data?.result) {
         return (
@@ -308,15 +301,6 @@ export const TabularShiftView = () => {
             return 0;
         }
     });
-
-    // Client-side pagination for UI display only
-    const paginatedShifts = sortedShifts.slice(
-        page * rowsPerPage,
-        page * rowsPerPage + rowsPerPage
-    );
-    
-    // Calculate total pages for client-side pagination controls
-    const totalPages = Math.ceil(sortedShifts.length / rowsPerPage);
 
     // Navy blue color from theme
     const navyBlue = theme.palette.primary.dark;
@@ -374,6 +358,9 @@ export const TabularShiftView = () => {
                 overflow: 'hidden',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%', // Make the paper take full height
             }}>
                 <Box sx={{ p: 2, borderBottom: '1px solid #eee' }}>
                     <Typography 
@@ -390,7 +377,12 @@ export const TabularShiftView = () => {
                     </Typography>
                 </Box>
                 
-                <TableContainer sx={{ maxHeight: 'calc(100vh - 200px)' }}>
+                {/* Updated TableContainer to use full available height */}
+                <TableContainer sx={{ 
+                    flexGrow: 1,  // Take up all available space
+                    height: '100%',  // Full height
+                    maxHeight: 'calc(100vh - 180px)'  // Limit max height to avoid overflow
+                }}>
                     <Table stickyHeader aria-label="shifts table" size="small">
                         <TableHead>
                             <TableRow>
@@ -410,7 +402,7 @@ export const TabularShiftView = () => {
                                                 active={orderBy === headCell.id}
                                                 direction={orderBy === headCell.id ? order : 'asc'}
                                                 onClick={() => handleRequestSort(headCell.id)}
-                                                sx={{
+                                                sx={{ 
                                                     '&.MuiTableSortLabel-root': {
                                                         color: 'white',
                                                     },
@@ -435,24 +427,23 @@ export const TabularShiftView = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {paginatedShifts.length > 0 ? (
-                                paginatedShifts.map((shift, index) => (
+                            {sortedShifts.length > 0 ? (
+                                sortedShifts.map((shift, index) => (
                                     <Grow
                                         key={`${shift.id}-${(shift.assignedPeople || []).join('-')}`}
                                         in={!loading || loadingType === 'refresh'}
                                         style={{ 
                                             transformOrigin: '0 0 0',
-                                            // Stagger animation for rows 
-                                            transitionDelay: animateRows ? `${Math.min(index * 30, 300)}ms` : '0ms' 
+                                            // Stagger animation for rows but limit delay for large datasets
+                                            transitionDelay: animateRows ? `${Math.min(index * 15, 300)}ms` : '0ms' 
                                         }}
-                                        timeout={animateRows ? 500 : 0}
+                                        timeout={animateRows ? 300 : 0}
                                     >
                                         <TableRow
                                             hover
                                             sx={{ 
                                                 '&:nth-of-type(odd)': { backgroundColor: 'rgba(0,0,0,0.02)' },
                                                 '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
-                                                // Add transition for smooth updates
                                                 transition: 'background-color 0.3s ease'
                                             }}
                                         >
@@ -526,24 +517,6 @@ export const TabularShiftView = () => {
                     </Box>
                 )}
             </Paper>
-
-            {totalPages > 1 && (
-                <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    mt: 2, 
-                    mb: 2 
-                }}>
-                    <Pagination
-                        count={totalPages}
-                        page={page + 1} // Convert 0-based to 1-based
-                        onChange={handlePageChange}
-                        color="primary"
-                        showFirstButton
-                        showLastButton
-                    />
-                </Box>
-            )}
 
             {selectedShift && (
                 <ShiftDetailModal
