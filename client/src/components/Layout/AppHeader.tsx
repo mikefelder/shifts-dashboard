@@ -2,7 +2,11 @@ import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
 
-export const AppHeader = () => {
+interface AppHeaderProps {
+  triggerRefresh: () => void; // Keep the prop for future reference
+}
+
+export const AppHeader = ({ triggerRefresh }: AppHeaderProps) => {
     const { selectedWorkgroup, setSelectedWorkgroup, workgroups } = useWorkgroup();
 
     return (
@@ -24,11 +28,14 @@ export const AppHeader = () => {
                 <Typography variant="h6" noWrap component="div">
                     Shiftboard Reporting
                 </Typography>
-                <WorkgroupFilter
-                    selectedWorkgroup={selectedWorkgroup}
-                    onWorkgroupChange={setSelectedWorkgroup}
-                    workgroups={workgroups || []}
-                />
+                
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <WorkgroupFilter
+                        selectedWorkgroup={selectedWorkgroup || ''}
+                        onWorkgroupChange={setSelectedWorkgroup}
+                        workgroups={workgroups || []}
+                    />
+                </Box>
             </Toolbar>
         </AppBar>
     );

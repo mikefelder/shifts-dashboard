@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { 
     Container, Box, Typography, CircularProgress,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    TableSortLabel, Chip, IconButton, Paper, useTheme, Button, Pagination,
+    TableSortLabel, Chip, IconButton, Paper, useTheme, Pagination,
     Fade, Grow
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { format, parseISO } from 'date-fns';
-import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
-import { WhosOnResponse, Shift, Account, PaginationOptions } from '../../types/shift.types';
+import { WhosOnResponse, Shift } from '../../types/shift.types';
 import { getWorkgroupShifts } from '../../services/api.service';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
 import { ShiftDetailModal } from './ShiftDetailModal';
@@ -17,6 +15,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { dbService } from '../../services/db.service';
+import { useOutletContext } from 'react-router-dom';
 
 // Sort direction type
 type SortDirection = 'asc' | 'desc';
@@ -41,9 +40,16 @@ const headCells: HeadCell[] = [
     { id: 'actions', label: 'Actions', numeric: false, sortable: false },
 ];
 
+interface RefreshContext {
+    refreshInterval: number;
+    refreshTimestamp: number;
+    triggerRefresh: () => void;
+}
+
 export const TabularShiftView = () => {
     const theme = useTheme();
     const { selectedWorkgroup, setWorkgroups } = useWorkgroup();
+    const { refreshTimestamp, triggerRefresh } = useOutletContext<RefreshContext>();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<WhosOnResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -77,11 +83,20 @@ export const TabularShiftView = () => {
         }
     }, []);
 
+    // Effect to handle workgroup changes
     useEffect(() => {
         if (initialDataLoaded) {
-            loadData(false); // Don't force sync when just filtering
+            loadData(true); // Force sync when filtering by workgroup
         }
     }, [selectedWorkgroup, initialDataLoaded]);
+    
+    // Effect to handle refresh timestamp changes (auto refresh)
+    useEffect(() => {
+        if (initialDataLoaded && refreshTimestamp) {
+            console.log('Auto refresh triggered in TabularShiftView at:', new Date().toISOString());
+            loadData(true); // Force sync on auto refresh
+        }
+    }, [refreshTimestamp, initialDataLoaded]);
 
     const loadData = async (forceSync = false) => {
         try {
@@ -94,7 +109,7 @@ export const TabularShiftView = () => {
             
             setLoading(true);
             
-            // Pass the selected workgroup ID to the API service
+            // Pass the selected workgroup ID to the API service and force sync for fresh data
             const response = await getWorkgroupShifts(forceSync, selectedWorkgroup);
             
             // Get ready to animate changes
@@ -105,13 +120,15 @@ export const TabularShiftView = () => {
             }
             
             setData(response);
-            setWorkgroups(response.result.referenced_objects.workgroup);
-            
-            // Only update the lastApiRefresh timestamp if fresh data was fetched
-            if (response.isFreshData) {
-                const formattedTime = await dbService.getLastSyncFormatted();
-                setLastApiRefresh(formattedTime);
+            if (response.result?.referenced_objects?.workgroup) {
+                setWorkgroups(response.result.referenced_objects.workgroup);
             }
+            
+            // Update both timestamp displays
+            setLastRefresh(new Date());
+            const formattedTime = await dbService.getLastSyncFormatted();
+            setLastApiRefresh(formattedTime);
+            
         } catch (err) {
             setError('Failed to load shifts');
             console.error(err);
@@ -120,8 +137,10 @@ export const TabularShiftView = () => {
         }
     };
 
+    // Use triggerRefresh from outlet context for manual refresh
     const refreshData = () => {
-        loadData(true); // Force refresh from API
+        console.log('Manual refresh triggered in TabularShiftView');
+        triggerRefresh();
     };
 
     // Handler for click on table header for sorting
@@ -302,6 +321,17 @@ export const TabularShiftView = () => {
     // Navy blue color from theme
     const navyBlue = theme.palette.primary.dark;
 
+    // Format a nice timestamp display that shows both refresh time and sync status
+    const getTimestampDisplay = () => {
+        // If we just refreshed from API, show that info
+        if (lastApiRefresh && lastApiRefresh.includes('Today')) {
+            return `Last refreshed: ${format(lastRefresh, 'h:mm:ss a')} (API sync completed)`;
+        }
+        
+        // Otherwise, show both times
+        return `Last refreshed: ${format(lastRefresh, 'h:mm:ss a')}`;
+    };
+
     return (
         <Container 
             maxWidth={false}
@@ -327,7 +357,7 @@ export const TabularShiftView = () => {
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Typography variant="caption" color="textSecondary" sx={{ mr: 1 }}>
-                        Last synced with API: {lastApiRefresh}
+                        {getTimestampDisplay()}
                     </Typography>
                     
                     {/* Show inline loading indicator during refresh */}
@@ -337,16 +367,6 @@ export const TabularShiftView = () => {
                         </Fade>
                     )}
                 </Box>
-                
-                <Button 
-                    size="small"
-                    variant="outlined"
-                    onClick={refreshData}
-                    disabled={loading}
-                    startIcon={loading && loadingType === 'initial' ? <CircularProgress size={16} /> : <RefreshIcon />}
-                >
-                    {loading && loadingType === 'initial' ? 'Loading...' : 'Refresh Data'}
-                </Button>
             </Box>
 
             <Paper sx={{ 
