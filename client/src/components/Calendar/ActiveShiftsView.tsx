@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Paper, Typography, Grid, Box, useTheme, Button } from '@mui/material';
+import { Paper, Typography, Grid, Box, useTheme, Button, Fade, Grow, CircularProgress } from '@mui/material';
 import { format, parseISO, isValid } from 'date-fns';
 import { Shift, Account } from '../../types/shift.types';
 import { ShiftDetailModal } from './ShiftDetailModal';
@@ -10,26 +10,24 @@ interface ActiveShiftsViewProps {
     accounts: Account[];
     date?: Date;
     showFullDay?: boolean;
-}
-
-interface GroupedShift extends Shift {
-    assignedPeople: string[];
-    clockStatuses: boolean[];
+    loading?: boolean; // <-- Add loading prop
 }
 
 export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({ 
     shifts, 
     accounts, 
     date = new Date(), 
-    showFullDay = false 
+    showFullDay = false,
+    loading = false  // <-- Add loading prop with default value
 }) => {
     const theme = useTheme();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedShift, setSelectedShift] = useState<GroupedShift | null>(null);
+    const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [forceDisplay, setForceDisplay] = useState(false);
+    const [animateShifts, setAnimateShifts] = useState(false);
 
-    const handleShiftClick = (shift: GroupedShift) => {
+    const handleShiftClick = (shift: Shift) => {
         setSelectedShift(shift);
         setModalOpen(true);
     };
@@ -38,41 +36,8 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
         setModalOpen(false);
     };
 
-    // Group shifts by common attributes (same shift with different people)
-    const groupShiftsByAttributes = (inputShifts: Shift[]): GroupedShift[] => {
-        const shiftGroups: { [key: string]: GroupedShift } = {};
-        
-        inputShifts.forEach(shift => {
-            try {
-                // Create a unique key for each distinct shift (excluding who is assigned)
-                const shiftKey = `${shift.name}-${shift.local_start_date}-${shift.local_end_date}-${shift.workgroup}-${shift.subject}-${shift.location}`;
-                
-                if (!shiftGroups[shiftKey]) {
-                    // Create a new group with the first person
-                    shiftGroups[shiftKey] = {
-                        ...shift,
-                        assignedPeople: shift.covering_member ? [shift.covering_member] : [],
-                        clockStatuses: shift.clocked_in !== undefined ? [shift.clocked_in] : []
-                    };
-                } else {
-                    // Add this person to the existing group if they're not already included
-                    if (shift.covering_member && !shiftGroups[shiftKey].assignedPeople.includes(shift.covering_member)) {
-                        shiftGroups[shiftKey].assignedPeople.push(shift.covering_member);
-                        shiftGroups[shiftKey].clockStatuses.push(shift.clocked_in !== undefined ? shift.clocked_in : false);
-                    }
-                }
-            } catch (error) {
-                console.error('Error grouping shifts:', error);
-            }
-        });
-        
-        return Object.values(shiftGroups);
-    };
-    
-    // Group shifts by common attributes
-    const groupedShifts = React.useMemo(() => {
-        return groupShiftsByAttributes(shifts);
-    }, [shifts]);
+    // No need to re-group shifts - they're already grouped by the backend
+    const groupedShifts = shifts;
 
     const getTimeWindow = () => {
         if (showFullDay) {
@@ -149,8 +114,8 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
     // Position shifts with minimal overlap
     const positionShiftsWithMinimalOverlap = () => {
         // Track used horizontal space at different times
-        const timeSlots: {[hour: number]: {left: number, shifts: GroupedShift[]}[]} = {};
-        const positionedResults: {shift: GroupedShift, position: React.CSSProperties}[] = [];
+        const timeSlots: {[hour: number]: {left: number, shifts: Shift[]}[]} = {};
+        const positionedResults: {shift: Shift, position: React.CSSProperties}[] = [];
         
         // Initialize time slots for each hour in our window
         for (let hour = timeWindow.start; hour < timeWindow.end; hour++) {
@@ -295,7 +260,7 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
     };
     
     // Helper to calculate a shift's width percentage
-    const calculateShiftWidth = (shift: GroupedShift): number => {
+    const calculateShiftWidth = (shift: Shift): number => {
         if (!shift) return 20; // Default width
         
         const nameLength = shift.name ? shift.name.length : 0;
@@ -327,6 +292,13 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
         const hourPosition = (hour - timeWindow.start) / (timeWindow.end - timeWindow.start);
         return `${hourPosition * 100}%`;
     };
+
+    // Animate shifts when they change
+    useEffect(() => {
+        setAnimateShifts(true);
+        const timer = setTimeout(() => setAnimateShifts(false), 1000);
+        return () => clearTimeout(timer);
+    }, [shifts]);
 
     // If there are too many shifts, render a message instead of the calendar
     if (tooManyShifts) {
@@ -397,7 +369,8 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 width: '100%',
-                maxWidth: '100%'
+                maxWidth: '100%',
+                position: 'relative' // Important for positioning the loading overlay
             }}
         >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -413,6 +386,13 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
                         ({positionedShifts.length} shifts)
                     </Typography>
                 </Typography>
+                
+                {/* Show loading indicator during refresh */}
+                {loading && (
+                    <Fade in={loading}>
+                        <CircularProgress size={20} sx={{ ml: 2 }} />
+                    </Fade>
+                )}
                 
                 {forceDisplay && (
                     <Typography 
@@ -522,111 +502,126 @@ export const ActiveShiftsView: React.FC<ActiveShiftsViewProps> = ({
                         />
                     ))}
                     
-                    {positionedShifts.map(({ shift, position }) => {
-                        // Get all assigned people for this shift
-                        const assignedPeople = shift.assignedPeople
-                            .map(memberId => accounts.find(acc => acc.id === memberId))
-                            .filter(Boolean);
+                    {positionedShifts.map(({ shift, position }, index) => {
+                        // Get all assigned people for this shift with null check
+                        const assignedPeople = shift.assignedPeople 
+                            ? shift.assignedPeople
+                                .map(memberId => accounts.find(acc => acc.id === memberId))
+                                .filter(Boolean)
+                            : [];
                         
                         // Theme colors for shadow effect
                         const shadowColor = theme.palette.primary.light;
                         const shadowAlpha = '0.5'; // Semi-transparent
                         
                         return (
-                            <Paper
-                                key={`${shift.id}-${shift.assignedPeople.join('-')}`}
-                                elevation={0} // Remove default elevation
-                                onClick={() => handleShiftClick(shift)}
-                                sx={{
-                                    position: 'absolute',
-                                    padding: 1.5,
-                                    backgroundColor: 'secondary.main',
-                                    color: 'white',
-                                    borderRadius: '4px',
-                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                                    overflow: 'hidden',
-                                    boxSizing: 'border-box',
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap', // Prevent text wrapping
-                                    boxShadow: `
-                                        0 1px 2px rgba(0,0,0,0.1),
-                                        0 0 0 1px ${shadowColor}${shadowAlpha},
-                                        0 2px 6px ${shadowColor}${shadowAlpha}
-                                    `, // Themed shadow effect
-                                    '&:hover': {
-                                        backgroundColor: 'secondary.dark',
-                                        transform: 'scale(1.05) translateY(-2px)',
-                                        zIndex: 1000,
-                                        overflow: 'visible',
-                                        maxHeight: 'none',
-                                        minWidth: 'auto',
-                                        whiteSpace: 'normal',
-                                        boxShadow: `
-                                            0 4px 12px rgba(0,0,0,0.15),
-                                            0 0 0 2px ${theme.palette.primary.main}${shadowAlpha},
-                                            0 6px 15px ${theme.palette.primary.main}40
-                                        `, // Enhanced shadow on hover
-                                    },
-                                    ...position,
+                            <Grow
+                                key={`${shift.id}-${shift.assignedPeople?.join('-') || 'unassigned'}`}
+                                in={!loading}
+                                style={{ 
+                                    transformOrigin: 'center center',
+                                    // Stagger animation for shifts
+                                    transitionDelay: animateShifts ? `${Math.min(index * 40, 500)}ms` : '0ms' 
                                 }}
+                                timeout={animateShifts ? 500 : 0}
                             >
-                                <Typography 
-                                    variant="subtitle2" 
-                                    noWrap 
-                                    title={shift.name}
-                                    sx={{ fontWeight: 600 }}
+                                <Paper
+                                    elevation={0} // Remove default elevation
+                                    onClick={() => handleShiftClick(shift)}
+                                    sx={{
+                                        position: 'absolute',
+                                        padding: 1.5,
+                                        backgroundColor: 'secondary.main',
+                                        color: 'white',
+                                        borderRadius: '4px',
+                                        overflow: 'hidden',
+                                        boxSizing: 'border-box',
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap', // Prevent text wrapping
+                                        boxShadow: `
+                                            0 1px 2px rgba(0,0,0,0.1),
+                                            0 0 0 1px ${shadowColor}${shadowAlpha},
+                                            0 2px 6px ${shadowColor}${shadowAlpha}
+                                        `, // Themed shadow effect
+                                        '&:hover': {
+                                            backgroundColor: 'secondary.dark',
+                                            transform: 'scale(1.05) translateY(-2px)',
+                                            zIndex: 1000,
+                                            overflow: 'visible',
+                                            maxHeight: 'none',
+                                            minWidth: 'auto',
+                                            whiteSpace: 'normal',
+                                            boxShadow: `
+                                                0 4px 12px rgba(0,0,0,0.15),
+                                                0 0 0 2px ${theme.palette.primary.main}${shadowAlpha},
+                                                0 6px 15px ${theme.palette.primary.main}40
+                                            `, // Enhanced shadow on hover
+                                        },
+                                        // Add smooth transition for any property changes
+                                        transition: 'transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease',
+                                        opacity: loading ? 0.7 : 1,
+                                        ...position,
+                                    }}
                                 >
-                                    {shift.name}
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Typography 
-                                        variant="caption" 
+                                        variant="subtitle2" 
                                         noWrap 
-                                        title={shift.subject}
-                                        sx={{ maxWidth: '100%', flexGrow: 1 }}
+                                        title={shift.name}
+                                        sx={{ fontWeight: 600 }}
                                     >
-                                        {shift.subject}
+                                        {shift.name}
                                     </Typography>
-                                    <Typography 
-                                        variant="caption" 
-                                        sx={{ opacity: 0.9, flexShrink: 0 }}
-                                    >
-                                        • {shift.display_time}
-                                    </Typography>
-                                </Box>
-                                <Box sx={{ mt: 1 }}>
-                                    {assignedPeople.map((person, index) => (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Typography 
-                                            key={person?.id}
-                                            variant="body2" 
-                                            noWrap
-                                            title={person?.screen_name || `${person?.first_name} ${person?.last_name}`}
-                                            sx={{ 
-                                                fontWeight: 500,
-                                                mt: index > 0 ? 0.5 : 0
-                                            }}
+                                            variant="caption" 
+                                            noWrap 
+                                            title={shift.subject}
+                                            sx={{ maxWidth: '100%', flexGrow: 1 }}
                                         >
-                                            {person?.screen_name || `${person?.first_name} ${person?.last_name}`}
-                                            {' '}
+                                            {shift.subject}
+                                        </Typography>
+                                        <Typography 
+                                            variant="caption" 
+                                            sx={{ opacity: 0.9, flexShrink: 0 }}
+                                        >
+                                            • {shift.display_time}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ mt: 1 }}>
+                                        {assignedPeople.map((person, index) => (
                                             <Typography 
-                                                component="span" 
-                                                variant="caption" 
+                                                key={person?.id || `unassigned-${index}`}
+                                                variant="body2" 
+                                                noWrap
+                                                title={person?.screen_name || `${person?.first_name || ''} ${person?.last_name || ''}`}
                                                 sx={{ 
-                                                    opacity: 0.9,
-                                                    fontStyle: 'italic'
+                                                    fontWeight: 500,
+                                                    mt: index > 0 ? 0.5 : 0
                                                 }}
                                             >
-                                                ({shift.clockStatuses[index] ? 'Clocked In' : 'Not Clocked In'})
+                                                {person?.screen_name || `${person?.first_name || ''} ${person?.last_name || ''}`}
+                                                {' '}
+                                                <Typography 
+                                                    component="span" 
+                                                    variant="caption" 
+                                                    sx={{ 
+                                                        opacity: 0.9,
+                                                        fontStyle: 'italic'
+                                                    }}
+                                                >
+                                                    ({(shift.clockStatuses && shift.clockStatuses[index]) 
+                                                        ? 'Clocked In' : 'Not Clocked In'})
+                                                </Typography>
                                             </Typography>
-                                        </Typography>
-                                    ))}
-                                    {assignedPeople.length === 0 && (
-                                        <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                                            No one assigned
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </Paper>
+                                        ))}
+                                        {(assignedPeople.length === 0) && (
+                                            <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                                                No one assigned
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Paper>
+                            </Grow>
                         );
                     })}
                 </Grid>

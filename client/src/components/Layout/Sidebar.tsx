@@ -1,14 +1,15 @@
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, FormControl, InputLabel, Select, MenuItem, Box, Typography, useTheme } from '@mui/material';
-import { Schedule } from '@mui/icons-material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, FormControl, Select, MenuItem, Box, Typography, useTheme, Button } from '@mui/material';
+import { Schedule, Refresh } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ViewDayIcon from '@mui/icons-material/ViewDay';
 
 interface SidebarProps {
   refreshInterval: number;
   onRefreshIntervalChange: (interval: number) => void;
+  onManualRefresh: () => void;
 }
 
-const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => {
+const Sidebar = ({ refreshInterval, onRefreshIntervalChange, onManualRefresh }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -28,10 +29,12 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
           width: 240,
           boxSizing: 'border-box',
           borderRight: '1px solid rgba(0, 0, 0, 0.12)',
-          top: '64px', // Match AppBar height
-          height: 'calc(100% - 64px)', // Subtract AppBar height
-          paddingLeft: 0, // No extra padding
+          top: '64px',
+          height: 'calc(100% - 64px)',
+          paddingLeft: 0,
           paddingRight: 0,
+          backgroundColor: theme.palette.primary.main, // Set background color to match AppBar
+          color: 'white',
         },
       }}
     >
@@ -40,14 +43,18 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
           onClick={() => navigate('/')}
           selected={isActive('/')}
           sx={{ 
-            cursor: 'pointer', // Show pointer cursor on hover
+            cursor: 'pointer',
+            color: 'white',
+            '& .MuiListItemIcon-root': {
+              color: 'white',
+            },
             '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
             },
             '&.Mui-selected': {
-              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: 'rgba(255, 255, 255, 0.16)',
               '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.12)',
+                backgroundColor: 'rgba(255, 255, 255, 0.24)',
               }
             }
           }}
@@ -61,14 +68,18 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
           onClick={() => navigate('/tabular-view')}
           selected={isActive('/tabular-view')}
           sx={{ 
-            cursor: 'pointer', // Show pointer cursor on hover
+            cursor: 'pointer',
+            color: 'white',
+            '& .MuiListItemIcon-root': {
+              color: 'white',
+            },
             '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
             },
             '&.Mui-selected': {
-              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: 'rgba(255, 255, 255, 0.16)',
               '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.12)',
+                backgroundColor: 'rgba(255, 255, 255, 0.24)',
               }
             }
           }}
@@ -80,11 +91,11 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
         </ListItem>
       </List>
       
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: 2, mt: 'auto' }}>
         <Typography variant="subtitle2" gutterBottom sx={{ color: 'white' }}>
           Auto Refresh
         </Typography>
-        <FormControl fullWidth size="small">
+        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
           <Select
             value={refreshInterval}
             onChange={(e) => onRefreshIntervalChange(Number(e.target.value))}
@@ -99,7 +110,7 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
               '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                 borderColor: 'white',
               },
-              '.MuiSvgIcon-root': {
+              '& .MuiSvgIcon-root': {
                 color: 'white',
               }
             }}
@@ -129,6 +140,24 @@ const Sidebar = ({ refreshInterval, onRefreshIntervalChange }: SidebarProps) => 
             <MenuItem value={15}>Every 15 minutes</MenuItem>
           </Select>
         </FormControl>
+        
+        {/* Add "Refresh Now" button with white outline and text */}
+        <Button 
+          variant="outlined" 
+          startIcon={<Refresh />}
+          onClick={onManualRefresh}
+          fullWidth
+          sx={{ 
+            color: 'white',
+            borderColor: 'white',
+            '&:hover': {
+              borderColor: 'rgba(255, 255, 255, 0.8)',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)'
+            }
+          }}
+        >
+          Refresh Now
+        </Button>
       </Box>
     </Drawer>
   );

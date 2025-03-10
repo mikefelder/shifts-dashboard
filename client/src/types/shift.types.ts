@@ -8,8 +8,10 @@ export interface ShiftMember {
 
 /**
  * Complete shift information from Shiftboard API
+ * Including properties added by the backend grouping logic
  */
 export interface Shift {
+    // Original Shiftboard API properties
     id: string;
     absent_operation_utc: string | null;
     absent_reason: string | null;
@@ -60,10 +62,13 @@ export interface Shift {
     use_time: string;
     workgroup: string;
     zipcode: string;
-    /** Whether the member can clock in/out for this shift */
     can_clock_in_out: boolean;
-    /** Current clock-in status for the shift */
     clocked_in: boolean;
+
+    // Properties added by backend shift grouping
+    assignedPeople?: string[];           // IDs of people assigned to this shift
+    clockStatuses?: boolean[];           // Clock-in status for each assigned person
+    assignedPersonNames?: string[];      // Names of people assigned to this shift
 }
 
 /**
@@ -88,6 +93,41 @@ export interface Workgroup {
 }
 
 /**
+ * Pagination options for API requests
+ */
+export interface PaginationOptions {
+    start?: number;
+    batch?: number;
+}
+
+/**
+ * Pagination metadata in API responses
+ */
+export interface PaginationInfo {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    currentPage: number;
+    pageSize: number;
+    totalResults: number;
+}
+
+/**
+ * Page information structure in API responses
+ */
+export interface PageInfo {
+    next?: {
+        batch: number;
+        start: number;
+    };
+    this?: {
+        batch: number;
+        start: number;
+    };
+    more?: boolean;
+    total?: number;
+}
+
+/**
  * API response structure for who's on data
  */
 export interface WhosOnResponse {
@@ -97,5 +137,28 @@ export interface WhosOnResponse {
             account: Account[];
             workgroup: Workgroup[];
         };
+        pagination?: PaginationInfo;
+        page?: PageInfo;
+        metrics?: {
+            original_shift_count: number;
+            grouped_shift_count: number;
+            fetch_time_ms: number;
+            grouping_time_ms: number;
+            total_time_ms: number;
+        }
     };
+    timing?: {
+        duration_ms: number;
+        timestamp: string;
+    }
 }
+
+/**
+ * Extended API response with data freshness indicator
+ */
+export interface EnhancedApiResponse {
+    isFreshData: boolean; // True if data was fetched from API, false if from cache
+}
+
+// Update WhosOnResponse to potentially include this field
+export type WhosOnResponseWithFreshFlag = WhosOnResponse & Partial<EnhancedApiResponse>;
