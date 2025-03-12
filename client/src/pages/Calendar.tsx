@@ -33,15 +33,18 @@ export const CalendarPage = () => {
     }, []);
 
     const fetchShifts = async (forceSync = true) => {
-        console.log('Fetching shifts at:', new Date().toISOString());
+        console.log(`Fetching shifts at: ${new Date().toISOString()}, workgroup: ${selectedWorkgroup || 'All'}`);
         try {
             setLoading(true);
             // Always force sync to ensure we get fresh data on every refresh
             const response = await getWorkgroupShifts(forceSync, selectedWorkgroup);
             setData(response);
+            
+            // Update workgroups list but keep selected workgroup from context
             if (response.result?.referenced_objects?.workgroup) {
                 setWorkgroups(response.result.referenced_objects.workgroup);
             }
+            
             setError(null);
             
             // Update last refresh time
@@ -70,7 +73,9 @@ export const CalendarPage = () => {
 
     // When workgroup changes
     useEffect(() => {
-        fetchShifts(true);
+        if (data) { // Only refetch if we've already loaded data once
+            fetchShifts(true);
+        }
     }, [selectedWorkgroup]);
 
     // Handle auto-refresh from refreshTimestamp

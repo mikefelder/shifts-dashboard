@@ -1,56 +1,79 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Workgroup } from '../types/shift.types';
-import { dbService } from '../services/db.service';
 
-// Interface for the context value
-interface WorkgroupContextValue {
+// Local storage key for the selected workgroup
+const STORAGE_KEY = 'hlsr-selected-workgroup';
+
+// Define context types
+interface WorkgroupContextType {
     selectedWorkgroup: string | null;
     setSelectedWorkgroup: (workgroupId: string | null) => void;
     workgroups: Workgroup[];
     setWorkgroups: (workgroups: Workgroup[]) => void;
-    isLoading: boolean;
 }
 
-// Create the context
-const WorkgroupContext = createContext<WorkgroupContextValue | undefined>(undefined);
+// Create context with default values
+const WorkgroupContext = createContext<WorkgroupContextType>({
+    selectedWorkgroup: null,
+    setSelectedWorkgroup: () => {},
+    workgroups: [],
+    setWorkgroups: () => {},
+});
 
-// Props for the provider component
-interface WorkgroupProviderProps {
-    children: ReactNode;
-}
+// Provider component that wraps app and provides context
+export const WorkgroupProvider: React.FC<{children: ReactNode}> = ({ children }) => {
+    // Get saved workgroup from localStorage if available
+    const getSavedWorkgroupId = (): string | null => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            return saved;
+        } catch (error) {
+            console.error("Error reading from localStorage:", error);
+            return null;
+        }
+    };
 
-// Provider component
-export const WorkgroupProvider: React.FC<WorkgroupProviderProps> = ({ children }) => {
-    const [selectedWorkgroup, setSelectedWorkgroup] = useState<string | null>(null);
+    const [selectedWorkgroup, setSelectedWorkgroupState] = useState<string | null>(getSavedWorkgroupId());
     const [workgroups, setWorkgroups] = useState<Workgroup[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    
-    // Load workgroups from IndexedDB on mount, if available
-    React.useEffect(() => {
-        async function loadCachedWorkgroups() {
-            setIsLoading(true);
-            try {
-                const cachedWorkgroups = await dbService.getAllWorkgroups();
-                if (cachedWorkgroups.length > 0) {
-                    console.log('Using cached workgroups from IndexedDB');
-                    setWorkgroups(cachedWorkgroups);
-                }
-            } catch (error) {
-                console.error('Failed to load cached workgroups:', error);
-            } finally {
-                setIsLoading(false);
+
+    // Custom setter that updates both state and localStorage
+    const setSelectedWorkgroup = (workgroupId: string | null) => {
+        try {
+            // Save to localStorage
+            if (workgroupId === null || workgroupId === '') {
+                localStorage.removeItem(STORAGE_KEY);
+            } else {
+                localStorage.setItem(STORAGE_KEY, workgroupId);
+            }
+            
+            // Update state
+            setSelectedWorkgroupState(workgroupId);
+            
+            console.log(`Workgroup filter set to: ${workgroupId || 'All'}`);
+        } catch (error) {
+            console.error("Error saving to localStorage:", error);
+            // Still update state even if localStorage fails
+            setSelectedWorkgroupState(workgroupId);
+        }
+    };
+
+    // Validate the stored workgroup exists when workgroups change
+    useEffect(() => {
+        if (selectedWorkgroup && workgroups.length > 0) {
+            const workgroupExists = workgroups.some(wg => wg.id === selectedWorkgroup);
+            
+            if (!workgroupExists) {
+                console.log(`Selected workgroup ${selectedWorkgroup} no longer exists, resetting filter`);
+                setSelectedWorkgroup(null);
             }
         }
-        
-        loadCachedWorkgroups();
-    }, []);
+    }, [workgroups, selectedWorkgroup]);
 
     const value = {
         selectedWorkgroup,
         setSelectedWorkgroup,
         workgroups,
         setWorkgroups,
-        isLoading
     };
 
     return (
@@ -60,11 +83,5 @@ export const WorkgroupProvider: React.FC<WorkgroupProviderProps> = ({ children }
     );
 };
 
-// Custom hook for using the context
-export const useWorkgroup = (): WorkgroupContextValue => {
-    const context = useContext(WorkgroupContext);
-    if (context === undefined) {
-        throw new Error('useWorkgroup must be used within a WorkgroupProvider');
-    }
-    return context;
-};
+// Custom hook for easy context use
+export const useWorkgroup = () => useContext(WorkgroupContext);

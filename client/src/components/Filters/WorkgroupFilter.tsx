@@ -1,4 +1,6 @@
-import { FormControl, Select, MenuItem, InputLabel } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { FormControl, Select, MenuItem, InputLabel, Tooltip, Badge } from '@mui/material';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { Workgroup } from '../../types/shift.types';
 
 interface WorkgroupFilterProps {
@@ -8,12 +10,31 @@ interface WorkgroupFilterProps {
 }
 
 export const WorkgroupFilter = ({ selectedWorkgroup, onWorkgroupChange, workgroups }: WorkgroupFilterProps) => {
-    const sortedWorkgroups = workgroups.sort((a, b) => a.name.localeCompare(b.name));
+    // Track whether a filter is actively applied
+    const [filterActive, setFilterActive] = useState(false);
+    
+    // Sort workgroups alphabetically
+    const sortedWorkgroups = [...workgroups].sort((a, b) => 
+        a.name.localeCompare(b.name)
+    );
     
     const allWorkgroups = [
         { id: '', name: 'All Workgroups' },
         ...sortedWorkgroups
     ];
+    
+    // Update filterActive when selectedWorkgroup changes
+    useEffect(() => {
+        setFilterActive(!!selectedWorkgroup); 
+    }, [selectedWorkgroup]);
+    
+    // Find the display name for the current workgroup
+    const getDisplayName = () => {
+        if (!selectedWorkgroup) return 'All Workgroups';
+        
+        const selected = workgroups.find(wg => wg.id === selectedWorkgroup);
+        return selected ? selected.name : 'All Workgroups';
+    };
 
     return (
         <FormControl 
@@ -32,8 +53,8 @@ export const WorkgroupFilter = ({ selectedWorkgroup, onWorkgroupChange, workgrou
                 '& .MuiOutlinedInput-root': {
                     color: 'white',
                     '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.5)',
-                        borderWidth: '1px',
+                        borderColor: filterActive ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                        borderWidth: filterActive ? '2px' : '1px',
                     },
                     '&:hover fieldset': {
                         borderColor: 'rgba(255, 255, 255, 0.8)',
@@ -62,25 +83,31 @@ export const WorkgroupFilter = ({ selectedWorkgroup, onWorkgroupChange, workgrou
                 onChange={(e) => onWorkgroupChange(e.target.value)}
                 label="Workgroup"
                 displayEmpty
-                defaultValue=""
-                renderValue={(value) => {
-                    if (!value) return '';
-                    const selected = allWorkgroups.find(wg => wg.id === value);
-                    return selected?.name || '';
-                }}
+                startAdornment={
+                    <Badge 
+                        color="warning" 
+                        variant="dot" 
+                        invisible={!filterActive} 
+                        sx={{ mr: 1 }}
+                    >
+                        <FilterAltIcon fontSize="small" />
+                    </Badge>
+                }
+                renderValue={() => getDisplayName()}
                 MenuProps={{
                     PaperProps: {
                         sx: {
-                            backgroundColor: 'primary.main',
+                            backgroundColor: 'white',
+                            maxHeight: 400,
                             '& .MuiMenuItem-root': {
-                                color: 'white',
+                                minHeight: '38px',
                                 '&:hover': {
-                                    backgroundColor: 'primary.dark',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                 },
                                 '&.Mui-selected': {
-                                    backgroundColor: 'primary.dark',
+                                    backgroundColor: 'rgba(33, 150, 243, 0.12)',
                                     '&:hover': {
-                                        backgroundColor: 'primary.dark',
+                                        backgroundColor: 'rgba(33, 150, 243, 0.18)',
                                     }
                                 }
                             }

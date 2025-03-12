@@ -107,6 +107,9 @@ export const TabularShiftView = () => {
             
             setLoading(true);
             
+            // Log the current workgroup filter being used
+            console.log(`TabularView loading data with workgroup filter: ${selectedWorkgroup || 'All'}`);
+            
             // Pass the selected workgroup ID to the API service and force sync for fresh data
             const response = await getWorkgroupShifts(forceSync, selectedWorkgroup);
             
@@ -118,6 +121,8 @@ export const TabularShiftView = () => {
             }
             
             setData(response);
+            
+            // Update workgroups list but keep selected workgroup from context
             if (response.result?.referenced_objects?.workgroup) {
                 setWorkgroups(response.result.referenced_objects.workgroup);
             }
@@ -316,6 +321,17 @@ export const TabularShiftView = () => {
         return `Last refreshed: ${format(lastRefresh, 'h:mm:ss a')}`;
     };
 
+    // In the render section, add the workgroup name to the title if filtered
+    const getWorkgroupName = () => {
+        if (!selectedWorkgroup) return '';
+        
+        const workgroup = data?.result?.referenced_objects?.workgroup?.find(
+            wg => wg.id === selectedWorkgroup
+        );
+        
+        return workgroup ? ` - ${workgroup.name}` : '';
+    };
+
     return (
         <Container 
             maxWidth={false}
@@ -372,7 +388,7 @@ export const TabularShiftView = () => {
                     >
                         {format(new Date(), 'EEEE, MMMM d, yyyy')} - Daily Schedule
                         <Typography component="span" variant="caption" sx={{ ml: 2, color: 'text.secondary' }}>
-                            ({sortedShifts.length} shifts)
+                            ({sortedShifts.length} shifts{getWorkgroupName()})
                         </Typography>
                     </Typography>
                 </Box>
