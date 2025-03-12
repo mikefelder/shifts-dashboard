@@ -97,7 +97,6 @@ async function shiftWhosOn(workgroupId, queryParams = {}) {
         
         // Make a direct API call first to test parameters
         const url = buildAuthenticatedUrl('shift.whosOn', baseParams);
-        console.log(`Generated URL: ${url}`);
         
         const response = await axios.get(url);
         
