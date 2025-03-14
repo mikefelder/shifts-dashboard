@@ -46,6 +46,9 @@ async function whosOn(req, res) {
         
         console.log(`API response ready: ${shifts.length} shifts with ${clockedInCount}/${totalAssigned} people clocked in`);
         
+        // Log the JSON response
+        console.log('WhosOn API response:', JSON.stringify(result, null, 2));
+        
         res.json(result);
     } catch (error) {
         console.error('Error in whosOn controller:', error);
