@@ -9,6 +9,18 @@ Web application for viewing and managing HLSR Information Technology Committee s
 - Workgroup filtering for IT Committee
 - Responsive design for desktop/mobile
 
+## QuickStart Guide
+   If you don't have node and npm installed, please follow the detailed instructions for you platform.
+
+   Assuming you have node installed on your machine, in both the `root` and `client` folders run the following:
+   ```bash
+   npm install
+   ```
+   then
+   ```bash
+   npm run dev
+   ```
+
 ## Installing Node.js and npm
 
 ### Windows
@@ -66,9 +78,6 @@ Returns all active shifts from Shiftboard with the following enhancements:
 - Groups shifts with multiple members into single shift records
 - Includes clock-in status for each person
 - Performance metrics for large datasets
-
-**Example Response:**
-```
 
 ## Tech Stack
 
