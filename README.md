@@ -6,7 +6,7 @@ Web application for viewing and managing HLSR Information Technology Committee s
 
 - Real-time shift calendar view
 - Clock-in status tracking
-- Workgroup filtering for IT Committee
+- Workgroup (committee) filtering
 - Responsive design for desktop/mobile
 
 ## QuickStart Guide
