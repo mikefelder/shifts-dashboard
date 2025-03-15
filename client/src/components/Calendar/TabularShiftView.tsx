@@ -62,6 +62,7 @@ export const TabularShiftView = () => {
     const [initialDataLoaded, setInitialDataLoaded] = useState(false);
     const [loadingType, setLoadingType] = useState<'initial' | 'refresh'>('initial');
     const [animateRows, setAnimateRows] = useState(false);
+    const [apiSyncSuccess, setApiSyncSuccess] = useState<boolean | null>(null);
     
     // Initial effect to load last API refresh time
     useEffect(() => {
@@ -122,14 +123,23 @@ export const TabularShiftView = () => {
                 setWorkgroups(response.result.referenced_objects.workgroup);
             }
             
-            // Update both timestamp displays
+            // Update timestamp display only on successful API refresh
             setLastRefresh(new Date());
             const formattedTime = await dbService.getLastSyncFormatted();
             setLastApiRefresh(formattedTime);
             
+            // Mark sync as successful
+            setApiSyncSuccess(true);
+            setError(null);
+            
         } catch (err) {
             setError('Failed to load shifts');
             console.error(err);
+            
+            // Mark sync as failed, but don't update the timestamp
+            setApiSyncSuccess(false);
+            
+            // We explicitly don't update lastRefresh here to keep the last successful refresh time
         } finally {
             setLoading(false);
         }
@@ -307,13 +317,26 @@ export const TabularShiftView = () => {
 
     // Format a nice timestamp display that shows both refresh time and sync status
     const getTimestampDisplay = () => {
-        // If we just refreshed from API, show that info
-        if (lastApiRefresh && lastApiRefresh.includes('Today')) {
-            return `Last refreshed: ${format(lastRefresh, 'h:mm:ss a')} (API sync completed)`;
+        // Base refresh timestamp
+        const refreshTime = `Last refreshed: ${format(lastRefresh, 'h:mm:ss a')}`;
+        
+        // If sync status is unknown (null), just show the time
+        if (apiSyncSuccess === null) {
+            return refreshTime;
         }
         
-        // Otherwise, show both times
-        return `Last refreshed: ${format(lastRefresh, 'h:mm:ss a')}`;
+        // If we just refreshed from API successfully
+        if (apiSyncSuccess && lastApiRefresh && lastApiRefresh.includes('Today')) {
+            return `${refreshTime} (API sync completed)`;
+        }
+        
+        // If API sync failed
+        if (apiSyncSuccess === false) {
+            return `${refreshTime} (Last successful refresh - API sync failed)`;
+        }
+        
+        // Otherwise just show refresh time
+        return refreshTime;
     };
 
     return (
@@ -340,7 +363,14 @@ export const TabularShiftView = () => {
                 gap: 1
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="caption" color="textSecondary" sx={{ mr: 1 }}>
+                    <Typography 
+                        variant="caption" 
+                        color={apiSyncSuccess === false ? "error.main" : "textSecondary"} 
+                        sx={{ 
+                            mr: 1,
+                            fontWeight: apiSyncSuccess === false ? 'medium' : 'normal'
+                        }}
+                    >
                         {getTimestampDisplay()}
                     </Typography>
                     
