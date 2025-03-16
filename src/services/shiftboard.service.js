@@ -69,6 +69,92 @@ async function shiftboardAPI(api_method, obj) {
     })
 }
 
+/**
+ * Process and normalize account data from Shiftboard API
+ * @param {Object} accountData - Raw account data from API 
+ * @returns {Object} - Normalized account object matching our schema
+ */
+const processAccountData = (accountData) => {
+  if (!accountData || typeof accountData !== 'object') {
+    console.error('Invalid account data received:', accountData);
+    return null;
+  }
+  
+  try {
+    const processedAccount = {
+      id: accountData.id,
+      external_id: accountData.external_id,
+      first_name: accountData.first_name,
+      last_name: accountData.last_name,
+      screen_name: accountData.screen_name,
+      mobile_phone: accountData.mobile_phone || accountData.phone || '',
+      profile_type: accountData.profile_type,
+      seniority_order: accountData.seniority_order,
+      phone: accountData.phone,
+      email: accountData.email,
+      clocked_in: Boolean(accountData.clocked_in),
+      
+      // Store the original data for reference
+      raw_data: accountData
+    };
+    
+    // Log any missing required fields
+    const requiredFields = ['id', 'external_id', 'first_name', 'last_name'];
+    const missingFields = requiredFields.filter(field => !processedAccount[field]);
+    
+    if (missingFields.length > 0) {
+      console.warn(`Missing required fields for account ${accountData.id || 'unknown'}: ${missingFields.join(', ')}`);
+    }
+    
+    return processedAccount;
+  } catch (error) {
+    console.error('Error processing account data:', error);
+    return null;
+  }
+};
+
+/**
+ * Process the WhosOn API response to ensure consistent data structure
+ * @param {Object} apiResponse - Response from Shiftboard WhosOn API
+ * @returns {Object} - Processed response with normalized data
+ */
+const processWhosOnResponse = (apiResponse) => {
+  if (!apiResponse || !apiResponse.result) {
+    console.error('Invalid API response format');
+    return { result: { shifts: [], referenced_objects: { account: [], workgroup: [] } } };
+  }
+
+  try {
+    const result = apiResponse.result;
+    
+    // Process accounts to ensure mobile_phone is included
+    const accounts = Array.isArray(result.referenced_objects?.account) 
+      ? result.referenced_objects.account.map(processAccountData).filter(Boolean)
+      : [];
+    
+    // Log account data to verify mobile_phone is present
+    console.log('Processed accounts sample:', accounts.slice(0, 2));
+    
+    // Create the processed response
+    return {
+      result: {
+        shifts: result.shifts || [],
+        referenced_objects: {
+          account: accounts,
+          workgroup: result.referenced_objects?.workgroup || []
+        },
+        pagination: result.pagination,
+        page: result.page,
+        metrics: result.metrics
+      },
+      timing: apiResponse.timing
+    };
+  } catch (error) {
+    console.error('Error processing WhosOn response:', error);
+    return { result: { shifts: [], referenced_objects: { account: [], workgroup: [] } } };
+  }
+};
+
 module.exports = {
     shiftboardAPI
 }

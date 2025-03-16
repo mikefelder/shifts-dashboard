@@ -16,6 +16,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { dbService } from '../../services/db.service';
 import { useOutletContext } from 'react-router-dom';
+import { PersonDetailModal } from './PersonDetailModal';
+import { Account } from '../../types/shift.types';
 
 // Sort direction type
 type SortDirection = 'asc' | 'desc';
@@ -63,6 +65,9 @@ export const TabularShiftView = () => {
     const [loadingType, setLoadingType] = useState<'initial' | 'refresh'>('initial');
     const [animateRows, setAnimateRows] = useState(false);
     const [apiSyncSuccess, setApiSyncSuccess] = useState<boolean | null>(null);
+    const [personModalOpen, setPersonModalOpen] = useState(false);
+    const [selectedPerson, setSelectedPerson] = useState<Account | null>(null);
+    const [selectedPersonClocked, setSelectedPersonClocked] = useState<boolean>(false);
     
     // Initial effect to load last API refresh time
     useEffect(() => {
@@ -168,6 +173,33 @@ export const TabularShiftView = () => {
         setModalOpen(false);
     };
 
+    // Handler for person chip click to show person details
+    const handlePersonClick = (event: React.MouseEvent, personName: string, isClocked: boolean, shift: Shift) => {
+        // Prevent the click from bubbling up to the table row
+        event.stopPropagation();
+        
+        // Find the account that matches this name
+        if (data?.result?.referenced_objects.account) {
+            // Find person by name in account list
+            const person = data.result.referenced_objects.account.find(acc => {
+                const displayName = acc.screen_name || `${acc.first_name} ${acc.last_name}`;
+                return displayName === personName;
+            });
+            
+            if (person) {
+                console.log("Selected person data:", person); // Debug log to check account data
+                setSelectedPerson(person);
+                setSelectedPersonClocked(isClocked);
+                setPersonModalOpen(true);
+            }
+        }
+    };
+    
+    // Close person modal
+    const handleClosePersonModal = () => {
+        setPersonModalOpen(false);
+    };
+
     // Function to determine sort value based on column
     const getSortValue = (shift: Shift, column: string) => {
         switch (column) {
@@ -248,13 +280,14 @@ export const TabularShiftView = () => {
     const successDarkColor = theme.palette.success.dark;
 
     // Function to render a person chip with correct styling based on clocked-in status
-    const renderPersonChip = (name: string, isClocked: boolean, index: number) => {
+    const renderPersonChip = (name: string, isClocked: boolean, index: number, shift: Shift) => {
         return (
             <Chip 
                 key={index}
                 size="small"
                 icon={<PersonIcon sx={{ color: isClocked ? 'white' : undefined }} />}
                 label={name}
+                onClick={(e) => handlePersonClick(e, name, isClocked, shift)}
                 sx={{ 
                     backgroundColor: isClocked 
                         ? successColor 
@@ -268,6 +301,7 @@ export const TabularShiftView = () => {
                         backgroundColor: isClocked 
                             ? successDarkColor
                             : undefined,
+                        cursor: 'pointer'
                     }
                 }}
             />
@@ -493,7 +527,8 @@ export const TabularShiftView = () => {
                                                             renderPersonChip(
                                                                 name, 
                                                                 shift.clockStatuses?.[index] || false, 
-                                                                index
+                                                                index,
+                                                                shift
                                                             )
                                                         )}
                                                     </Box>
@@ -548,6 +583,15 @@ export const TabularShiftView = () => {
                 )}
             </Paper>
 
+            {/* Add the person detail modal */}
+            <PersonDetailModal
+                open={personModalOpen}
+                onClose={handleClosePersonModal}
+                account={selectedPerson}
+                isClocked={selectedPersonClocked}
+            />
+            
+            {/* Existing shift detail modal */}
             {selectedShift && (
                 <ShiftDetailModal
                     open={modalOpen}
