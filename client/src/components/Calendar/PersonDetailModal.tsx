@@ -1,7 +1,6 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Divider, Box, Chip, Grid, IconButton, ButtonGroup } from '@mui/material';
 import { Account } from '../../types/shift.types';
 import CloseIcon from '@mui/icons-material/Close';
-import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import BadgeIcon from '@mui/icons-material/Badge';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
