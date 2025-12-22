@@ -71,8 +71,9 @@ async function shiftWhosOn(workgroupId, queryParams = {}) {
     try {
         // Base parameters - ALWAYS include timeclock_status
         const baseParams = {
-            // Explicitly set timeclock_status to true
-            timeclock_status: true
+            // Explicitly set timeclock_status and extended to true
+            timeclock_status: true,
+            extended: true
         };
         
         // Add workgroup filter if provided

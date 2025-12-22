@@ -438,7 +438,6 @@ export const DayView = ({ shifts, accounts, date = new Date(), showFullDay = fal
                                             </Typography>
                                         ))}
                                     </Box>
-                                    {/* Remove location display entirely */}
                                 </Paper>
                             );
                         })}

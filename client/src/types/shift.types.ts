@@ -75,13 +75,15 @@ export interface Shift {
  * Account information for shift members
  */
 export interface Account {
+    id: string;
     external_id: string;
     first_name: string;
     last_name: string;
-    id: string;
+    mobile_phone: string;  
     screen_name: string;
     seniority_order: string;
-    clocked_in: boolean;
+    clocked_in: boolean;    
+    // Additional fields may be present in raw data
 }
 
 /**

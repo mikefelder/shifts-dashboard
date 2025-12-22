@@ -20,7 +20,7 @@ async function whosOn(req, res) {
         
         console.log('WhosOn API request received:', req.query);
         
-        // Always ensure timeclock_status is true (will be handled in service)
+        // Always ensure timeclock_status and extended params are true (will be handled in service)
         // This is already taken care of in the service, just log the request
         
         // Get shifts with who's on data
