@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appServiceName": {
+      "value": "hlsr-shiftboard-api"
+    },
+    "appServicePlanName": {
+      "value": "hlsr-shiftboard-plan"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "appServicePlanSku": {
+      "value": "B1"
+    },
+    "shiftboardAccessKeyId": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/ShiftboardReporting/providers/Microsoft.KeyVault/vaults/{keyvault-name}"
+        },
+        "secretName": "shiftboard-access-key-id"
+      }
+    },
+    "shiftboardSecretKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/ShiftboardReporting/providers/Microsoft.KeyVault/vaults/{keyvault-name}"
+        },
+        "secretName": "shiftboard-secret-key"
+      }
+    },
+    "enableApplicationInsights": {
+      "value": true
+    }
+  }
+}
