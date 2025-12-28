@@ -6,18 +6,21 @@ param(
     [string]$ResourceGroupName = "ShiftboardReporting",
     
     [Parameter(Mandatory=$false)]
-    [string]$AppServiceName = "hlsr-shiftboard-api",
+    [string]$AppServiceName = "app-hlsr-shiftboard-dashboard",
     
     [Parameter(Mandatory=$false)]
-    [string]$Location = "eastus",
+    [string]$AppServicePlanName = "asp-hlsr-shiftboard-dashboard",
+    
+    [Parameter(Mandatory=$false)]
+    [string]$Location = "swedencentral",
     
     [Parameter(Mandatory=$false)]
     [ValidateSet("B1", "B2", "S1", "S2", "P1v2", "P2v2")]
-    [string]$Sku = "B1",
+    [string]$AppServicePlanSku = "S1",
     
     [Parameter(Mandatory=$false)]
     [ValidateSet("dev", "staging", "prod")]
-    [string]$Environment = "prod",
+    [string]$Environment = "dev",
     
     [Parameter(Mandatory=$false)]
     [switch]$UseKeyVault
@@ -31,10 +34,10 @@ Write-Host ""
 
 # Check if Azure CLI is installed
 try {
-    $azVersion = az --version
-    Write-Host "✓ Azure CLI is installed" -ForegroundColor Green
+    az --version | Out-Null
+    Write-Host "Azure CLI is installed" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Azure CLI is not installed" -ForegroundColor Red
+    Write-Host "Azure CLI is not installed" -ForegroundColor Red
     Write-Host "Please install from: https://docs.microsoft.com/cli/azure/install-azure-cli" -ForegroundColor Yellow
     exit 1
 }
@@ -47,7 +50,7 @@ if (-not $account) {
 }
 
 $currentAccount = az account show | ConvertFrom-Json
-Write-Host "✓ Logged in as: $($currentAccount.user.name)" -ForegroundColor Green
+Write-Host "Logged in as: $($currentAccount.user.name)" -ForegroundColor Green
 Write-Host "  Subscription: $($currentAccount.name)" -ForegroundColor Cyan
 Write-Host ""
 
@@ -55,8 +58,9 @@ Write-Host ""
 Write-Host "Deployment Configuration:" -ForegroundColor Yellow
 Write-Host "  Resource Group: $ResourceGroupName" -ForegroundColor White
 Write-Host "  App Service: $AppServiceName" -ForegroundColor White
+Write-Host "  App Service Plan: $AppServicePlanName" -ForegroundColor White
+Write-Host "  App Service Plan SKU: $AppServicePlanSku" -ForegroundColor White
 Write-Host "  Location: $Location" -ForegroundColor White
-Write-Host "  SKU: $Sku" -ForegroundColor White
 Write-Host "  Environment: $Environment" -ForegroundColor White
 Write-Host "  Use Key Vault: $UseKeyVault" -ForegroundColor White
 Write-Host ""
@@ -74,9 +78,9 @@ $rgExists = az group exists --name $ResourceGroupName
 if ($rgExists -eq "false") {
     Write-Host "Resource group '$ResourceGroupName' does not exist. Creating it..." -ForegroundColor Yellow
     az group create --name $ResourceGroupName --location $Location
-    Write-Host "✓ Resource group created" -ForegroundColor Green
+    Write-Host "Resource group created" -ForegroundColor Green
 } else {
-    Write-Host "✓ Using existing resource group: $ResourceGroupName" -ForegroundColor Green
+    Write-Host "Using existing resource group: $ResourceGroupName" -ForegroundColor Green
 }
 
 # Deploy Key Vault if requested
@@ -96,15 +100,15 @@ if ($UseKeyVault) {
             environment=$Environment
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Key Vault deployed successfully" -ForegroundColor Green
+        Write-Host "Key Vault deployed successfully" -ForegroundColor Green
         Write-Host ""
         Write-Host "Please add your secrets to Key Vault:" -ForegroundColor Yellow
         Write-Host "  az keyvault secret set --vault-name $keyVaultName --name shiftboard-access-key-id --value YOUR_KEY" -ForegroundColor White
         Write-Host "  az keyvault secret set --vault-name $keyVaultName --name shiftboard-secret-key --value YOUR_SECRET" -ForegroundColor White
         Write-Host ""
-        $continueAfterSecrets = Read-Host "Press Enter after adding secrets to continue..."
+        Read-Host "Press Enter after adding secrets to continue"
     } else {
-        Write-Host "✗ Key Vault deployment failed" -ForegroundColor Red
+        Write-Host "Key Vault deployment failed" -ForegroundColor Red
         exit 1
     }
 }
@@ -133,19 +137,28 @@ if ($UseKeyVault) {
         --template-file infrastructure/main.bicep `
         --parameters `
             appServiceName=$AppServiceName `
-            appServicePlanName="$AppServiceName-plan" `
+            appServicePlanName=$AppServicePlanName `
             location=$Location `
             environment=$Environment `
-            appServicePlanSku=$Sku `
+            appServicePlanSku=$AppServicePlanSku `
             shiftboardAccessKeyId=$accessKeyId `
             shiftboardSecretKey=$secretKeyPlain `
             enableApplicationInsights=$true
 }
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✓ Infrastructure deployed successfully" -ForegroundColor Green
+    Write-Host "Infrastructure deployed successfully" -ForegroundColor Green
 } else {
-    Write-Host "✗ Infrastructure deployment failed" -ForegroundColor Red
+    Write-Host "Infrastructure deployment failed" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Common issues:" -ForegroundColor Yellow
+    Write-Host "  - Quota exceeded: Try a different SKU (S1, P1v2) or request quota increase" -ForegroundColor White
+    Write-Host "  - Resource name conflict: Change AppServiceName or AppServicePlanName" -ForegroundColor White
+    Write-Host "  - Invalid credentials: Check your Shiftboard API keys" -ForegroundColor White
+    Write-Host ""
+    Write-Host "To use a different SKU, run:" -ForegroundColor Yellow
+    Write-Host "  .\infrastructure\deploy.ps1 -AppServicePlanSku S1" -ForegroundColor Cyan
+    Write-Host ""
     exit 1
 }
 
@@ -165,13 +178,13 @@ if ($zipFile) {
         --src $zipFile.FullName
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Application deployed successfully" -ForegroundColor Green
+        Write-Host "Application deployed successfully" -ForegroundColor Green
     } else {
-        Write-Host "✗ Application deployment failed" -ForegroundColor Red
+        Write-Host "Application deployment failed" -ForegroundColor Red
         exit 1
     }
 } else {
-    Write-Host "✗ No deployment ZIP file found" -ForegroundColor Red
+    Write-Host "No deployment ZIP file found" -ForegroundColor Red
     Write-Host "Please run: .\create-deployment-zip.ps1" -ForegroundColor Yellow
     exit 1
 }
@@ -188,6 +201,7 @@ Write-Host "Application URL: https://$appUrl" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "1. Visit your application: https://$appUrl" -ForegroundColor White
-Write-Host "2. View logs: az webapp log tail --name $AppServiceName --resource-group $ResourceGroupName" -ForegroundColor White
-Write-Host "3. Monitor in Azure Portal: https://portal.azure.com" -ForegroundColor White
+$logsCommand = "az webapp log tail --name $AppServiceName --resource-group $ResourceGroupName"
+Write-Host "2. View logs: $logsCommand" -ForegroundColor White
+Write-Host "3. Monitor in Azure Portal at portal.azure.com" -ForegroundColor White
 Write-Host ""

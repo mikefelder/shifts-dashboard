@@ -17,7 +17,7 @@ param location string = resourceGroup().location
   'staging'
   'prod'
 ])
-param environment string = 'prod'
+param environment string = 'dev'
 
 @description('The SKU for the App Service Plan')
 @allowed([
@@ -135,7 +135,7 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: enableApplicationInsights ? applicationInsights.properties.ConnectionString : ''
+          value: enableApplicationInsights ? applicationInsights!.properties.ConnectionString : ''
         }
         {
           name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
@@ -162,36 +162,20 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
       {
         category: 'AppServiceHTTPLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
       {
         category: 'AppServiceConsoleLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
       {
         category: 'AppServiceAppLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
     ]
   }
@@ -201,5 +185,5 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
 output appServiceHostName string = appService.properties.defaultHostName
 output appServicePrincipalId string = appService.identity.principalId
 output appServiceUrl string = 'https://${appService.properties.defaultHostName}'
-output applicationInsightsInstrumentationKey string = enableApplicationInsights ? applicationInsights.properties.InstrumentationKey : ''
-output applicationInsightsConnectionString string = enableApplicationInsights ? applicationInsights.properties.ConnectionString : ''
+output applicationInsightsInstrumentationKey string = enableApplicationInsights ? applicationInsights!.properties.InstrumentationKey : ''
+output applicationInsightsConnectionString string = enableApplicationInsights ? applicationInsights!.properties.ConnectionString : ''

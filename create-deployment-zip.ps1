@@ -28,17 +28,9 @@ if (-not (Test-Path "client\dist")) {
     }
 }
 
-# Clean up any existing node_modules to reduce ZIP size
+# Note: node_modules will be installed by Azure during deployment
 Write-Host ""
-Write-Host "Step 2: Cleaning node_modules (Azure will reinstall)..." -ForegroundColor Yellow
-if (Test-Path "node_modules") {
-    Write-Host "Removing root node_modules..." -ForegroundColor Cyan
-    Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
-}
-if (Test-Path "client\node_modules") {
-    Write-Host "Removing client\node_modules..." -ForegroundColor Cyan
-    Remove-Item -Path "client\node_modules" -Recurse -Force -ErrorAction SilentlyContinue
-}
+Write-Host "Step 2: Skipping node_modules (will be installed on Azure)..." -ForegroundColor Yellow
 
 # Create deployment package name with timestamp
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -54,9 +46,6 @@ $filesToInclude = @(
     "client",
     "docs",
     "package.json",
-    "web.config",
-    ".deployment",
-    "deploy.cmd",
     "LICENSE",
     "README.md"
 )
