@@ -53,7 +53,7 @@ var appInsightsName = '${appServiceName}-insights'
 var logAnalyticsWorkspaceName = '${appServiceName}-logs'
 
 // Log Analytics Workspace (for Application Insights)
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = if (enableApplicationInsights) {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = if (enableApplicationInsights) {
   name: logAnalyticsWorkspaceName
   location: location
   tags: tags
@@ -107,7 +107,7 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
     clientAffinityEnabled: false // Disable for better scalability
     siteConfig: {
       linuxFxVersion: 'NODE|18-lts' // Node.js 18 LTS
-      alwaysOn: appServicePlanSku != 'B1' ? true : false // AlwaysOn not available on B1
+      alwaysOn: appServicePlanSku != 'B1' // AlwaysOn not available on B1
       http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
@@ -141,13 +141,11 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
           name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
           value: '~3'
         }
+        {
+          name: 'ALLOWED_ORIGINS'
+          value: 'https://${appServiceName}.azurewebsites.net'
+        }
       ]
-      cors: {
-        allowedOrigins: [
-          'https://${appServiceName}.azurewebsites.net'
-        ]
-        supportCredentials: false
-      }
     }
   }
 }

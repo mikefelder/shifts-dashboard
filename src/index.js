@@ -31,7 +31,7 @@ const app = express()
 // CORS configuration
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const corsOptions = {
-    origin: isDevelopment ? 'http://localhost:5173' : true, // Allow all origins in production (or specify your Azure URL)
+    origin: isDevelopment ? 'http://localhost:5173' : process.env.ALLOWED_ORIGINS?.split(',') || false,
     optionsSuccessStatus: 200
 }
 
@@ -55,8 +55,11 @@ if (!isDevelopment) {
     const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
     app.use(express.static(clientBuildPath));
     
-    // Handle React routing, return all requests to React app
+    // Handle React routing, return all non-API requests to React app
     app.get('*', (req, res) => {
+        if (req.path && req.path.startsWith('/api')) {
+            return res.status(404).json({ error: 'Not found' });
+        }
         res.sendFile(path.join(clientBuildPath, 'index.html'));
     });
 }

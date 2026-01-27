@@ -130,6 +130,14 @@ az keyvault secret set \
 
 #### Step 3: Update Parameters File
 
+**IMPORTANT**: Before deploying with Key Vault, you must update `main.parameters.json`:
+
+1. Copy `main.parameters.template.json` to `main.parameters.json` (or edit the existing file)
+2. Replace placeholders:
+   - `{subscription-id}` with your Azure subscription ID (get it with `az account show --query id -o tsv`)
+   - `{keyvault-name}` with `kv-hlsr-shiftboard` (or your Key Vault name)
+3. The deploy.ps1 script will validate that these placeholders have been replaced
+
 Edit `main.parameters.json` and replace placeholders:
 - `{subscription-id}` with your subscription ID
 - Resource group is already set to `ShiftboardReporting`

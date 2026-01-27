@@ -6,17 +6,17 @@ param(
     [string]$ResourceGroupName = "ShiftboardReporting",
     
     [Parameter(Mandatory=$false)]
-    [string]$AppServiceName = "app-hlsr-shiftboard-dashboard",
+    [string]$AppServiceName = "hlsr-shiftboard-api",
     
     [Parameter(Mandatory=$false)]
-    [string]$AppServicePlanName = "asp-hlsr-shiftboard-dashboard",
+    [string]$AppServicePlanName = "hlsr-shiftboard-plan",
     
     [Parameter(Mandatory=$false)]
-    [string]$Location = "swedencentral",
+    [string]$Location = "eastus",
     
     [Parameter(Mandatory=$false)]
     [ValidateSet("B1", "B2", "S1", "S2", "P1v2", "P2v2")]
-    [string]$AppServicePlanSku = "S1",
+    [string]$AppServicePlanSku = "B1",
     
     [Parameter(Mandatory=$false)]
     [ValidateSet("dev", "staging", "prod")]
@@ -120,30 +120,72 @@ Write-Host "Step 3: Deploying App Service infrastructure..." -ForegroundColor Ye
 if ($UseKeyVault) {
     # Use parameters file with Key Vault references
     Write-Host "Using Key Vault for secrets..." -ForegroundColor Cyan
+    
+    # Validate that placeholder values have been replaced
+    $parametersContent = Get-Content -Path "infrastructure/main.parameters.json" -Raw
+    if ($parametersContent -match '\{subscription-id\}' -or $parametersContent -match '\{keyvault-name\}') {
+        Write-Host "ERROR: Parameter file contains placeholder values!" -ForegroundColor Red
+        Write-Host "Please replace {subscription-id} and {keyvault-name} in infrastructure/main.parameters.json" -ForegroundColor Yellow
+        Write-Host "You can use infrastructure/main.parameters.template.json as a reference." -ForegroundColor Yellow
+        exit 1
+    }
+    
     az deployment group create `
         --resource-group $ResourceGroupName `
         --template-file infrastructure/main.bicep `
         --parameters infrastructure/main.parameters.json
 } else {
-    # Prompt for secrets
+    # Prompt for secrets (non-Key Vault flow)
     Write-Host "Please enter your Shiftboard credentials:" -ForegroundColor Yellow
     $accessKeyId = Read-Host "Shiftboard Access Key ID"
     $secretKey = Read-Host "Shiftboard Secret Key" -AsSecureString
-    $secretKeyPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secretKey))
-    
-    az deployment group create `
-        --resource-group $ResourceGroupName `
-        --template-file infrastructure/main.bicep `
-        --parameters `
-            appServiceName=$AppServiceName `
-            appServicePlanName=$AppServicePlanName `
-            location=$Location `
-            environment=$Environment `
-            appServicePlanSku=$AppServicePlanSku `
-            shiftboardAccessKeyId=$accessKeyId `
-            shiftboardSecretKey=$secretKeyPlain `
-            enableApplicationInsights=$true
+
+    # Safely convert the SecureString to plain text only for JSON serialization
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secretKey)
+    try {
+        $secretKeyPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+
+        # Load base parameters file and inject runtime values, including secrets
+        $baseParametersPath = "infrastructure/main.parameters.json"
+        $parametersJson = Get-Content -Path $baseParametersPath -Raw | ConvertFrom-Json
+
+        if (-not $parametersJson.parameters) {
+            $parametersJson | Add-Member -MemberType NoteProperty -Name "parameters" -Value (@{})
+        }
+
+        $parameters = $parametersJson.parameters
+
+        if (-not $parameters.appServiceName)       { $parameters.appServiceName       = @{ value = $AppServiceName } }       else { $parameters.appServiceName.value       = $AppServiceName }
+        if (-not $parameters.appServicePlanName)   { $parameters.appServicePlanName   = @{ value = $AppServicePlanName } }   else { $parameters.appServicePlanName.value   = $AppServicePlanName }
+        if (-not $parameters.location)            { $parameters.location            = @{ value = $Location } }             else { $parameters.location.value            = $Location }
+        if (-not $parameters.environment)         { $parameters.environment         = @{ value = $Environment } }          else { $parameters.environment.value         = $Environment }
+        if (-not $parameters.appServicePlanSku)   { $parameters.appServicePlanSku   = @{ value = $AppServicePlanSku } }    else { $parameters.appServicePlanSku.value   = $AppServicePlanSku }
+        if (-not $parameters.shiftboardAccessKeyId) { $parameters.shiftboardAccessKeyId = @{ value = $accessKeyId } }      else { $parameters.shiftboardAccessKeyId.value = $accessKeyId }
+        if (-not $parameters.shiftboardSecretKey) { $parameters.shiftboardSecretKey = @{ value = $secretKeyPlain } }       else { $parameters.shiftboardSecretKey.value = $secretKeyPlain }
+        if (-not $parameters.enableApplicationInsights) { $parameters.enableApplicationInsights = @{ value = $true } }      else { $parameters.enableApplicationInsights.value = $true }
+
+        # Write to a temporary parameters file to avoid putting secrets on the command line
+        $tempParamFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ("main.parameters.{0}.json" -f ([guid]::NewGuid()))
+        $parametersJson | ConvertTo-Json -Depth 10 | Set-Content -Path $tempParamFile -Encoding UTF8
+
+        try {
+            az deployment group create `
+                --resource-group $ResourceGroupName `
+                --template-file infrastructure/main.bicep `
+                --parameters @"$tempParamFile"
+        }
+        finally {
+            if (Test-Path -Path $tempParamFile) {
+                Remove-Item -Path $tempParamFile -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+    finally {
+        if ($bstr -ne [IntPtr]::Zero) {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+        $secretKeyPlain = $null
+    }
 }
 
 if ($LASTEXITCODE -eq 0) {
