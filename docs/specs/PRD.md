@@ -17,10 +17,11 @@
 ### Goals
 1. Present real-time "who's on" shift data with clear clock-in status per assigned person.
 2. Offer at least two complementary visualizations (timeline calendar and sortable table) with shared filtering.
-3. Allow filtering by workgroup, remembering selections per session.
-4. Provide manual and configurable auto-refresh plus last-sync telemetry.
-5. Cache data locally to survive transient API failures and reduce load.
+3. Allow filtering by workgroup, remembering selections while the app session remains open (selection resets on hard reloads in the current build).
+4. Provide manual and configurable auto-refresh plus last-sync telemetry sourced from the most recent successful API fetch.
+5. Cache data locally so the UI can fall back to recent data when Shiftboard fetches fail.
 6. Surface contact and shift details within one click (modals, chips).
+7. Expose a GET `/api/system/health` endpoint for probes; reserve POST `/api/system/echo` for diagnostics.
 
 ### Non-Goals
 - Editing, trading, or creating shifts in Shiftboard.
@@ -35,9 +36,9 @@
 | F2 | Tabular Shift View | Sortable table with start/end times, location, assigned people chips, and status chips. | Supports ascending/descending sorting; clicking person chip opens person detail modal; manual refresh updates data + timestamps. |
 | F3 | Workgroup Filter | Global selector in header filtering both views and API requests. | Loads workgroups from cache/API; "All workgroups" default; persists selection during session; warns when no data. |
 | F4 | Shift & Person Detail Modals | On-demand overlays showing contact info, phone actions, and clock-in badges. | Modal exposes call/text actions; shift modal lists assigned people with status chips; closing returns focus to originating component. |
-| F5 | Data Refresh & Telemetry | Manual "Refresh now" button, configurable auto-refresh (off/5/10/15 min), last API sync display, fallback to cache. | "Refresh now" triggers data fetch + UI spinner; auto-refresh logs to console; last sync text distinguishes API vs cache data; errors surface toast/state. |
-| F6 | API Layer | Express API proxy exposing `/api/shifts/whos-on`, `/accounts/*`, `/workgroups/*`, `/roles/*`, `/calendar/summary`, `/system/echo`. | Endpoints return JSON with `result` + `error` shape; `whos-on` groups shifts server-side; API enforces 60s timeout, logs metrics. |
-| F7 | Local Cache | IndexedDB stores shifts/accounts/workgroups with timestamps. | Cache used when last sync < 1 minute or API unavailable; data flagged `isFreshData`. |
+| F5 | Data Refresh & Telemetry | Manual "Refresh now" button, configurable auto-refresh (off/5/10/15 min), last API sync display, fallback to cache. | "Refresh now" always forces a live API fetch and indicates loading; auto-refresh triggers the same fetch logic; last sync text reflects the timestamp of the most recent successful API response; when a fetch fails the UI shows an error state and then falls back to cache. |
+| F6 | API Layer | Express API proxy exposing `/api/shifts/whos-on`, `/accounts/*`, `/workgroups/*`, `/roles/*`, `/calendar/summary`, `GET /system/health`, and `POST /system/echo`. | Endpoints return JSON with `result` + `error` shape; `whos-on` groups shifts server-side; health probes depend on `/system/health`; request/response metrics are logged via `morgan` and console telemetry. |
+| F7 | Local Cache | IndexedDB stores shifts/accounts/workgroups with timestamps. | Cache powers offline fallback and filters; cached data is used automatically only when the live Shiftboard fetch fails; the UI attaches an `isFreshData` flag when a request returns from the API. |
 
 ## 5. Success Metrics
 - **Adoption:** 100% of IT shift captains using the app during Rodeo (tracked via unique clients or manual survey).

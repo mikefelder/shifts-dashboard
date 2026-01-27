@@ -31,7 +31,8 @@ Describes end-to-end behaviors required to recreate the HLSR Shiftboard Reportin
 | `/api/workgroups/:id/roles` | GET | Returns workgroup roles. |
 | `/api/roles/:id` and `/api/roles/list` | GET | Role lookups. |
 | `/api/calendar/summary` | GET | Aggregated stats (currently stub). |
-| `/api/system/echo` | GET | Health-check endpoint reflecting provided payload. |
+| `/api/system/health` | GET | Lightweight JSON probe returning `{ status, timestamp, uptime }` for infrastructure health checks. |
+| `/api/system/echo` | POST | Diagnostic endpoint that relays an arbitrary payload to Shiftboard `system.echo` for connectivity tests. |
 - All endpoints must return `200` success or JSON error object with `error` string plus HTTP status code (400/401/403/404/500).
 
 ### 3.3 Shift Grouping Logic
@@ -50,7 +51,7 @@ Describes end-to-end behaviors required to recreate the HLSR Shiftboard Reportin
 
 #### 3.4.2 Calendar Page (Active Shifts View)
 - Displays vertical timeline of current day.
-- Time window auto-adjusts to show active shifts ±1 hour; "full day" mode optional.
+- Time window auto-adjusts to show active shifts ±1 hour. The current build does not expose a "full day" toggle; future versions may add it if operators need the capability.
 - Shifts rendered as positioned cards with minimal overlap using custom algorithm; cards show shift name, subject, location, assigned people.
 - If >25 grouped shifts, show "Too many shifts" message with option to "Show anyway".
 - Current time indicator line across grid.
@@ -69,20 +70,20 @@ Describes end-to-end behaviors required to recreate the HLSR Shiftboard Reportin
 
 ### 3.5 Filtering & Context
 - Workgroup filter options include "All Workgroups" + alphabetical list from API/cache.
-- Selected workgroup stored in context and applied to API calls and cached queries.
-- When no workgroup selected, show entire dataset (or 50 limit fallback message).
+- Selected workgroup stored in React context and applied to all API calls while the page remains open; selections reset on hard reloads.
+- When no workgroup selected, show the entire dataset (or 50 limit fallback message).
 
 ### 3.6 Refresh Mechanics
 - Auto-refresh interval configurable (off/5/10/15 minutes). Changing interval triggers immediate refresh.
-- Manual "Refresh Now" button available when auto-refresh disabled or to override schedule.
+- Manual "Refresh Now" button is always available and forces a live API fetch.
 - Refresh operations differentiate between `loadingType` = initial vs refresh for UI states.
-- Last sync timestamp derived from local metadata; label distinguishes API vs cache usage.
+- Last sync timestamp reflects the most recent successful API response; if the latest request failed and the UI fell back to cache, the timestamp continues to show the last good call.
 
 ### 3.7 Local Cache Requirements
 - Stores entire shift dataset plus referenced accounts/workgroups after successful API fetch.
-- Cache used when last sync < 60 seconds or API call fails.
-- Provide boolean flag `isFreshData` in API responses to inform UI badges/telemetry.
-- On workgroup filter, client either filters cached data or requests server (if client caching only). Current implementation filters client-side; new stack may choose equivalent approach but must meet UX requirements.
+- Cache automatically satisfies reads only when the latest API attempt fails (e.g., Shiftboard outage); otherwise the client fetches live data even if the previous sync was recent.
+- The client appends an `isFreshData` boolean when a fetch returns from the API; cached responses set the flag to `false`.
+- Workgroup filtering is performed client-side using cached data after each fetch.
 
 ### 3.8 Error Handling
 - Client shows inline error state (centered message) when API fails and cache unavailable.
@@ -104,11 +105,11 @@ Describes end-to-end behaviors required to recreate the HLSR Shiftboard Reportin
 1. **View Current Shifts**
    1. User lands on `/` route; Workgroup filter defaults to "All".
    2. Client requests `/api/shifts/whos-on` (force sync true on first load).
-   3. Data cached and context updated; Active Shifts view renders timeline; Tabular view accessible via tab or route.
+   3. Data cached locally and context updated; Active Shifts view renders timeline; Tabular view accessible via tab or route.
 2. **Filter by Workgroup**
    1. User selects workgroup in header.
    2. Client fetches filtered data (force sync) and updates context.
-   3. Both views update; Tabular view counts filtered set.
+   3. Both views update; Tabular view counts filtered set; the selection persists until the page reloads.
 3. **Investigate Shift Details**
    1. User clicks shift card/table row.
    2. Shift Detail Modal opens showing time, location, assigned people list with clock badges.
@@ -119,8 +120,8 @@ Describes end-to-end behaviors required to recreate the HLSR Shiftboard Reportin
    3. Buttons trigger tel/sms links.
 5. **Manage Refresh**
    1. User adjusts auto-refresh interval via sidebar select.
-   2. New interval saved; immediate refresh triggered.
-   3. Timestamp text updates to "Last refreshed" message and API sync badge.
+   2. New interval saved; immediate refresh triggered that hits the API.
+   3. Timestamp text updates to "Last refreshed" message reflecting the most recent successful fetch; failures display error state before reverting to cache data.
 
 ## 5. Non-Functional Requirements (Functional Impact)
 - **Performance:** Calendar view must render <=25 shifts with animations < 500ms; degrade gracefully beyond threshold.

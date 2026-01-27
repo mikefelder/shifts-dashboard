@@ -17,8 +17,8 @@ Client UI  <->  REST API  <->  Shiftboard JSON-RPC
 2. API server translates to Shiftboard `shift.whosOn` call with `timeclock_status=true`, `extended=true`, handles pagination.
 3. API server groups shifts via deterministic key and attaches account/workgroup references.
 4. Response returned to client with `result` payload, metrics, and timing.
-5. Client stores shifts/accounts/workgroups in IndexedDB and updates context/state.
-6. Subsequent requests may read from cache if last sync < 60 seconds or if API fails.
+5. Client stores shifts/accounts/workgroups in IndexedDB, updates context/state, and tags the response with `isFreshData=true`.
+6. Subsequent requests always attempt a live API fetch; if the call fails the client serves cached data with `isFreshData=false`.
 
 ## 3. Server-Side Design
 ### 3.1 Routing & Middleware
@@ -134,7 +134,7 @@ Client UI  <->  REST API  <->  Shiftboard JSON-RPC
 ## 6. Non-Functional Requirements
 - **Performance:** End-to-end fetch/render under 6s for 10K shifts; DOM virtualization optional but recommended if dataset grows.
 - **Security:** Server must not expose Shiftboard secrets; enforce HTTPS; set HSTS via reverse proxy or middleware.
-- **Monitoring:** Log shift fetch durations, grouped counts, errors; expose health endpoint (`/api/system/echo`).
+- **Monitoring:** Log shift fetch durations, grouped counts, errors; expose GET `/api/system/health` for probes and retain POST `/api/system/echo` for diagnostic round-trips.
 - **Testing:** Provide API integration tests (mock Shiftboard) + client unit tests for grouping/formatting logic.
 - **Accessibility:** Maintain keyboard navigation, focus management, and color contrast.
 
