@@ -155,14 +155,26 @@ if ($UseKeyVault) {
 
         $parameters = $parametersJson.parameters
 
-        if (-not $parameters.appServiceName)       { $parameters.appServiceName       = @{ value = $AppServiceName } }       else { $parameters.appServiceName.value       = $AppServiceName }
-        if (-not $parameters.appServicePlanName)   { $parameters.appServicePlanName   = @{ value = $AppServicePlanName } }   else { $parameters.appServicePlanName.value   = $AppServicePlanName }
-        if (-not $parameters.location)            { $parameters.location            = @{ value = $Location } }             else { $parameters.location.value            = $Location }
-        if (-not $parameters.environment)         { $parameters.environment         = @{ value = $Environment } }          else { $parameters.environment.value         = $Environment }
-        if (-not $parameters.appServicePlanSku)   { $parameters.appServicePlanSku   = @{ value = $AppServicePlanSku } }    else { $parameters.appServicePlanSku.value   = $AppServicePlanSku }
-        if (-not $parameters.shiftboardAccessKeyId) { $parameters.shiftboardAccessKeyId = @{ value = $accessKeyId } }      else { $parameters.shiftboardAccessKeyId.value = $accessKeyId }
-        if (-not $parameters.shiftboardSecretKey) { $parameters.shiftboardSecretKey = @{ value = $secretKeyPlain } }       else { $parameters.shiftboardSecretKey.value = $secretKeyPlain }
-        if (-not $parameters.enableApplicationInsights) { $parameters.enableApplicationInsights = @{ value = $true } }      else { $parameters.enableApplicationInsights.value = $true }
+        # Define parameter mappings for cleaner assignment
+        $parameterMappings = @{
+            appServiceName = $AppServiceName
+            appServicePlanName = $AppServicePlanName
+            location = $Location
+            environment = $Environment
+            appServicePlanSku = $AppServicePlanSku
+            shiftboardAccessKeyId = $accessKeyId
+            shiftboardSecretKey = $secretKeyPlain
+            enableApplicationInsights = $true
+        }
+
+        # Update or add each parameter
+        foreach ($key in $parameterMappings.Keys) {
+            if (-not $parameters.$key) {
+                $parameters | Add-Member -MemberType NoteProperty -Name $key -Value @{ value = $parameterMappings[$key] }
+            } else {
+                $parameters.$key.value = $parameterMappings[$key]
+            }
+        }
 
         # Write to a temporary parameters file to avoid putting secrets on the command line
         $tempParamFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ("main.parameters.{0}.json" -f ([guid]::NewGuid()))

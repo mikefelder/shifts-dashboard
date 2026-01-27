@@ -57,7 +57,8 @@ if (!isDevelopment) {
     
     // Handle React routing, return all non-API requests to React app
     app.get('*', (req, res) => {
-        if (req.path && req.path.startsWith('/api')) {
+        // Protect API routes - return 404 for any unmatched API paths
+        if (req.path && req.path.toLowerCase().startsWith('/api')) {
             return res.status(404).json({ error: 'Not found' });
         }
         res.sendFile(path.join(clientBuildPath, 'index.html'));
