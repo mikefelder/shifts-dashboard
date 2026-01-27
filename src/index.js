@@ -29,8 +29,9 @@ const config = require('./config/api.config');
 const app = express()
 
 // CORS configuration
+const isDevelopment = process.env.NODE_ENV !== 'production';
 const corsOptions = {
-    origin: 'http://localhost:5173', // Vite's default port
+    origin: isDevelopment ? 'http://localhost:5173' : process.env.ALLOWED_ORIGINS?.split(',') || false,
     optionsSuccessStatus: 200
 }
 
@@ -40,7 +41,7 @@ app.use(helmet())
 app.use(express.json())
 app.use(morgan('dev'))
 
-// Routes
+// API Routes
 app.use('/api/accounts', require('./routes/account.routes'))
 app.use('/api/shifts', require('./routes/shift.routes'))
 app.use('/api/workgroups', require('./routes/workgroup.routes'))
@@ -48,6 +49,21 @@ app.use('/api/roles', require('./routes/role.routes'))
 app.use('/api/calendar', require('./routes/calendar.routes'))
 app.use('/api/system', require('./routes/system.routes'))
 // Add other routes here as needed
+
+// Serve static files from the React app in production
+if (!isDevelopment) {
+    const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
+    app.use(express.static(clientBuildPath));
+    
+    // Handle React routing, return all non-API requests to React app
+    app.get('*', (req, res) => {
+        // Protect API routes - return 404 for any unmatched API paths
+        if (req.path && req.path.toLowerCase().startsWith('/api')) {
+            return res.status(404).json({ error: 'Not found' });
+        }
+        res.sendFile(path.join(clientBuildPath, 'index.html'));
+    });
+}
 
 // Error handling
 app.use(errorHandler)
