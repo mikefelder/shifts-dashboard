@@ -28,6 +28,13 @@ if (-not (Test-Path "client\dist")) {
     }
 }
 
+# Validate client build output exists
+$clientIndexPath = Join-Path "client\dist" "index.html"
+if (-not (Test-Path $clientIndexPath)) {
+    Write-Host "Client build output not found at $clientIndexPath. Aborting deployment package creation." -ForegroundColor Red
+    exit 1
+}
+
 # Note: node_modules will be installed by Azure during deployment
 Write-Host ""
 Write-Host "Step 2: Skipping node_modules (will be installed on Azure)..." -ForegroundColor Yellow
