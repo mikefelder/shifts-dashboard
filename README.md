@@ -6,7 +6,7 @@ Web application for viewing and managing shifts using the Shiftboard API.
 
 - Real-time shift calendar view
 - Clock-in status tracking
-- Workgroup filtering for IT Committee
+- Workgroup filtering for a Committee
 - Responsive design for desktop/mobile
 
 ## Installing Node.js and npm
