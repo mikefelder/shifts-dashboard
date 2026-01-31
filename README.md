@@ -1,6 +1,6 @@
-# HLSR Shiftboard Reporting API
+# Shiftboad Shift Dashboard App
 
-Web application for viewing and managing HLSR Information Technology Committee shifts.
+Web application for viewing and managing shifts using the Shiftboard API.
 
 ## Features
 
