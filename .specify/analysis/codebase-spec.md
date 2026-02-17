@@ -814,37 +814,316 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 
 ## Deployment
 
-### Current Deployment (Azure App Service)
+### Azure-Native Deployment (Infrastructure as Code)
 
-1. **Build**:
-   ```bash
-   npm install
-   npm run build:client  # Builds client to client/dist
-   ```
+The application follows cloud-native principles with all infrastructure provisioned via Bicep templates and deployed through GitHub Actions CI/CD.
 
-2. **Production Config**:
-   - `NODE_ENV=production`
-   - Express serves static files from `client/dist`
-   - Catch-all route returns `index.html` for client routing
+#### Architecture Overview
 
-3. **Environment Variables**:
-   - `SHIFTBOARD_ACCESS_KEY_ID`
-   - `SHIFTBOARD_SECRET_KEY`
-   - `SHIFTBOARD_HOST`
-   - `SHIFTBOARD_PATH`
-   - `ALLOWED_ORIGINS` (comma-separated)
-   - `PORT` (default: 3000)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    GitHub Actions CI/CD                      │
+│  - Build: Compile TypeScript, bundle frontend               │
+│  - Test: Run unit, integration, E2E tests                   │
+│  - Deploy: Execute Bicep templates, deploy container        │
+└──────────────────────┬──────────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  Azure Resource Group                        │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         App Service Plan (B1 or higher)              │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                       ↓                                      │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │             App Service (Linux)                      │  │
+│  │  - Node.js 20 LTS runtime                            │  │
+│  │  - Serves bundled client + API                       │  │
+│  │  - Health probe: /api/system/health                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                       ↓                                      │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │            Azure Key Vault                           │  │
+│  │  - Shiftboard credentials                            │  │
+│  │  - App secrets                                       │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                       ↓                                      │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         Application Insights                         │  │
+│  │  - Telemetry & logging                               │  │
+│  │  - Performance monitoring                            │  │
+│  │  - Error tracking                                    │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
 
-4. **Azure Setup**:
-   - App Service Plan: Basic B1 or higher
-   - Node version: LTS (18.x or 20.x)
-   - Startup command: `node src/index.js`
-   - Health check: `/api/system/health`
+#### Multi-Tenancy Support
 
-### Alternative Deployments
+The application supports **configuration-driven multi-tenancy**, allowing multiple isolated instances for different organizational units (e.g., different committees within HLSR):
 
-#### Docker
+**Design Principles**:
+- **No hardcoded organization data**: All organization/committee-specific values passed via deployment parameters
+- **Resource isolation**: Each instance has dedicated App Service, Key Vault, and Application Insights resources
+- **Shared repository**: Single public codebase cloned and configured for each deployment
+- **Parameter-driven**: Bicep templates accept parameters for resource naming, credentials, and configuration
+
+**Configuration Parameters**:
+```bicep
+@description('Organization identifier (e.g., hlsr-security)')
+param organizationId string
+
+@description('Environment (dev, staging, prod)')
+param environment string = 'prod'
+
+@description('Shiftboard API credentials from Key Vault')
+@secure()
+param shiftboardAccessKey string
+
+@secure()
+param shiftboardSecretKey string
+
+@description('Application-specific settings')
+param appSettings object = {
+  organizationName: 'Security Committee'
+  timeZone: 'America/Chicago'
+  allowedOrigins: 'https://security.hlsr.com'
+}
+```
+
+**Deployment per Instance**:
+```bash
+# Deploy Security Committee instance
+az deployment group create \
+  --resource-group rg-shifts-security-prod \
+  --template-file infra/main.bicep \
+  --parameters organizationId=hlsr-security \
+               environment=prod \
+               appSettings='{"organizationName":"Security Committee"}'
+
+# Deploy Parking Committee instance  
+az deployment group create \
+  --resource-group rg-shifts-parking-prod \
+  --template-file infra/main.bicep \
+  --parameters organizationId=hlsr-parking \
+               environment=prod \
+               appSettings='{"organizationName":"Parking Committee"}'
+```
+
+#### Seasonal Operations (Cost Optimization)
+
+The application supports **elastic resource management** for seasonal operations:
+
+**Spin-Up** (Before event season):
+```bash
+# Provision infrastructure from Bicep templates (~10-15 minutes)
+az deployment group create \
+  --resource-group rg-shifts-$ORG-prod \
+  --template-file infra/main.bicep \
+  --parameters @params/$ORG.prod.json
+
+# Deploy application via GitHub Actions
+gh workflow run deploy.yml \
+  --ref main \
+  -f environment=production \
+  -f organization=$ORG
+```
+
+**Spin-Down** (After event season):
+```bash
+# Delete resource group (all resources removed)
+az group delete \
+  --name rg-shifts-$ORG-prod \
+  --yes --no-wait
+
+# Estimated monthly savings: ~$50-100 per instance (B1 App Service + Key Vault + App Insights)
+```
+
+**Automation Options**:
+- **Manual**: Run scripts before/after event season
+- **Scheduled**: Azure Automation runbooks triggered by calendar dates
+- **Cost-managed**: Use Azure Cost Management alerts to monitor spending
+
+#### Infrastructure as Code (Bicep)
+
+**Repository Structure**:
+```
+infra/
+├── main.bicep                 # Main orchestration template
+├── modules/
+│   ├── app-service.bicep      # App Service Plan + App Service
+│   ├── key-vault.bicep        # Key Vault with secrets
+│   ├── app-insights.bicep     # Application Insights
+│   └── networking.bicep       # VNet/subnet (optional for private endpoints)
+├── params/
+│   ├── dev.json               # Development environment parameters
+│   ├── staging.json           # Staging environment parameters
+│   └── prod.json              # Production environment parameters (template)
+└── scripts/
+    ├── deploy.sh              # Deployment automation script
+    ├── destroy.sh             # Cleanup script (spin-down)
+    └── validate.sh            # Pre-deployment validation
+```
+
+**Key Bicep Modules**:
+
+1. **App Service** (`modules/app-service.bicep`):
+   - App Service Plan (Linux, B1 or higher)
+   - App Service with Node.js 20 LTS runtime
+   - Application settings (Key Vault references for secrets)
+   - Health check configuration (`/api/system/health`)
+   - Custom domain + SSL certificate (optional)
+
+2. **Key Vault** (`modules/key-vault.bicep`):
+   - Soft-delete enabled
+   - Purge protection
+   - RBAC authorization
+   - Secrets: Shiftboard credentials, connection strings
+   - Access policies for App Service managed identity
+
+3. **Application Insights** (`modules/app-insights.bicep`):
+   - Log Analytics workspace
+   - Application Insights resource
+   - Integration with App Service
+   - Custom metrics and alerts
+
+**CI/CD Pipeline** (`.github/workflows/deploy.yml`):
+```yaml
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-bundle
+          path: |
+            dist/
+            client/dist/
+            package*.json
+
+  deploy-infrastructure:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - uses: azure/arm-deploy@v1
+        with:
+          scope: resourcegroup
+          resourceGroupName: ${{ secrets.RESOURCE_GROUP }}
+          template: infra/main.bicep
+          parameters: infra/params/${{ inputs.environment }}.json
+          
+  deploy-application:
+    needs: deploy-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.APP_NAME }}
+          package: app-bundle/
+```
+
+#### Environment Configuration
+
+**Required Environment Variables**:
+| Variable | Source | Description |
+|----------|--------|-------------|
+| `SHIFTBOARD_ACCESS_KEY_ID` | Key Vault | Shiftboard API access key |
+| `SHIFTBOARD_SECRET_KEY` | Key Vault | Shiftboard API secret |
+| `SHIFTBOARD_HOST` | App Setting | `api.shiftboard.com` |
+| `SHIFTBOARD_PATH` | App Setting | `/api/v1/` |
+| `ALLOWED_ORIGINS` | App Setting | CORS allowed origins (comma-separated) |
+| `PORT` | App Setting | `3000` (default) |
+| `NODE_ENV` | App Setting | `production` |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights | Auto-injected by Azure |
+
+**Bicep Integration** (Key Vault References):
+```bicep
+resource appService 'Microsoft.Web/sites@2022-09-01' = {
+  name: appName
+  properties: {
+    siteConfig: {
+      appSettings: [
+        {
+          name: 'SHIFTBOARD_ACCESS_KEY_ID'
+          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=shiftboard-access-key)'
+        }
+        {
+          name: 'SHIFTBOARD_SECRET_KEY'
+          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=shiftboard-secret-key)'
+        }
+        {
+          name: 'ALLOWED_ORIGINS'
+          value: appSettings.allowedOrigins
+        }
+        {
+          name: 'NODE_ENV'
+          value: 'production'
+        }
+      ]
+    }
+  }
+}
+```
+
+#### Production Deployment Checklist
+
+**Pre-Deployment**:
+- [ ] Bicep templates validated (`az bicep build`)
+- [ ] Parameters file configured with correct values
+- [ ] Azure subscription has sufficient quota
+- [ ] Key Vault secrets populated
+- [ ] Custom domain DNS configured (if applicable)
+- [ ] GitHub Actions secrets configured
+
+**Deployment**:
+- [ ] Infrastructure deployed via Bicep (`az deployment group create`)
+- [ ] Application deployed via GitHub Actions or Azure CLI
+- [ ] Health check endpoint returning 200 (`/api/system/health`)
+- [ ] Application Insights receiving telemetry
+- [ ] HTTPS redirect working
+- [ ] CORS configured correctly
+
+**Post-Deployment**:
+- [ ] Manual smoke test (view shifts, filter, refresh)
+- [ ] Monitor Application Insights for errors (first 2 hours)
+- [ ] Verify Key Vault secrets accessible
+- [ ] Test workgroup filtering
+- [ ] Verify cache fallback during API failure scenario
+- [ ] Document actual resource costs for cost tracking
+
+#### Alternative Deployment Options
+
+**Docker** (for local development or non-Azure hosting):
 ```dockerfile
+# Backend Dockerfile
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
@@ -855,10 +1134,32 @@ EXPOSE 3000
 CMD ["node", "src/index.js"]
 ```
 
-#### Static + Serverless
-- Frontend: Vercel/Netlify (Vite build)
-- Backend: Azure Functions or AWS Lambda (Express via adapter)
-- Cache: Client-only IndexedDB
+**Docker Compose** (local full-stack):
+```yaml
+version: '3.8'
+services:
+  backend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SHIFTBOARD_ACCESS_KEY_ID=${SHIFTBOARD_ACCESS_KEY_ID}
+      - SHIFTBOARD_SECRET_KEY=${SHIFTBOARD_SECRET_KEY}
+  
+  # Optional: Redis for future session management
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+```
+
+**Static Hosting + Serverless** (alternative architecture):
+- Frontend: Azure Static Web Apps or CDN
+- Backend: Azure Functions (Express via adapter)
+- Storage: Cosmos DB or Table Storage (if needed)
+
+**Note**: Current focus is Azure App Service deployment for simplicity and operational efficiency.
 
 ## Security Considerations
 
@@ -966,7 +1267,7 @@ Build components in this order:
 
 ## Constitution Compliance
 
-This specification is derived from the project constitution (v1.0.0, ratified 2026-02-17). All principles are reflected in the implementation:
+This specification is derived from the project constitution (v1.1.0, amended 2026-02-17). All principles are reflected in the implementation:
 
 - **I. API-First Architecture**: ✅ Express REST API proxies Shiftboard
 - **II. Resilient Data Access**: ✅ IndexedDB cache with automatic fallback
@@ -974,6 +1275,7 @@ This specification is derived from the project constitution (v1.0.0, ratified 20
 - **IV. User-Centered Design**: ✅ Multiple views, WCAG AA, responsive
 - **V. Security & Compliance**: ✅ PII protection, HTTPS, credential isolation
 - **VI. Observable Systems**: ✅ Metrics, health checks, structured logging
+- **VII. Cloud-Native Infrastructure**: ✅ Bicep IaC, GitHub Actions CI/CD, multi-tenant config, elastic resources
 
 Any future enhancements must comply with these principles or propose constitutional amendments.
 

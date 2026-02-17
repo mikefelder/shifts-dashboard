@@ -1,34 +1,41 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version Change: [Template] → 1.0.0
-Type: Initial Ratification
+Version Change: 1.0.0 → 1.1.0
+Type: Minor Amendment (New Principle Added)
 Date: 2026-02-17
 
 Principles Defined:
-  1. API-First Architecture (new)
-  2. Resilient Data Access (new)
-  3. Real-Time Operations (new)
-  4. User-Centered Design (new)
-  5. Security & Compliance (new)
-  6. Observable Systems (new)
+  1. API-First Architecture (unchanged)
+  2. Resilient Data Access (unchanged)
+  3. Real-Time Operations (unchanged)
+  4. User-Centered Design (unchanged)
+  5. Security & Compliance (unchanged)
+  6. Observable Systems (unchanged)
+  7. Cloud-Native Infrastructure (NEW)
 
-Sections Added:
-  - Technical Standards
-  - Quality & Testing
+Sections Modified:
+  - Technical Standards (expanded with Azure-native, IaC, multi-tenancy requirements)
 
-Templates Status:
-  ✅ plan-template.md - Constitution Check section aligns with principles
-  ✅ spec-template.md - User story prioritization supports incremental delivery
-  ✅ tasks-template.md - Task organization matches principle-driven development
+Impact Analysis:
+  ✅ Existing code compatible (additive change only)
+  ⚠️  New deployment requirements:
+      - Bicep templates required for infrastructure
+      - GitHub Actions CI/CD pipeline required
+      - Configuration-driven multi-tenancy architecture needed
+      - Azure Key Vault integration for secrets
 
 Follow-up Actions:
-  - None required; all templates are consistent with constitution
+  - Update rebuild-plan.md Phase 0 to include Bicep scaffolding (T001-T005)
+  - Update rebuild-plan.md Phase 4 to replace manual Azure setup with IaC deployment
+  - Update codebase-spec.md deployment section
+  - Update TIMELINE.md to reflect infrastructure work
 
 Notes:
-  - This is the initial ratification based on existing project requirements
-  - Principles derived from PRD, Functional Spec, and Technical Specification
-  - Future amendments must follow semantic versioning (MAJOR.MINOR.PATCH)
+  - Amendment driven by operational requirements: seasonal operations (cost optimization),
+    multi-committee support (multi-tenancy), and public code sharing (generic architecture)
+  - Aligns with Azure best practices and modern DevOps principles
+  - Version bump: MINOR (new principle added without breaking existing principles)
 -->
 
 # Shifts Dashboard Constitution
@@ -107,16 +114,35 @@ The system MUST provide operational visibility for debugging and performance mon
 
 **Rationale**: Operations teams need visibility into system performance and error conditions. Metrics enable capacity planning; health probes support automated monitoring; detailed logging accelerates incident response.
 
+### VII. Cloud-Native Infrastructure
+
+The system MUST be deployable as cloud-native infrastructure with configuration-driven multi-tenancy.
+
+- All Azure infrastructure provisioned via Bicep templates (Infrastructure as Code)
+- CI/CD automated through GitHub Actions for consistent, repeatable deployments
+- Environment configuration drives instance isolation (no hardcoded organization/committee data)
+- Resource provisioning supports elastic scaling (easy spin-up/down for seasonal operations)
+- Application architecture is Shiftboard-generic, enabling reuse by any organization via public repository clone
+- Secrets managed through Azure Key Vault, never in code or CI/CD definitions
+- Deployment configuration accepts parameters for committee/organization-specific instances
+
+**Rationale**: Seasonal operations (e.g., HLSR Rodeo) require cost-effective resource management through automated provisioning and decommissioning. Multi-tenant architecture enables multiple independent instances for different organizational units. Infrastructure as Code ensures reproducible deployments, reduces manual errors, and enables version-controlled infrastructure changes. Configuration-driven design allows public code sharing without exposing organizational specifics.
+
 ## Technical Standards
 
 The following constraints apply stack-agnostic requirements for any implementation:
 
 - **Technology Stack**: Node.js/Express API (current); browser-based SPA with IndexedDB support; any replacement must maintain REST API contract
+- **Cloud Platform**: Azure-native deployment (App Service, Key Vault, Application Insights); infrastructure provisioned via Bicep templates
+- **CI/CD**: GitHub Actions for automated build, test, and deployment pipelines
+- **Multi-Tenancy**: Configuration-driven instances supporting isolated deployments per organizational unit (e.g., different committees)
+- **Configuration**: Environment-specific parameters (organization name, Shiftboard credentials, resource names) passed via deployment parameters or Key Vault references
+- **Infrastructure as Code**: All Azure resources defined in versioned Bicep modules; manual portal changes prohibited in production
 - **Time Zone**: All timestamps displayed in `America/Chicago`; server enforces consistent conversions from Shiftboard UTC responses
 - **Date Formatting**: Use `MMM d, yyyy` and `h:mm a` patterns for operator familiarity; changes require user acceptance testing
 - **Pagination**: Batch sizes up to 100 pages with guard limits to prevent runaway loops; log warnings when approaching limits
 - **Error Responses**: JSON format `{error: <string>}` with appropriate HTTP status codes (400/401/403/404/500)
-- **Deployment**: Azure App Service compatible; production mode serves static client from backend; environment configuration via .env or Key Vault
+- **Resource Management**: Support for automated spin-up/spin-down to minimize costs during off-season; infrastructure templates enable rapid provisioning (<15 minutes from parameters to running app)
 
 ## Quality & Testing
 
@@ -144,4 +170,4 @@ This constitution is the authoritative source for project architectural principl
 - **Compliance Review**: All PRs must either comply with constitution or explicitly justify temporary deviations with remediation plans
 - **Relationship to Specs**: PRD, Functional Spec, and Technical Specification define *what* to build; constitution defines *how* we build
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-17 | **Last Amended**: 2026-02-17
+**Version**: 1.1.0 | **Ratified**: 2026-02-17 | **Last Amended**: 2026-02-17
