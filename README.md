@@ -164,7 +164,7 @@ npm run dev
 
 ```bash
 # Production mode (Nginx + Node)
-docker-compose up
+docker-compose --profile prod up
 
 # Development mode (hot-reload for both services, dev-only)
 docker-compose --profile dev up backend-dev frontend-dev
