@@ -166,8 +166,8 @@ npm run dev
 # Production mode (Nginx + Node)
 docker-compose up
 
-# Development mode (hot-reload for both services)
-docker-compose --profile dev up
+# Development mode (hot-reload for both services, dev-only)
+docker-compose --profile dev up backend-dev frontend-dev
 
 # Build images from scratch
 docker-compose build
