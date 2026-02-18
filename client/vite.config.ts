@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -26,7 +27,6 @@ export default defineConfig({
       },
     },
   },
-  // @ts-expect-error - Vitest extends Vite config with test property at runtime
   test: {
     globals: true,
     environment: 'jsdom',
