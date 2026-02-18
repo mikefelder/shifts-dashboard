@@ -533,19 +533,19 @@ frontend/
 **Owner**: Frontend Developer  
 **Effort**: 4 hours
 
-- [ ] Create Vite project: `npm create vite@latest frontend -- --template react-ts`
-- [ ] Install dependencies (MUI, react-router-dom, Axios, idb, date-fns, Zustand)
-- [ ] Install dev dependencies (Vitest, Testing Library, Playwright, MSW)
-- [ ] Configure `vite.config.ts` (proxy to backend, build optimizations)
-- [ ] Configure `vitest.config.ts` (coverage: 70%)
-- [ ] Configure Playwright (`npx playwright install`)
-- [ ] Add `npm scripts`: dev, build, test, test:e2e
+- [x] Create Vite project: `npm create vite@latest frontend -- --template react-ts`
+- [x] Install dependencies (MUI, react-router-dom, Axios, idb, date-fns, Zustand)
+- [x] Install dev dependencies (Vitest, Testing Library, Playwright, MSW)
+- [x] Configure `vite.config.ts` (proxy to backend, build optimizations)
+- [x] Configure `vitest.config.ts` (coverage: 70%)
+- [x] Configure Playwright (`npx playwright install`)
+- [x] Add `npm scripts`: dev, build, test, test:e2e
 
 **Acceptance**:
 
-- `npm run dev` starts Vite dev server on port 5173
-- `npm test` runs Vitest (0 tests)
-- Playwright launches browser (`npm run test:e2e`)
+- [x] `npm run dev` starts Vite dev server on port 5173
+- [x] `npm test` runs Vitest (0 tests)
+- [x] Playwright launches browser (`npm run test:e2e`)
 
 ---
 
