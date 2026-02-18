@@ -14,21 +14,22 @@ This directory contains implementation plans for the Shifts Dashboard project.
 
 #### Plan Overview
 
-| Phase | Duration | Focus | Key Deliverables |
-|-------|----------|-------|------------------|
-| **Phase 0: Setup** | 1-2 weeks | Project scaffolding, tooling, CI/CD | Docker setup, test frameworks, pipelines |
-| **Phase 1: Backend** | 2 weeks | API layer, Shiftboard integration | 13 endpoints, shift grouping, 70% coverage |
-| **Phase 2: Frontend** | 2 weeks | UI components, IndexedDB cache | Calendar + table views, modals, E2E tests |
-| **Phase 3: Polish** | 1 week | Integration, accessibility, security | A11y audit, performance, documentation |
-| **Phase 4: Deploy** | 1 week | Production deployment, monitoring | Azure deployment, monitoring dashboards |
+| Phase                 | Duration  | Focus                                | Key Deliverables                           |
+| --------------------- | --------- | ------------------------------------ | ------------------------------------------ |
+| **Phase 0: Setup**    | 1-2 weeks | Project scaffolding, tooling, CI/CD  | Docker setup, test frameworks, pipelines   |
+| **Phase 1: Backend**  | 2 weeks   | API layer, Shiftboard integration    | 13 endpoints, shift grouping, 70% coverage |
+| **Phase 2: Frontend** | 2 weeks   | UI components, IndexedDB cache       | Calendar + table views, modals, E2E tests  |
+| **Phase 3: Polish**   | 1 week    | Integration, accessibility, security | A11y audit, performance, documentation     |
+| **Phase 4: Deploy**   | 1 week    | Production deployment, monitoring    | Azure deployment, monitoring dashboards    |
 
 **Total**: 8-10 weeks + 2 week contingency
 
 #### Constitution Compliance
 
 ✅ All 6 constitutional principles verified and incorporated:
+
 - I. API-First Architecture
-- II. Resilient Data Access  
+- II. Resilient Data Access
 - III. Real-Time Operations
 - IV. User-Centered Design
 - V. Security & Compliance
@@ -77,12 +78,10 @@ The plan is based on comprehensive codebase analysis:
   - Complete feature specifications
   - Architecture diagrams
   - Implementation details for 9 core features
-  
 - **[../analysis/api-contracts.md](../analysis/api-contracts.md)** (850 lines)
   - Technology-agnostic API specifications
   - Request/response schemas for 13 endpoints
   - Shift grouping algorithm pseudocode
-  
 - **[../analysis/enhancements.md](../analysis/enhancements.md)** (750 lines)
   - 15 enhancement opportunities
   - 5-phase roadmap (post-launch)
@@ -103,6 +102,7 @@ The plan is based on comprehensive codebase analysis:
 #### Post-Launch (Week 9+)
 
 After production release, implement quick wins from enhancements:
+
 - Week 10-12: Dark mode, keyboard shortcuts, CSV export, analytics (5 days total)
 - Month 4-6: PWA, advanced filtering, search, performance optimization (11 days)
 
@@ -113,24 +113,28 @@ See [../analysis/enhancements.md](../analysis/enhancements.md) for full roadmap.
 ## Using This Plan
 
 ### For Project Managers
+
 - Review timeline and milestones
 - Assign resources (2 FTE + part-time QA)
 - Schedule weekly demos
 - Track against success criteria
 
 ### For Developers
+
 - Follow phase tasks sequentially
 - Reference specs in `../analysis/` for implementation details
 - Run tests frequently (70% coverage minimum)
 - Update plan if tasks blocked
 
 ### For QA Engineers
+
 - Set up test infrastructure in Phase 0
 - Write contract tests in Phase 1
 - Write E2E tests in Phase 2
 - Conduct accessibility audit in Phase 3
 
 ### For Stakeholders
+
 - Review Executive Summary and timeline
 - Approve plan before kickoff
 - Attend weekly demos
@@ -141,12 +145,14 @@ See [../analysis/enhancements.md](../analysis/enhancements.md) for full roadmap.
 ## Plan Maintenance
 
 **Update Triggers**:
+
 - ✅ Task completed → Mark task as done
 - ✅ Blocker discovered → Document in Risk Management
 - ✅ Timeline slips → Adjust phase dates + add contingency
 - ✅ New requirement → Evaluate scope impact, update plan
 
 **Review Schedule**:
+
 - **Weekly**: Review progress against plan in team meeting
 - **Phase End**: Review phase completion gates, adjust next phase if needed
 - **Post-Launch**: Retrospective and plan update for enhancements

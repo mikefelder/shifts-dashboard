@@ -16,7 +16,7 @@
 
 Week 1-2    │ ████████████████ PHASE 0: SETUP & FOUNDATION
             │ • Project scaffolding
-            │ • Docker & CI/CD setup  
+            │ • Docker & CI/CD setup
             │ • Bicep infrastructure templates
             │ • Testing frameworks configured
             │ Deliverable: Development environment + IaC ready
@@ -66,6 +66,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Focus**: Development environment, tooling, CI/CD pipelines, Infrastructure as Code
 
 **Key Tasks** (6 tasks):
+
 - T001: Repository & tooling setup (ESLint, Prettier, Husky)
 - T002: Backend project initialization (Node.js + TypeScript + Express)
 - T003: Frontend project initialization (React + TypeScript + Vite)
@@ -76,6 +77,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Team**: Primarily DevOps Lead
 
 **Deliverables**:
+
 - ✅ Project structure created
 - ✅ Docker Compose working
 - ✅ CI/CD pipelines green
@@ -91,6 +93,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Focus**: API implementation, Shiftboard integration, business logic
 
 **Key Tasks** (9 tasks):
+
 - T101: Shiftboard HMAC authentication utility
 - T102: Pagination utility (multi-page fetching)
 - T103: Shift grouping algorithm
@@ -104,6 +107,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Team**: Backend Developer + QA Engineer (0.5)
 
 **Deliverables**:
+
 - ✅ 13 REST endpoints functional
 - ✅ Shift grouping <50ms for 1000 shifts
 - ✅ 70% test coverage
@@ -118,6 +122,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Focus**: UI components, state management, IndexedDB cache
 
 **Key Tasks** (10 tasks):
+
 - T201: IndexedDB service (4 object stores)
 - T202: API service (with cache fallback)
 - T203: Theme & layout shell
@@ -132,6 +137,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Team**: Frontend Developer + QA Engineer (0.5)
 
 **Deliverables**:
+
 - ✅ Calendar view with dynamic time windows
 - ✅ Tabular view with sorting
 - ✅ IndexedDB cache functional
@@ -147,6 +153,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Focus**: Quality assurance, accessibility, performance, security
 
 **Key Tasks** (6 tasks):
+
 - T301: Integration testing (frontend + backend + mocked Shiftboard)
 - T302: Accessibility audit (Axe DevTools, keyboard nav, screen reader)
 - T303: Performance optimization (lazy loading, memoization, Lighthouse)
@@ -157,6 +164,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Team**: All hands (2 FTE)
 
 **Deliverables**:
+
 - ✅ Integration tests passing
 - ✅ 0 accessibility violations
 - ✅ Lighthouse Performance >90
@@ -172,6 +180,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Focus**: Infrastructure provisioning, production deployment, monitoring, user training
 
 **Key Tasks** (5 tasks):
+
 - T401: Infrastructure deployment via Bicep (Container Apps, ACR, Key Vault, App Insights)
 - T402: Monitoring setup (Application Insights dashboards, alerts)
 - T403: Logging enhancement (structured JSON logs, correlation IDs)
@@ -181,6 +190,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Team**: DevOps Lead + QA Engineer
 
 **Deliverables**:
+
 - ✅ Infrastructure provisioned via Bicep
 - ✅ Application live on Azure
 - ✅ Monitoring dashboards active
@@ -207,26 +217,28 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 ```
 
 **Core Team** (minimum viable):
+
 - 1 Senior Full-Stack Developer (Backend focus)
 - 1 Frontend Developer
 - 1 QA Engineer (part-time, 0.5 FTE)
 
 **Extended Team** (optimal):
+
 - Add: 1 DevOps Engineer (part-time, 0.5 FTE)
 
 ---
 
 ## Key Milestones
 
-| Milestone | Date | Deliverable |
-|-----------|------|-------------|
-| **M0: Kickoff** | Week 1 | Team assembled, plan approved |
-| **M1: Dev Environment Ready** | End of Week 2 | Docker + CI/CD working |
-| **M2: API Complete** | End of Week 4 | 13 endpoints + tests |
-| **M3: UI Complete** | End of Week 6 | Both views + E2E tests |
-| **M4: Production-Ready** | End of Week 7 | All quality gates passed |
-| **M5: Go-Live** | End of Week 8 | Application in production |
-| **M6: Stabilized** | End of Week 10 | Bug fixes complete, monitoring validated |
+| Milestone                     | Date           | Deliverable                              |
+| ----------------------------- | -------------- | ---------------------------------------- |
+| **M0: Kickoff**               | Week 1         | Team assembled, plan approved            |
+| **M1: Dev Environment Ready** | End of Week 2  | Docker + CI/CD working                   |
+| **M2: API Complete**          | End of Week 4  | 13 endpoints + tests                     |
+| **M3: UI Complete**           | End of Week 6  | Both views + E2E tests                   |
+| **M4: Production-Ready**      | End of Week 7  | All quality gates passed                 |
+| **M5: Go-Live**               | End of Week 8  | Application in production                |
+| **M6: Stabilized**            | End of Week 10 | Bug fixes complete, monitoring validated |
 
 ---
 
@@ -235,29 +247,34 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 ### By Phase 4 Completion
 
 **Code Quality**:
+
 - ✅ 70%+ test coverage (backend + frontend)
 - ✅ 100% contract tests passing (13 endpoints)
 - ✅ 0 ESLint errors
 - ✅ TypeScript strict mode enabled
 
 **Performance**:
+
 - ✅ API response time: p95 <2s for /api/shifts/whos-on
 - ✅ Shift grouping: <50ms for 1000 shifts
 - ✅ Table render: <300ms for 100 shifts
 - ✅ Lighthouse Performance score: >90
 
 **Accessibility**:
+
 - ✅ WCAG AA compliance (0 Axe violations)
 - ✅ Keyboard navigation functional
 - ✅ Screen reader compatible
 
 **Security**:
+
 - ✅ HTTPS enforced
 - ✅ Rate limiting active (100 req/min)
 - ✅ Content Security Policy configured
 - ✅ No credentials in source code
 
 **Production Health**:
+
 - ✅ Uptime: 99.5%+ (measured)
 - ✅ Error rate: <0.1% of requests
 - ✅ Monitoring dashboards live
@@ -269,18 +286,18 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 
 ### High Risks
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| **Shiftboard API changes** | Medium | High | Contract tests detect breaks; maintain fallback |
-| **Performance issues (large datasets)** | Medium | Medium | Test with 1000-shift dataset; plan virtualization |
-| **Deployment issues** | Medium | High | Test production build locally; deploy to staging first |
+| Risk                                    | Probability | Impact | Mitigation                                             |
+| --------------------------------------- | ----------- | ------ | ------------------------------------------------------ |
+| **Shiftboard API changes**              | Medium      | High   | Contract tests detect breaks; maintain fallback        |
+| **Performance issues (large datasets)** | Medium      | Medium | Test with 1000-shift dataset; plan virtualization      |
+| **Deployment issues**                   | Medium      | High   | Test production build locally; deploy to staging first |
 
 ### Medium Risks
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| **Missing test coverage** | High | Medium | Block merges on <70% coverage |
-| **Browser cache corruption** | Low | Medium | Implement cache versioning; add "Clear Cache" button |
+| Risk                         | Probability | Impact | Mitigation                                           |
+| ---------------------------- | ----------- | ------ | ---------------------------------------------------- |
+| **Missing test coverage**    | High        | Medium | Block merges on <70% coverage                        |
+| **Browser cache corruption** | Low         | Medium | Implement cache versioning; add "Clear Cache" button |
 
 All risks have documented mitigation strategies in the full plan.
 
@@ -308,27 +325,31 @@ Total:                                    50 FTE-weeks (with DevOps)
 
 **Azure Container Apps (Scale-to-Zero Model)**:
 
-| Period | Monthly Cost | Notes |
-|--------|--------------|-------|
-| **Active Season** (traffic) | ~$10-15/month | Container Apps compute + ACR |
-| **Off-Season** (scale-to-zero) | ~$1-3/month | Container Apps Environment + Log Analytics only |
-| **Off-Season** (deleted) | $0/month | Full infrastructure removal |
+| Period                         | Monthly Cost  | Notes                                           |
+| ------------------------------ | ------------- | ----------------------------------------------- |
+| **Active Season** (traffic)    | ~$10-15/month | Container Apps compute + ACR                    |
+| **Off-Season** (scale-to-zero) | ~$1-3/month   | Container Apps Environment + Log Analytics only |
+| **Off-Season** (deleted)       | $0/month      | Full infrastructure removal                     |
 
 **Additional Shared Resources**:
+
 - **Azure Container Registry**: ~$5/month (Basic tier, shared across instances)
 - **Azure Application Insights**: ~$10-20/month (based on usage, can be shared)
 - **Domain + SSL**: ~$15/year (if custom domain used)
 
 **Cost Comparison** (Annual, per instance, 3-month active season):
+
 - **Container Apps (scale-to-zero)**: ~$48/year (vs ~$156 for always-on App Service)
 - **69% cost savings** due to scale-to-zero capability
 
 **Multi-Instance Example** (3 committees, 3-month season):
+
 - 3 instances × $48/year = ~$144/year total
 - Shared ACR + monitoring ÷ 3 = ~$8/year per instance
 - **Total per instance**: ~$52/year
 
 **Estimated Monthly Infra** (Single instance):
+
 - Development: $15-20/month (always-on for testing)
 - Production (active): $10-15/month
 - Production (idle): $1-3/month
@@ -338,6 +359,7 @@ Total:                                    50 FTE-weeks (with DevOps)
 ## Post-Launch Plan (Week 9+)
 
 ### Week 9-10: Stabilization
+
 - Monitor production metrics (uptime, error rate, performance)
 - Fix high-priority bugs
 - Gather user feedback
@@ -345,14 +367,18 @@ Total:                                    50 FTE-weeks (with DevOps)
 - Update documentation
 
 ### Week 11-12: Quick Wins (5 days dev time)
+
 Implement fast enhancements:
+
 - ✨ Dark mode (4 hours)
 - ✨ Keyboard shortcuts (4 hours)
 - ✨ CSV export (1 day)
 - ✨ Analytics integration (4 hours)
 
 ### Month 4-6: Phase 5 Enhancements (11 days dev time)
+
 Implement high-priority improvements:
+
 - 🚀 **E1**: Offline-First PWA (4 days)
 - 🔍 **E2**: Advanced Filtering UI (2 days)
 - 🔎 **E3**: Search Functionality (2 days)
@@ -366,14 +392,14 @@ See [enhancements.md](../analysis/enhancements.md) for full roadmap (15 opportun
 
 ### ✅ All 6 Principles Verified
 
-| Principle | Status | Implementation |
-|-----------|--------|----------------|
-| **I. API-First Architecture** | ✅ PASS | Express REST API; credentials isolated |
-| **II. Resilient Data Access** | ✅ PASS | IndexedDB cache with automatic fallback |
-| **III. Real-Time Operations** | ✅ PASS | Manual + auto-refresh; timestamp tracking |
-| **IV. User-Centered Design** | ✅ PASS | Multiple views; WCAG AA; responsive |
-| **V. Security & Compliance** | ✅ PASS | PII in modals; HTTPS; env-based credentials |
-| **VI. Observable Systems** | ✅ PASS | Metrics, structured logs, health checks |
+| Principle                     | Status  | Implementation                              |
+| ----------------------------- | ------- | ------------------------------------------- |
+| **I. API-First Architecture** | ✅ PASS | Express REST API; credentials isolated      |
+| **II. Resilient Data Access** | ✅ PASS | IndexedDB cache with automatic fallback     |
+| **III. Real-Time Operations** | ✅ PASS | Manual + auto-refresh; timestamp tracking   |
+| **IV. User-Centered Design**  | ✅ PASS | Multiple views; WCAG AA; responsive         |
+| **V. Security & Compliance**  | ✅ PASS | PII in modals; HTTPS; env-based credentials |
+| **VI. Observable Systems**    | ✅ PASS | Metrics, structured logs, health checks     |
 
 **No constitutional violations identified.**
 
@@ -384,6 +410,7 @@ All implementations align with project principles as defined in [constitution.md
 ## Technology Stack Summary
 
 ### Backend
+
 - **Language**: Node.js 20.x LTS + TypeScript 5.2+
 - **Framework**: Express 4.19+
 - **Authentication**: HMAC SHA-1 (jssha) for Shiftboard
@@ -392,6 +419,7 @@ All implementations align with project principles as defined in [constitution.md
 - **Testing**: Jest 29.7+ + Supertest 6.3+
 
 ### Frontend
+
 - **Framework**: React 18.2+ + TypeScript 5.2+
 - **Build**: Vite 5.0+
 - **UI**: Material-UI (@mui/material) 5.15+
@@ -401,6 +429,7 @@ All implementations align with project principles as defined in [constitution.md
 - **Testing**: Vitest 1.2+ + React Testing Library 14.1+ + Playwright 1.40+
 
 ### Infrastructure
+
 - **Containers**: Docker + Docker Compose
 - **CI/CD**: GitHub Actions
 - **Deployment**: Azure Container Apps (Linux containers, scale-to-zero)
@@ -412,21 +441,25 @@ All implementations align with project principles as defined in [constitution.md
 ## How to Get Started
 
 ### 1. Review & Approve This Plan
+
 - **Audience**: Stakeholders, project sponsors
 - **Action**: Review timeline, budget, success criteria → Approve to proceed
 
 ### 2. Assemble Team
+
 - **Roles Needed**: 1 Backend Dev, 1 Frontend Dev, 1 QA Engineer (part-time)
 - **Action**: Assign developers to roles; confirm availability for 8-10 weeks
 
 ### 3. Schedule Kickoff Meeting
-- **Agenda**: 
+
+- **Agenda**:
   - Plan review (1 hour)
   - Q&A session
   - Assign Phase 0 tasks
   - Establish communication channels (Slack, standups, demos)
 
 ### 4. Begin Phase 0
+
 - **First Tasks**: T001-T005 (project setup)
 - **Target**: Complete in 1-2 weeks
 - **Next Check-in**: End of Phase 0 (review dev environment setup)
@@ -438,6 +471,7 @@ All implementations align with project principles as defined in [constitution.md
 **For technical questions**: Review the full [rebuild-plan.md](./rebuild-plan.md) (8,000 words, comprehensive)
 
 **For specification details**: See [.specify/analysis/](../analysis/) directory:
+
 - [codebase-spec.md](../analysis/codebase-spec.md) - Feature specifications
 - [api-contracts.md](../analysis/api-contracts.md) - API contracts
 - [enhancements.md](../analysis/enhancements.md) - Post-launch roadmap

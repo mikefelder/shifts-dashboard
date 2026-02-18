@@ -169,6 +169,6 @@ This constitution is the authoritative source for project architectural principl
   - **MINOR**: New principles/sections added, material expansions to existing guidance
   - **PATCH**: Clarifications, wording improvements, non-semantic refinements
 - **Compliance Review**: All PRs must either comply with constitution or explicitly justify temporary deviations with remediation plans
-- **Relationship to Specs**: PRD, Functional Spec, and Technical Specification define *what* to build; constitution defines *how* we build
+- **Relationship to Specs**: PRD, Functional Spec, and Technical Specification define _what_ to build; constitution defines _how_ we build
 
 **Version**: 1.1.0 | **Ratified**: 2026-02-17 | **Last Amended**: 2026-02-17

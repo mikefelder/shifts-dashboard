@@ -11,12 +11,14 @@ This document catalogs enhancement opportunities discovered during codebase anal
 ## Priority Framework
 
 ### Priority Levels
+
 - **P0 (Critical)**: Blocks production use or violates constitution
 - **P1 (High)**: Significant value with reasonable effort
 - **P2 (Medium)**: Nice-to-have with moderate effort
 - **P3 (Low)**: Polish items or high-effort/low-impact features
 
 ### Effort Estimation
+
 - **XS**: <4 hours
 - **S**: 1-2 days
 - **M**: 3-5 days
@@ -32,6 +34,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Convert to Progressive Web App with service worker.
 
 **Features**:
+
 - Service worker with cache-first strategy for API responses
 - App manifest for install prompt (Add to Home Screen)
 - Background sync for queued refresh attempts
@@ -39,12 +42,14 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - Pre-cache critical assets (fonts, icons, framework code)
 
 **Benefits**:
+
 - Faster perceived load times (instant cache hits)
 - True offline mode (works without connectivity)
 - Mobile home screen icon for quick access
 - Reduced API load through intelligent caching
 
 **Technical Approach**:
+
 - Use Workbox for service worker generation (Vite plugin available)
 - Cache strategies:
   - **API responses**: Network-first with 5-minute cache fallback
@@ -55,17 +60,20 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: M (3-4 days)
 
 **Constitution Alignment**:
+
 - ✅ II. Resilient Data Access (enhanced offline capability)
 - ✅ III. Real-Time Operations (maintains freshness with network-first)
 - ✅ IV. User-Centered Design (installable, app-like experience)
 
 **Acceptance Criteria**:
+
 - [ ] App installable on mobile/desktop
 - [ ] Works offline with cached data
 - [ ] Shows toast when new version available
 - [ ] Lighthouse PWA score >90
 
 **Risks**:
+
 - Cache invalidation complexity
 - Service worker debugging challenges
 - Browser compatibility (95%+ modern browsers)
@@ -79,6 +87,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Multi-dimensional filtering with visual chips.
 
 **Features**:
+
 - Filter panel with sections:
   - **Workgroups**: Multi-select checkbox list
   - **Clock-in Status**: All / Clocked In / Not Clocked In / Partial
@@ -91,12 +100,14 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - Count of visible/total shifts displayed
 
 **Benefits**:
+
 - Find specific shifts faster (e.g., "unstaffed arena shifts 2-6pm")
 - Share filtered views via URL
 - Reduce cognitive load by hiding irrelevant shifts
 - Support different operator workflows
 
 **Technical Approach**:
+
 - Implement filter reducer in React state
 - Apply filters client-side to cached dataset
 - Use `react-router-dom` search params for persistence
@@ -106,10 +117,12 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: S (1-2 days)
 
 **Constitution Alignment**:
+
 - ✅ IV. User-Centered Design (multiple operational use cases)
 - ✅ III. Real-Time Operations (instant client-side filtering)
 
 **Acceptance Criteria**:
+
 - [ ] Can combine multiple filters (AND logic)
 - [ ] Filters applied instantly without API call
 - [ ] Active filters visible as removable chips
@@ -125,6 +138,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Fuzzy search across people, shifts, locations.
 
 **Features**:
+
 - Global search input in header (keyboard shortcut: `/`)
 - Search across:
   - Person names (screen name, first/last)
@@ -137,11 +151,13 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - Recent searches stored in localStorage
 
 **Benefits**:
+
 - Find specific person/shift in <5 seconds
 - Keyboard-driven navigation for power users
 - Reduces need for extensive scrolling/filtering
 
 **Technical Approach**:
+
 - Use `fuse.js` for fuzzy search (5KB gzipped)
 - Index: `[person names, shift names, locations, subjects]`
 - Debounce search input (300ms)
@@ -150,10 +166,12 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: S (1-2 days)
 
 **Constitution Alignment**:
+
 - ✅ IV. User-Centered Design (accessibility for different workflows)
 - ✅ III. Real-Time Operations (instant search on cached data)
 
 **Acceptance Criteria**:
+
 - [ ] Search returns results in <100ms
 - [ ] Fuzzy matching handles typos
 - [ ] Keyboard shortcut opens search
@@ -169,6 +187,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Browser push notifications for critical events.
 
 **Features**:
+
 - Opt-in notification permission prompt
 - Notification triggers:
   - Shift becomes unstaffed (assigned person removed)
@@ -181,11 +200,13 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - Notification preferences page (enable/disable by event type)
 
 **Benefits**:
+
 - Proactive alerts reduce response time to coverage issues
 - Reduces need for constant manual refreshing
 - Critical for shift captains during event operations
 
 **Technical Approach**:
+
 - Backend: WebSocket or Server-Sent Events (SSE) for real-time updates
   - Alternative: Long polling (simpler, less efficient)
 - Frontend: Browser Push API
@@ -198,14 +219,17 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: M (4-5 days)
 
 **Dependencies**:
+
 - Requires backend enhancement (WebSocket/SSE endpoint)
 - May require Shiftboard webhook integration (preferred) or polling
 
 **Constitution Alignment**:
+
 - ✅ III. Real-Time Operations (proactive push vs reactive pull)
 - ✅ IV. User-Centered Design (reduce cognitive burden)
 
 **Acceptance Criteria**:
+
 - [ ] Notifications delivered within 30s of event
 - [ ] Clicking notification focuses app and opens relevant modal
 - [ ] Works on desktop Chrome, Firefox, Edge
@@ -213,6 +237,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - [ ] User can disable specific event types
 
 **Risks**:
+
 - Push permission denial rate (users may decline)
 - Battery impact on mobile (mitigate with efficient connection)
 - Requires persistent backend (not stateless)
@@ -226,6 +251,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Date range selector and historical shift analysis.
 
 **Features**:
+
 - Date range picker in header (default: today)
 - Historical shift views:
   - Calendar view for past dates
@@ -241,12 +267,14 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - "Compare Dates" feature (side-by-side or overlay)
 
 **Benefits**:
+
 - Operational insights for planning future events
 - Identify patterns (which shifts hard to staff?)
 - Volunteer recognition (who shows up consistently?)
 - Compliance reporting for sponsors/leadership
 
 **Technical Approach**:
+
 - Date picker: Material-UI DateRangePicker
 - Backend changes:
   - Add `?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` to whos-on endpoint
@@ -259,14 +287,17 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: L (1-2 weeks)
 
 **Dependencies**:
+
 - Requires API changes to accept date range
 - May require Shiftboard data retention awareness
 
 **Constitution Alignment**:
+
 - ✅ IV. User-Centered Design (leadership persona needs)
 - ✅ VI. Observable Systems (metrics and reporting)
 
 **Acceptance Criteria**:
+
 - [ ] Can select arbitrary date range (past or future)
 - [ ] Views update to show shifts in selected range
 - [ ] CSV export contains all visible columns
@@ -284,12 +315,14 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Multi-user authentication with role-based permissions.
 
 **Roles**:
+
 - **Shift Captain**: Full access (view, filter, contact)
 - **Support Desk**: Read-only (view, filter; no contact info)
 - **Leadership**: Reports and metrics (no real-time shifts)
 - **Admin**: User management, configuration
 
 **Features**:
+
 - Login page with email/password (optional SSO with Azure AD/OAuth)
 - JWT-based authentication
 - Protected API endpoints (verify JWT middleware)
@@ -297,12 +330,14 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - User management page (Admin only)
 
 **Benefits**:
+
 - Multi-organization support (different committees)
 - Audit trail (who accessed contact info?)
 - Compliance with data access policies
 - Granular control over sensitive data
 
 **Technical Approach**:
+
 - Auth library: `passport` (Node.js) or `next-auth` if migrating to Next.js
 - JWT stored in httpOnly cookie
 - Backend: Add `authMiddleware` to protected routes
@@ -312,14 +347,17 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: L (1.5-2 weeks)
 
 **Dependencies**:
+
 - Requires database for user storage
 - May require organization model (multi-tenancy)
 
 **Constitution Alignment**:
+
 - ✅ V. Security & Compliance (authorized access to PII)
 - ✅ VI. Observable Systems (audit logs)
 
 **Acceptance Criteria**:
+
 - [ ] Unauthorized access redirects to login
 - [ ] JWT expires after 8 hours; refresh token for 7 days
 - [ ] Support Desk role cannot see phone numbers
@@ -341,17 +379,20 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Solution**: Use `react-window` or `react-virtualized` to render only visible rows.
 
 **Features**:
+
 - Render ~20 rows (viewport height) + overscan buffer
 - Smooth scrolling with dynamic row heights
 - Maintains sorting and filtering
 - Preserves modal interactions
 
 **Benefits**:
+
 - Scrolling remains smooth with 1000+ shifts
 - Reduced memory usage (fewer DOM nodes)
 - Faster initial render
 
 **Technical Approach**:
+
 - Replace Material-UI Table with `FixedSizeList` from `react-window`
 - Calculate row height based on content (fixed or estimated)
 - Wrap rows in memoized component to prevent unnecessary re-renders
@@ -360,10 +401,12 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: M (3-4 days)
 
 **Constitution Alignment**:
+
 - ✅ IV. User-Centered Design (smooth UX at scale)
 - ✅ III. Real-Time Operations (fast refresh with large datasets)
 
 **Acceptance Criteria**:
+
 - [ ] Table renders 1000 shifts with no scroll lag
 - [ ] Initial render <500ms for 500 shifts
 - [ ] Sorting and filtering work as expected
@@ -378,22 +421,26 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Fetch only changed shifts since last sync.
 
 **Backend Changes**:
+
 - Add `?since=TIMESTAMP` parameter to whos-on endpoint
 - Return only shifts modified after timestamp
 - Include deleted shift IDs in response
 
 **Frontend Changes**:
+
 - Store last sync timestamp in state
 - Merge delta response with cached data
 - Highlight updated shifts in UI (yellow flash animation)
 - Show "+5 new, -2 removed" badge in header
 
 **Benefits**:
+
 - Reduced API latency (fewer shifts transferred)
 - Lower bandwidth usage
 - Visual feedback on what changed
 
 **Technical Approach**:
+
 - Backend: Filter Shiftboard response by `updated > since`
 - Merge logic: `cachedShifts.filter(not deleted) + deltaShifts`
 - UI: Add `data-updated="recent"` class, fade-out after 3s
@@ -401,10 +448,12 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: M (4-5 days)
 
 **Constitution Alignment**:
+
 - ✅ III. Real-Time Operations (efficient updates)
 - ✅ II. Resilient Data Access (incremental cache updates)
 
 **Acceptance Criteria**:
+
 - [ ] Delta refresh 10x faster than full refresh for <10% changes
 - [ ] UI highlights updated/new shifts
 - [ ] Deleted shifts removed from cache
@@ -419,6 +468,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Configurable alerts sent via email/SMS.
 
 **Features**:
+
 - Alert configuration page:
   - "Notify me when shift in [Workgroup] becomes unstaffed"
   - "Notify me when person X clocks in/out"
@@ -428,11 +478,13 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - Snooze alerts for X hours
 
 **Benefits**:
+
 - Proactive notification (don't have to watch dashboard)
 - Integrates with existing communication workflows
 - Reduces "watch time" for shift captains
 
 **Technical Approach**:
+
 - Backend: Scheduled job checks conditions every 5 minutes
 - Store alert rules in database (PostgreSQL)
 - Queue delivery via Celery/Bull or direct API calls
@@ -441,10 +493,12 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: L (1-2 weeks)
 
 **Dependencies**:
+
 - Requires email/SMS service accounts (SendGrid, Twilio)
 - Requires backend job scheduler (node-cron or separate worker)
 
 **Constitution Alignment**:
+
 - ✅ III. Real-Time Operations (proactive alerts)
 - ✅ IV. User-Centered Design (reduces manual monitoring)
 
@@ -459,6 +513,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Approach**: React Native or Flutter for code reuse.
 
 **Features**:
+
 - Full feature parity with web app
 - Native navigation patterns (tabs, stack navigator)
 - Push notifications via native APIs (better reliability)
@@ -467,6 +522,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 - Deep links for shift sharing
 
 **Benefits**:
+
 - Better mobile UX (native gestures, navigation)
 - Improved performance on mobile devices
 - App Store presence (discoverability)
@@ -475,6 +531,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Effort**: XL (6-8 weeks)
 
 **Constitution Alignment**:
+
 - ✅ II. Resilient Data Access (native offline storage)
 - ✅ IV. User-Centered Design (mobile-optimized experience)
 
@@ -499,6 +556,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Hotkeys for common actions.
 
 **Shortcuts**:
+
 - `/`: Focus search
 - `R`: Refresh
 - `F`: Open filter panel
@@ -526,6 +584,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Current State**: Basic WCAG AA compliance.
 
 **Enhancements**:
+
 - Full keyboard navigation (skip links)
 - Screen reader announcements for live data updates
 - High contrast mode
@@ -541,6 +600,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 **Enhancement**: Google Analytics or Application Insights.
 
 **Metrics**:
+
 - Page views per route
 - Feature usage (modal opens, filter changes)
 - Error rates (ErrorBoundary catches)
@@ -553,6 +613,7 @@ This document catalogs enhancement opportunities discovered during codebase anal
 ## Implementation Roadmap
 
 ### Phase 1: Foundational Improvements (2-3 weeks)
+
 Focus on high-value, moderate-effort enhancements that improve daily operations.
 
 - E1: Offline-First PWA (M)
@@ -563,6 +624,7 @@ Focus on high-value, moderate-effort enhancements that improve daily operations.
 **Value**: Faster, more resilient app with better discoverability.
 
 ### Phase 2: Real-Time & Notifications (2-3 weeks)
+
 Add proactive alerting to reduce manual monitoring.
 
 - E4: Push Notifications (M)
@@ -572,6 +634,7 @@ Add proactive alerting to reduce manual monitoring.
 **Value**: Shift captains notified of issues proactively.
 
 ### Phase 3: Insights & Reporting (2-3 weeks)
+
 Historical analysis and operational metrics.
 
 - E5: Historical Reporting (L)
@@ -581,6 +644,7 @@ Historical analysis and operational metrics.
 **Value**: Leadership insights, trend analysis, compliance reporting.
 
 ### Phase 4: Security & Scale (2-3 weeks)
+
 Multi-tenant support and access control.
 
 - E6: Role-Based Access Control (L)
@@ -589,6 +653,7 @@ Multi-tenant support and access control.
 **Value**: Multi-organization deployment, compliance, inclusivity.
 
 ### Phase 5: Mobile & Polish (6-8 weeks)
+
 Native mobile experience (deferred until demand confirmed).
 
 - E10: Mobile Native App (XL)
@@ -638,12 +703,14 @@ Native mobile experience (deferred until demand confirmed).
 ## Performance Improvement Opportunities
 
 ### Current Performance Characteristics
+
 - **whos-on API**: 1-2 seconds for 150 shifts (acceptable)
 - **Grouping algorithm**: <20ms for 1000 shifts (excellent)
 - **Table render**: 200-500ms for 50 shifts (acceptable)
 - **Cache read**: <10ms (excellent)
 
 ### Optimization Targets
+
 1. **Virtual scrolling** (E7): Handles 10x more shifts smoothly
 2. **Differential refresh** (E8): 5-10x faster API responses
 3. **Code splitting**: Lazy-load modals, table view
@@ -655,6 +722,7 @@ Native mobile experience (deferred until demand confirmed).
 ## Security Enhancements
 
 ### Current Security Posture
+
 - ✅ HTTPS enforced (production)
 - ✅ CORS configured
 - ✅ Helmet.js security headers
@@ -665,6 +733,7 @@ Native mobile experience (deferred until demand confirmed).
 - ❌ No audit logging
 
 ### Recommended Security Roadmap
+
 1. **Add request validation**: Joi/Zod schemas for query params (XS)
 2. **Rate limiting**: express-rate-limit middleware (XS)
 3. **Content Security Policy**: Strict CSP header (S)
@@ -677,6 +746,7 @@ Native mobile experience (deferred until demand confirmed).
 ## Monitoring & Observability
 
 ### Current Monitoring
+
 - ✅ Console logging (unstructured)
 - ✅ Morgan HTTP request logs
 - ✅ Health check endpoint (`/api/system/health`)
@@ -686,6 +756,7 @@ Native mobile experience (deferred until demand confirmed).
 - ❌ No uptime monitoring
 
 ### Recommended Observability Stack
+
 - **APM**: Application Insights or Datadog (deployment metrics, traces)
 - **Error Tracking**: Sentry (client + server errors)
 - **Uptime Monitoring**: Pingdom or UptimeRobot (health check polls)
@@ -701,6 +772,7 @@ Native mobile experience (deferred until demand confirmed).
 All enhancements evaluated against constitution principles:
 
 ### Enhances Existing Principles
+
 - **E1 (PWA)**: ✅ Principle II (Resilient Data Access), IV (User-Centered)
 - **E2 (Filtering)**: ✅ Principle IV (User-Centered)
 - **E3 (Search)**: ✅ Principle IV (User-Centered)
@@ -711,6 +783,7 @@ All enhancements evaluated against constitution principles:
 - **E8 (Differential Refresh)**: ✅ Principle III (Real-Time)
 
 ### No Constitutional Conflicts
+
 All enhancements align with or strengthen existing principles. No amendments required.
 
 ---
@@ -727,6 +800,7 @@ When evaluating new enhancements, consider:
 6. **Urgency**: Blocking production issue? vs nice-to-have?
 
 **Scoring Example**:
+
 ```
 User Impact (1-10) × Operational Value (1-10) / Effort (XS=1, S=2, M=3, L=5, XL=10)
 ```

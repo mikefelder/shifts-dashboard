@@ -3,7 +3,8 @@
 **Version**: 1.0.0  
 **Date**: 2026-02-17  
 **Type**: Full Application Rebuild  
-**Specification Sources**: 
+**Specification Sources**:
+
 - `.specify/analysis/codebase-spec.md`
 - `.specify/analysis/api-contracts.md`
 - `.specify/analysis/enhancements.md`
@@ -24,12 +25,14 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 ## Technical Context
 
 ### Language/Version
+
 - **Backend**: Node.js 20.x LTS (TypeScript 5.2+)
 - **Frontend**: React 18.2+ with TypeScript 5.2+
 
 ### Primary Dependencies
 
 #### Backend
+
 - **Framework**: Express 4.19+
 - **HTTP Client**: Axios 1.6+
 - **Security**: Helmet 7.0+, CORS 2.8+
@@ -39,6 +42,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - **Testing**: Jest 29.7+, Supertest 6.3+
 
 #### Frontend
+
 - **Build Tool**: Vite 5.0+
 - **UI Framework**: Material-UI (@mui/material) 5.15+
 - **Routing**: react-router-dom 6.21+
@@ -49,10 +53,12 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - **Testing**: Vitest 1.2+, React Testing Library 14.1+, Playwright 1.40+
 
 ### Storage
+
 - **Client**: IndexedDB (4 object stores: shifts, accounts, workgroups, metadata)
 - **Server**: In-memory (stateless); future: Redis for session management
 
 ### Testing
+
 - **Unit**: Jest (backend), Vitest (frontend)
 - **Integration**: Supertest (API), MSW (mock Shiftboard)
 - **E2E**: Playwright
@@ -60,14 +66,17 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - **Coverage Target**: 70% (Phase 1), 85% (Phase 2)
 
 ### Target Platform
+
 - **Backend**: Linux container (Azure Container Apps), Docker, Azure Container Registry
 - **Frontend**: Modern browsers (Chrome 90+, Firefox 88+, Safari 15+, Edge 90+)
 - **Mobile**: Responsive web (1024px+); future: React Native
 
 ### Project Type
+
 **Web application** (separate backend/frontend)
 
 ### Performance Goals
+
 - **API Response Time**: p95 <2s for /api/shifts/whos-on
 - **Page Load (First Paint)**: <1.5s
 - **Time to Interactive**: <2.5s
@@ -76,6 +85,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - **Lighthouse Scores**: Performance >90, Accessibility >95, Best Practices >95, SEO >90
 
 ### Constraints
+
 - **Browser Compatibility**: Last 2 major versions of each browser
 - **Offline Support**: Read-only cache fallback required
 - **Time Zone**: America/Chicago (configurable via env var)
@@ -84,6 +94,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - **Max Dataset**: 10,000 shifts (100 pages × 100 batch size)
 
 ### Scale/Scope
+
 - **Concurrent Users**: 10-50 typical, 100 peak
 - **Data Volume**: 150-500 shifts during events
 - **API Endpoints**: 13 REST endpoints
@@ -94,13 +105,14 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Principle I: API-First Architecture ✅
 
 **Requirement**: All features exposed through RESTful API; client never handles Shiftboard credentials.
 
 **Implementation**:
+
 - ✅ Express backend proxies all Shiftboard calls
 - ✅ HMAC authentication isolated to backend service
 - ✅ Consistent error format: `{error: string}`
@@ -108,6 +120,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - ✅ Environment-based credential management
 
 **Gates**:
+
 - [ ] All API endpoints follow REST conventions (GET/POST, proper status codes)
 - [ ] No Shiftboard credentials in client code
 - [ ] API contract tests validate response schemas
@@ -122,6 +135,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 **Requirement**: Graceful degradation through local caching when external dependencies fail.
 
 **Implementation**:
+
 - ✅ IndexedDB cache with 4 object stores
 - ✅ Automatic fallback on API failure
 - ✅ `isFreshData` flag distinguishes live vs cached
@@ -129,6 +143,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - ✅ Read-only offline mode
 
 **Gates**:
+
 - [ ] Cache stores all entity types (shifts, accounts, workgroups)
 - [ ] API failure triggers automatic cache read
 - [ ] UI indicates stale data state
@@ -144,6 +159,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 **Requirement**: Current shift data readily accessible with clear freshness indicators.
 
 **Implementation**:
+
 - ✅ Manual "Refresh Now" button (always available)
 - ✅ Auto-refresh (5/10/15 min configurable)
 - ✅ Timestamp display of last successful sync
@@ -151,13 +167,14 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - ✅ Loading states differentiated (initial vs refresh)
 
 **Gates**:
+
 - [ ] Manual refresh forces API call
 - [ ] Auto-refresh interval configurable (off/5/10/15)
 - [ ] Changing interval triggers immediate refresh
 - [ ] Timestamp updates only on successful API response
 - [ ] Loading indicators visible during refresh
 
-**Status**: PASS (design compliant)
+**Status**: PASS (design complian )
 
 ---
 
@@ -166,6 +183,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 **Requirement**: Interface supports different operational use cases through multiple views.
 
 **Implementation**:
+
 - ✅ Two primary views: Calendar (timeline) + Tabular (sortable table)
 - ✅ Global workgroup filter with session persistence
 - ✅ WCAG AA compliance (color contrast, keyboard nav)
@@ -173,6 +191,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - ✅ Modals for shift/person details (minimize clutter)
 
 **Gates**:
+
 - [ ] Both views render same dataset differently
 - [ ] Workgroup filter applies to both views
 - [ ] Keyboard navigation functional (tab order, ESC to close)
@@ -188,6 +207,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 **Requirement**: PII protected with appropriate access controls and transport security.
 
 **Implementation**:
+
 - ✅ Phone numbers visible only in Person Detail Modal
 - ✅ HTTPS enforced in production
 - ✅ Credentials in environment variables / Key Vault
@@ -195,6 +215,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - ✅ Helmet.js security headers
 
 **Gates**:
+
 - [ ] Phone numbers not displayed in table/calendar views
 - [ ] Production deployment uses HTTPS
 - [ ] No credentials in source code
@@ -210,6 +231,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 **Requirement**: Operational visibility for debugging and performance monitoring.
 
 **Implementation**:
+
 - ✅ Structured timing metrics (fetch, grouping durations)
 - ✅ Morgan HTTP logging + Winston structured logs
 - ✅ Health check endpoint (`/api/system/health`)
@@ -217,6 +239,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - ✅ Differentiated loading states
 
 **Gates**:
+
 - [ ] All API responses include timing metadata
 - [ ] Logs written in JSON format (structured)
 - [ ] Health check returns uptime and status
@@ -232,6 +255,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 **Requirement**: Deployable as cloud-native infrastructure with configuration-driven multi-tenancy.
 
 **Implementation**:
+
 - ✅ All Azure infrastructure provisioned via Bicep templates
 - ✅ CI/CD automated through GitHub Actions
 - ✅ Environment configuration drives instance isolation (no hardcoded org data)
@@ -241,6 +265,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - ✅ Deployment configuration accepts parameters for multi-tenant instances
 
 **Gates**:
+
 - [ ] Bicep templates provision all Azure resources (App Service, Key Vault, App Insights)
 - [ ] GitHub Actions workflow automates infrastructure + application deployment
 - [ ] No organization/committee-specific data hardcoded in source
@@ -454,6 +479,7 @@ frontend/
 **Goal**: Project scaffolding, tooling, and development environment.
 
 ### Prerequisites
+
 - [ ] Node.js 20.x LTS installed
 - [ ] Git repository initialized
 - [ ] Shiftboard API credentials obtained
@@ -462,17 +488,19 @@ frontend/
 ### Tasks
 
 #### T001: Repository & Tooling Setup
+
 **Owner**: DevOps Lead  
 **Effort**: 4 hours
 
 - [x] Initialize monorepo (or separate repos)
-- [ ] Configure ESLint + Prettier (shared config)
-- [ ] Set up Husky pre-commit hooks (lint + format)
-- [ ] Configure TypeScript (strict mode enabled)
-- [ ] Add `.gitignore` (node_modules, .env, dist, coverage)
-- [ ] Create `.env.example` files (backend + frontend)
+- [x] Configure ESLint + Prettier (shared config)
+- [x] Set up Husky pre-commit hooks (lint + format)
+- [x] Configure TypeScript (strict mode enabled)
+- [x] Add `.gitignore` (node_modules, .env, dist, coverage)
+- [x] Create `.env.example` files (backend + frontend)
 
 **Acceptance**:
+
 - `npm run lint` passes on empty project
 - Pre-commit hook prevents commits with lint errors
 - TypeScript strict mode enabled in tsconfig
@@ -480,6 +508,7 @@ frontend/
 ---
 
 #### T002: Backend Project Initialization
+
 **Owner**: Backend Developer  
 **Effort**: 4 hours
 
@@ -492,6 +521,7 @@ frontend/
 - [ ] Add `npm scripts`: dev, build, test, lint
 
 **Acceptance**:
+
 - `npm run dev` starts server on port 3000
 - `npm test` runs Jest (0 tests)
 - TypeScript compilation works (`npm run build`)
@@ -499,6 +529,7 @@ frontend/
 ---
 
 #### T003: Frontend Project Initialization
+
 **Owner**: Frontend Developer  
 **Effort**: 4 hours
 
@@ -511,6 +542,7 @@ frontend/
 - [ ] Add `npm scripts`: dev, build, test, test:e2e
 
 **Acceptance**:
+
 - `npm run dev` starts Vite dev server on port 5173
 - `npm test` runs Vitest (0 tests)
 - Playwright launches browser (`npm run test:e2e`)
@@ -518,6 +550,7 @@ frontend/
 ---
 
 #### T004: Docker & Local Development Setup
+
 **Owner**: DevOps Lead  
 **Effort**: 6 hours
 
@@ -528,6 +561,7 @@ frontend/
 - [ ] Add `.dockerignore` files
 
 **Acceptance**:
+
 - `docker-compose up` starts both services
 - Backend accessible at localhost:3000
 - Frontend accessible at localhost:5173 (dev) or 8080 (prod)
@@ -535,6 +569,7 @@ frontend/
 ---
 
 #### T005: CI/CD Pipeline Setup
+
 **Owner**: DevOps Lead  
 **Effort**: 8 hours
 
@@ -545,6 +580,7 @@ frontend/
 - [ ] Add status badges to README
 
 **Acceptance**:
+
 - Pull requests trigger automated tests
 - Failed tests block merge
 - Push to main triggers deployment
@@ -552,6 +588,7 @@ frontend/
 ---
 
 #### T006: Infrastructure as Code (Bicep) Setup
+
 **Owner**: DevOps Lead  
 **Effort**: 8 hours
 
@@ -573,6 +610,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 - [ ] Add Bicep linting to CI pipeline
 
 **Key Features**:
+
 - Multi-tenancy support via parameters (organizationId, environment)
 - Key Vault integration for secrets (Shiftboard credentials)
 - Managed identity for Container App → Key Vault access
@@ -582,6 +620,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 - Resource naming conventions: `{resourceType}-shifts-{orgId}-{env}`
 
 **Acceptance**:
+
 - Bicep templates validate without errors (`az bicep build`)
 - `deploy.sh` provisions full infrastructure in dev subscription
 - Container App can read Key Vault secrets via managed identity
@@ -612,6 +651,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 **Goal**: Implement API layer with Shiftboard integration and shift grouping.
 
 ### T101: Shiftboard Authentication Utility
+
 **Owner**: Backend Developer  
 **Effort**: 4 hours
 
@@ -623,6 +663,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 - [ ] Add timestamp generation
 
 **Tests**: `backend/tests/unit/utils/shiftboard-auth.test.ts`
+
 - [ ] Test signature generation with known inputs
 - [ ] Test URL construction
 - [ ] Test timestamp handling
@@ -632,6 +673,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 ---
 
 #### T102: Pagination Utility
+
 **Owner**: Backend Developer  
 **Effort**: 3 hours
 
@@ -643,6 +685,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 - [ ] Merge paginated results
 
 **Tests**: `backend/tests/unit/utils/pagination.test.ts`
+
 - [ ] Test single-page response
 - [ ] Test multi-page fetching
 - [ ] Test safety limit (stops at 100)
@@ -653,6 +696,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 ---
 
 #### T103: Shift Grouping Algorithm
+
 **Owner**: Backend Developer  
 **Effort**: 6 hours
 
@@ -664,6 +708,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 - [ ] Handle edge cases (missing fields, invalid shifts, duplicates)
 
 **Tests**: `backend/tests/unit/utils/shift.utils.test.ts`
+
 - [ ] Test basic grouping (2 shifts → 1 group)
 - [ ] Test no grouping needed (different times)
 - [ ] Test edge cases (missing member, null clocked_in)
@@ -674,6 +719,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 ---
 
 #### T104: Shiftboard Service Client
+
 **Owner**: Backend Developer  
 **Effort**: 8 hours
 
@@ -687,6 +733,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 - [ ] Add request logging
 
 **Tests**: `backend/tests/integration/services/shiftboard.service.test.ts`
+
 - [ ] Mock Shiftboard API with MSW
 - [ ] Test successful call
 - [ ] Test authentication failure
@@ -696,6 +743,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 ---
 
 #### T105: Shift Service (Business Logic)
+
 **Owner**: Backend Developer  
 **Effort**: 8 hours
 
@@ -710,6 +758,7 @@ Create Bicep templates for Azure infrastructure provisioning:
 - [ ] Add workgroup filtering
 
 **Tests**: `backend/tests/unit/services/shift.service.test.ts`
+
 - [ ] Test shiftWhosOn grouping applied
 - [ ] Test workgroup filter passed to Shiftboard
 - [ ] Test metrics collection
@@ -720,12 +769,14 @@ Create Bicep templates for Azure infrastructure provisioning:
 ---
 
 #### T106: Controllers (Request Handlers)
+
 **Owner**: Backend Developer  
 **Effort**: 6 hours
 
 **Implementation**: `backend/src/controllers/*.controller.ts`
 
 Create controllers for:
+
 - [ ] `shift.controller.ts` (listShifts, whosOn)
 - [ ] `account.controller.ts` (listAccounts, getSelf, getByWorkgroup, getById)
 - [ ] `workgroup.controller.ts` (listWorkgroups, getRoles)
@@ -734,6 +785,7 @@ Create controllers for:
 - [ ] `system.controller.ts` (health, echo)
 
 Each controller:
+
 - [ ] Extract query params
 - [ ] Validate with Zod
 - [ ] Call service method
@@ -745,10 +797,12 @@ Each controller:
 ---
 
 #### T107: Routes & Middleware
+
 **Owner**: Backend Developer  
 **Effort**: 4 hours
 
-**Implementation**: 
+**Implementation**:
+
 - `backend/src/routes/*.routes.ts`
 - `backend/src/middleware/error.middleware.ts`
 - `backend/src/middleware/validation.middleware.ts`
@@ -766,12 +820,14 @@ Each controller:
 ---
 
 #### T108: API Integration Tests
+
 **Owner**: Backend Developer  
 **Effort**: 8 hours
 
 **Implementation**: `backend/tests/integration/api/*.test.ts`
 
 Test each endpoint against contract:
+
 - [ ] `/api/shifts/whos-on` (with/without workgroup filter)
 - [ ] `/api/shifts/list`
 - [ ] `/api/accounts/list`, `/api/accounts/self`, `/api/accounts/workgroup/:id`
@@ -780,6 +836,7 @@ Test each endpoint against contract:
 - [ ] `/api/system/health`, `/api/system/echo`
 
 Each test:
+
 - [ ] Verify response schema matches api-contracts.md
 - [ ] Verify status codes
 - [ ] Verify error format
@@ -790,6 +847,7 @@ Each test:
 ---
 
 #### T109: Contract Tests
+
 **Owner**: Backend Developer  
 **Effort**: 6 hours
 
@@ -822,6 +880,7 @@ Each test:
 **Goal**: Implement UI components, state management, and IndexedDB cache.
 
 ### T201: IndexedDB Service
+
 **Owner**: Frontend Developer  
 **Effort**: 6 hours
 
@@ -841,6 +900,7 @@ Each test:
   - [ ] `getLastSyncFormatted()` - get formatted string
 
 **Tests**: `frontend/tests/unit/services/db.service.test.ts`
+
 - [ ] Test store creation
 - [ ] Test upsert (add then update)
 - [ ] Test workgroup filtering
@@ -851,6 +911,7 @@ Each test:
 ---
 
 #### T202: API Service
+
 **Owner**: Frontend Developer  
 **Effort**: 6 hours
 
@@ -868,6 +929,7 @@ Each test:
 - [ ] Implement `getAccounts()`
 
 **Tests**: `frontend/tests/unit/services/api.service.test.ts`
+
 - [ ] Mock Axios with MSW
 - [ ] Test successful fetch
 - [ ] Test cache fallback on error
@@ -878,10 +940,12 @@ Each test:
 ---
 
 #### T203: Theme & Layout Shell
+
 **Owner**: Frontend Developer  
 **Effort**: 4 hours
 
-**Implementation**: 
+**Implementation**:
+
 - `frontend/src/theme/theme.ts`
 - `frontend/src/components/Layout/AppLayout.tsx`
 - `frontend/src/components/Layout/AppHeader.tsx`
@@ -894,6 +958,7 @@ Each test:
 - [ ] Add navigation links (Calendar, Tabular View)
 
 **Tests**: `frontend/tests/integration/components/AppLayout.test.tsx`
+
 - [ ] Test rendering
 - [ ] Test refresh trigger
 - [ ] Test navigation
@@ -901,10 +966,12 @@ Each test:
 ---
 
 #### T204: Workgroup Context & Filter
+
 **Owner**: Frontend Developer  
 **Effort**: 4 hours
 
-**Implementation**: 
+**Implementation**:
+
 - `frontend/src/contexts/WorkgroupContext.tsx`
 - `frontend/src/components/Filters/WorkgroupFilter.tsx`
 
@@ -916,6 +983,7 @@ Each test:
 - [ ] Integrate into AppHeader
 
 **Tests**: `frontend/tests/unit/contexts/WorkgroupContext.test.tsx`
+
 - [ ] Test context provider
 - [ ] Test default state
 - [ ] Test selection change
@@ -925,6 +993,7 @@ Each test:
 ---
 
 #### T205: Tabular Shift View
+
 **Owner**: Frontend Developer  
 **Effort**: 12 hours
 
@@ -940,6 +1009,7 @@ Each test:
 - [ ] Add animation on data update (Fade/Grow)
 
 **Tests**: `frontend/tests/integration/components/TabularShiftView.test.tsx`
+
 - [ ] Test rendering with mock data
 - [ ] Test sorting (click header)
 - [ ] Test person chip click opens modal
@@ -950,6 +1020,7 @@ Each test:
 ---
 
 #### T206: Active Shifts View (Timeline)
+
 **Owner**: Frontend Developer  
 **Effort**: 16 hours (complex)
 
@@ -965,6 +1036,7 @@ Each test:
 - [ ] Update current time every second
 
 **Tests**: `frontend/tests/integration/components/ActiveShiftsView.test.tsx`
+
 - [ ] Test time window calculation
 - [ ] Test shift card rendering
 - [ ] Test overlap detection
@@ -975,20 +1047,24 @@ Each test:
 ---
 
 #### T207: Modals (Shift & Person Detail)
+
 **Owner**: Frontend Developer  
 **Effort**: 8 hours
 
-**Implementation**: 
+**Implementation**:
+
 - `frontend/src/components/Calendar/ShiftDetailModal.tsx`
 - `frontend/src/components/Calendar/PersonDetailModal.tsx`
 
 **Shift Detail Modal**:
+
 - [ ] Display shift name, time, location, subject
 - [ ] List assigned people with clock status badges
 - [ ] Person name clickable → opens Person Detail Modal
 - [ ] Close button + ESC key + click outside
 
 **Person Detail Modal**:
+
 - [ ] Display person name, clock status badge
 - [ ] Show phone number (formatted)
 - [ ] Add Call button (tel: link)
@@ -996,6 +1072,7 @@ Each test:
 - [ ] Close button + ESC key + click outside
 
 **Tests**: `frontend/tests/integration/components/Modals.test.tsx`
+
 - [ ] Test ShiftDetailModal rendering
 - [ ] Test PersonDetailModal rendering
 - [ ] Test closing mechanisms
@@ -1006,6 +1083,7 @@ Each test:
 ---
 
 #### T208: Error Boundary
+
 **Owner**: Frontend Developer  
 **Effort**: 2 hours
 
@@ -1017,6 +1095,7 @@ Each test:
 - [ ] Display error message
 
 **Tests**: `frontend/tests/unit/components/ErrorBoundary.test.tsx`
+
 - [ ] Test error catching
 - [ ] Test error display
 
@@ -1025,10 +1104,12 @@ Each test:
 ---
 
 #### T209: Router & Pages
+
 **Owner**: Frontend Developer  
 **Effort**: 3 hours
 
-**Implementation**: 
+**Implementation**:
+
 - `frontend/src/App.tsx`
 - `frontend/src/pages/CalendarPage.tsx`
 
@@ -1042,12 +1123,14 @@ Each test:
 ---
 
 #### T210: E2E Tests (Critical Flows)
+
 **Owner**: QA Engineer  
 **Effort**: 12 hours
 
 **Implementation**: `frontend/tests/e2e/critical-flows.spec.ts`
 
 **Test Scenarios**:
+
 1. **View Calendar**:
    - [ ] Load app → See calendar view
    - [ ] Shifts displayed in timeline
@@ -1102,6 +1185,7 @@ Each test:
 **Goal**: End-to-end integration, accessibility, performance optimization.
 
 ### T301: Integration Testing (Frontend + Backend)
+
 **Owner**: QA Engineer  
 **Effort**: 8 hours
 
@@ -1116,6 +1200,7 @@ Each test:
 ---
 
 #### T302: Accessibility Audit
+
 **Owner**: Frontend Developer  
 **Effort**: 6 hours
 
@@ -1126,7 +1211,8 @@ Each test:
 - [ ] Add ARIA labels where needed
 - [ ] Verify focus trap in modals
 
-**Acceptance**: 
+**Acceptance**:
+
 - No Axe violations
 - All interactive elements keyboard-accessible
 - Screen reader announces content correctly
@@ -1136,6 +1222,7 @@ Each test:
 ---
 
 #### T303: Performance Optimization
+
 **Owner**: Frontend Developer  
 **Effort**: 6 hours
 
@@ -1147,6 +1234,7 @@ Each test:
 - [ ] Measure render time with 100+ shifts
 
 **Acceptance**:
+
 - Table renders 100 shifts in <300ms
 - Calendar renders 25 shifts in <200ms
 - Lighthouse Performance score >90
@@ -1154,6 +1242,7 @@ Each test:
 ---
 
 #### T304: Security Hardening
+
 **Owner**: Backend Developer  
 **Effort**: 4 hours
 
@@ -1164,6 +1253,7 @@ Each test:
 - [ ] Add request ID to logs (traceability)
 
 **Acceptance**:
+
 - Rate limiting active (test with curl)
 - Invalid requests return 400
 - CSP header present
@@ -1172,10 +1262,12 @@ Each test:
 ---
 
 #### T305: Documentation
+
 **Owner**: Tech Lead  
 **Effort**: 6 hours
 
 Create documentation:
+
 - [ ] `docs/architecture.md` (diagrams, data flow)
 - [ ] `docs/deployment.md` (Azure setup, env vars)
 - [ ] `docs/testing.md` (how to run tests)
@@ -1187,6 +1279,7 @@ Create documentation:
 ---
 
 #### T306: Production Build & Smoke Tests
+
 **Owner**: DevOps Lead  
 **Effort**: 4 hours
 
@@ -1197,6 +1290,7 @@ Create documentation:
 - [ ] Test with production-like env vars
 
 **Acceptance**:
+
 - Production build runs without errors
 - Health check returns 200
 - Static frontend accessible
@@ -1221,6 +1315,7 @@ Create documentation:
 **Goal**: Deploy to production, set up monitoring, train users.
 
 ### T401: Infrastructure Deployment via Bicep
+
 **Owner**: DevOps Lead  
 **Effort**: 4 hours
 
@@ -1239,6 +1334,7 @@ Deploy Azure infrastructure using Bicep templates created in Phase 0 (T006):
 - [ ] Document deployment parameters used
 
 **Key Deployment Commands**:
+
 ```bash
 # Validate templates
 az bicep build --file infra/main.bicep
@@ -1264,6 +1360,7 @@ az deployment group create \
 ```
 
 **Multi-Tenant Testing**:
+
 - [ ] Deploy dev environment for testing
 - [ ] Deploy staging environment with different organizationId
 - [ ] Verify instances are isolated (separate Container Apps, Key Vaults)
@@ -1272,6 +1369,7 @@ az deployment group create \
 - [ ] Test spin-down: `infra/scripts/destroy.sh` removes all resources
 
 **Acceptance**:
+
 - Infrastructure deployed successfully via Bicep
 - Container App running with health check returning 200
 - Key Vault secrets accessible via managed identity
@@ -1285,6 +1383,7 @@ az deployment group create \
 ---
 
 #### T402: Monitoring Setup
+
 **Owner**: DevOps Lead  
 **Effort**: 6 hours
 
@@ -1294,7 +1393,8 @@ az deployment group create \
 - [ ] Create dashboards (requests/min, error rate, p95 latency)
 - [ ] Set up alerts (error rate >1%, health check failing)
 
-**Acceptance**: 
+**Acceptance**:
+
 - Errors visible in monitoring tool
 - Alert triggered by test error
 - Dashboard shows live metrics
@@ -1302,6 +1402,7 @@ az deployment group create \
 ---
 
 #### T403: Logging Enhancement
+
 **Owner**: Backend Developer  
 **Effort**: 3 hours
 
@@ -1311,13 +1412,15 @@ az deployment group create \
 - [ ] Add log levels (debug, info, warn, error)
 - [ ] Configure log streaming to Azure or external service
 
-**Acceptance**: 
+**Acceptance**:
+
 - Production logs are structured JSON
 - Can trace single request through logs
 
 ---
 
 #### T404: User Acceptance Testing (UAT)
+
 **Owner**: QA Engineer  
 **Effort**: 8 hours
 
@@ -1332,10 +1435,12 @@ az deployment group create \
 ---
 
 #### T405: Production Release & Infrastructure Verification
+
 **Owner**: Tech Lead  
 **Effort**: 3 hours
 
 **Production Deployment**:
+
 - [ ] Build production Docker image with semantic version tag
 - [ ] Push production image to Azure Container Registry
 - [ ] Deploy production infrastructure via Bicep (GitHub Actions or manual)
@@ -1346,6 +1451,7 @@ az deployment group create \
 - [ ] Test cache fallback scenario (simulate Shiftboard outage)
 
 **Infrastructure Validation**:
+
 - [ ] Verify Key Vault integration (secrets accessible)
 - [ ] Verify scale-to-zero behavior (wait 5 minutes idle, check replicas = 0)
 - [ ] Test cold start time (first request after scale-to-zero: <10 seconds acceptable)
@@ -1356,13 +1462,15 @@ az deployment group create \
 - [ ] Verify instances are isolated (different Container Apps, separate scaling)
 
 **Release Communication**:
+
 - [ ] Announce to users (email, Slack)
 - [ ] Share quick start guide
 - [ ] Monitor for first 2 hours (watch error rates, performance, scale events)
 - [ ] Document any issues in incident log
 - [ ] Schedule post-release retrospective
 
-**Acceptance**: 
+**Acceptance**:
+
 - Application accessible to users at production URL
 - No critical errors in first 2 hours
 - Users successfully view shifts, filter workgroups, view contact info
@@ -1391,6 +1499,7 @@ az deployment group create \
 ## Testing Strategy
 
 ### Test Coverage Goals
+
 - **Backend Unit**: 80% (utils, services)
 - **Backend Integration**: 70% (API endpoints)
 - **Backend Contract**: 100% (all endpoints validated)
@@ -1411,12 +1520,14 @@ az deployment group create \
 ```
 
 ### Test Execution
+
 - **Pre-commit**: Lint + format
 - **PR**: All tests + coverage check
 - **Pre-deploy**: E2E tests against staging
 - **Post-deploy**: Smoke tests in production
 
 ### Contract Testing
+
 All API responses validated against `api-contracts.md` spec using custom validator.
 
 **Reference**: `codebase-spec.md` § Testing Strategy
@@ -1428,9 +1539,11 @@ All API responses validated against `api-contracts.md` spec using custom validat
 ### High Risks
 
 #### R001: Shiftboard API Changes
+
 **Probability**: Medium  
 **Impact**: High (app breaks)  
-**Mitigation**: 
+**Mitigation**:
+
 - Contract tests detect breaking changes immediately
 - Version API client code for easy rollback
 - Maintain communication with Shiftboard support
@@ -1438,9 +1551,11 @@ All API responses validated against `api-contracts.md` spec using custom validat
 ---
 
 #### R002: Performance Degradation with Large Datasets
+
 **Probability**: Medium  
 **Impact**: Medium (slow UX)  
 **Mitigation**:
+
 - Performance tests with synthetic 1000-shift dataset
 - Virtual scrolling planned for Phase 5 (if needed)
 - Pagination at API level limits single-response size
@@ -1448,9 +1563,11 @@ All API responses validated against `api-contracts.md` spec using custom validat
 ---
 
 #### R003: Browser Cache Corruption
+
 **Probability**: Low  
 **Impact**: Medium (user sees errors)  
 **Mitigation**:
+
 - Implement cache version in metadata
 - Clear cache on version mismatch
 - Provide "Clear Cache" button in settings
@@ -1458,9 +1575,11 @@ All API responses validated against `api-contracts.md` spec using custom validat
 ---
 
 #### R004: Missing Test Coverage
+
 **Probability**: High (tight timeline)  
 **Impact**: Medium (regressions)  
 **Mitigation**:
+
 - Prioritize critical path tests first
 - Block merge on <70% coverage
 - Add tests for bugs discovered in QA
@@ -1468,9 +1587,11 @@ All API responses validated against `api-contracts.md` spec using custom validat
 ---
 
 #### R005: Deployment Issues
+
 **Probability**: Medium  
 **Impact**: High (launch delay)  
 **Mitigation**:
+
 - Test production build locally first
 - Deploy to staging 1 week before production
 - Maintain rollback plan (previous Docker image)
@@ -1481,30 +1602,35 @@ All API responses validated against `api-contracts.md` spec using custom validat
 
 ### Phase Completion Gates
 
-**Phase 0 Complete**: 
+**Phase 0 Complete**:
+
 - ✅ All tasks green
 - ✅ `docker-compose up` works
 - ✅ CI/CD pipelines green
 
 **Phase 1 Complete**:
+
 - ✅ All 13 API endpoints functional
 - ✅ Contract tests passing
 - ✅ 70%+ backend test coverage
 - ✅ Shift grouping <50ms for 1000 shifts
 
 **Phase 2 Complete**:
+
 - ✅ Both views rendering correctly
 - ✅ IndexedDB cache working
 - ✅ E2E tests passing (6 flows)
 - ✅ 70%+ frontend test coverage
 
 **Phase 3 Complete**:
+
 - ✅ Lighthouse Performance >90
 - ✅ 0 Axe accessibility violations
 - ✅ Security headers present
 - ✅ Documentation complete
 
 **Phase 4 Complete**:
+
 - ✅ Production deployment stable
 - ✅ Monitoring dashboards live
 - ✅ Users successfully using app
@@ -1527,13 +1653,13 @@ All API responses validated against `api-contracts.md` spec using custom validat
 
 ## Timeline Summary
 
-| Phase | Duration | Team | Deliverable |
-|-------|----------|------|-------------|
-| **Phase 0: Setup** | 1-2 weeks | DevOps (1) | Project scaffolding, tooling |
-| **Phase 1: Backend** | 2 weeks | Backend (1), QA (0.5) | API with tests, 70% coverage |
-| **Phase 2: Frontend** | 2 weeks | Frontend (1), QA (0.5) | UI with E2E tests, 70% coverage |
-| **Phase 3: Polish** | 1 week | All (2) | Integration, a11y, security |
-| **Phase 4: Deploy** | 1 week | DevOps (1), QA (0.5) | Production release |
+| Phase                 | Duration  | Team                   | Deliverable                     |
+| --------------------- | --------- | ---------------------- | ------------------------------- |
+| **Phase 0: Setup**    | 1-2 weeks | DevOps (1)             | Project scaffolding, tooling    |
+| **Phase 1: Backend**  | 2 weeks   | Backend (1), QA (0.5)  | API with tests, 70% coverage    |
+| **Phase 2: Frontend** | 2 weeks   | Frontend (1), QA (0.5) | UI with E2E tests, 70% coverage |
+| **Phase 3: Polish**   | 1 week    | All (2)                | Integration, a11y, security     |
+| **Phase 4: Deploy**   | 1 week    | DevOps (1), QA (0.5)   | Production release              |
 
 **Total**: 8-10 weeks with 2 FTE (full-time equivalent)
 
@@ -1544,20 +1670,25 @@ All API responses validated against `api-contracts.md` spec using custom validat
 ## Post-Launch Plan (Week 9+)
 
 ### Week 9: Stabilization
+
 - Monitor production metrics
 - Fix any high-priority bugs
 - Gather user feedback
 - Conduct retrospective
 
 ### Week 10-12: Quick Wins (Phase 5a)
+
 Implement quick enhancements from `enhancements.md`:
+
 - E11: Dark Mode (4 hours)
 - E12: Keyboard Shortcuts (4 hours)
 - E13: Export to CSV (1 day)
 - E15: Analytics Integration (4 hours)
 
 ### Month 4-6: Phase 5b Enhancements
+
 Implement high-priority enhancements:
+
 - E1: Offline-First PWA (4 days)
 - E2: Advanced Filtering UI (2 days)
 - E3: Search Functionality (2 days)
@@ -1570,15 +1701,18 @@ Implement high-priority enhancements:
 ## Team Structure & Roles
 
 ### Core Team (Minimum Viable)
+
 - **1 Senior Full-Stack Developer**: Backend + complex frontend
 - **1 Frontend Developer**: UI components, state management
 - **1 QA Engineer** (0.5 FTE): Testing infrastructure, E2E tests
 
 ### Extended Team (Optional)
+
 - **1 DevOps Engineer** (0.5 FTE): CI/CD, deployment, monitoring
 - **1 Designer** (0.25 FTE): UX review, visual polish
 
 ### Skill Requirements
+
 - **Backend**: Node.js, TypeScript, Express, REST APIs, testing (Jest)
 - **Frontend**: React, TypeScript, MUI, state management, testing (Vitest, Playwright)
 - **DevOps**: Docker, Azure, GitHub Actions, monitoring tools
@@ -1588,16 +1722,20 @@ Implement high-priority enhancements:
 ## Communication & Collaboration
 
 ### Daily
+
 - **Standup** (15 min): Progress, blockers, plan
 
 ### Weekly
+
 - **Planning** (1 hour): Upcoming tasks, priorities
 - **Demo** (30 min): Show progress to stakeholders
 
 ### Bi-Weekly
+
 - **Retrospective** (1 hour): What worked, what didn't, improvements
 
 ### Tools
+
 - **Code**: GitHub (pull requests, reviews)
 - **Tasks**: GitHub Projects or Jira
 - **Docs**: Markdown in repo + Confluence (optional)
@@ -1611,33 +1749,40 @@ Implement high-priority enhancements:
 
 After Phase 3 completion, verify all principles upheld:
 
-**Principle I (API-First)**: ✅  
+**Principle I (API-First)**: ✅
+
 - All endpoints implemented per contracts
 - Credentials isolated to backend
 
-**Principle II (Resilient Data)**: ✅  
+**Principle II (Resilient Data)**: ✅
+
 - Cache fallback functional
 - isFreshData flag present
 
-**Principle III (Real-Time)**: ✅  
+**Principle III (Real-Time)**: ✅
+
 - Manual + auto-refresh working
 - Timestamps accurate
 
-**Principle IV (User-Centered)**: ✅  
+**Principle IV (User-Centered)**: ✅
+
 - Multiple views functional
 - Accessibility audit passed
 
-**Principle V (Security)**: ✅  
+**Principle V (Security)**: ✅
+
 - PII protected in modals
 - HTTPS enforced
 - Security headers present
 
-**Principle VI (Observable)**: ✅  
+**Principle VI (Observable)**: ✅
+
 - Metrics collected
 - Logs structured
 - Monitoring active
 
-**Principle VII (Cloud-Native Infrastructure)**: ✅  
+**Principle VII (Cloud-Native Infrastructure)**: ✅
+
 - Bicep templates provision all resources
 - GitHub Actions CI/CD functional
 - Multi-tenant configuration working
@@ -1651,6 +1796,7 @@ After Phase 3 completion, verify all principles upheld:
 ## Appendices
 
 ### A. Reference Documents
+
 - `.specify/analysis/codebase-spec.md` - Feature specification
 - `.specify/analysis/api-contracts.md` - API contracts
 - `.specify/analysis/enhancements.md` - Enhancement roadmap
@@ -1658,22 +1804,23 @@ After Phase 3 completion, verify all principles upheld:
 
 ### B. Key Decisions Log
 
-| Date | Decision | Rationale |
-|------|----------|-----------|
-| 2026-02-17 | Use TypeScript for entire stack | Type safety, better IDE support, reduced bugs |
-| 2026-02-17 | Zustand for refresh state | Simpler than Redux, sufficient for our needs |
-| 2026-02-17 | Vitest > Jest for frontend | Faster, better Vite integration |
-| 2026-02-17 | Playwright for E2E | Modern, reliable, better DX than Selenium |
-| 2026-02-17 | Defer PWA to Phase 5 | Core features first, enhancements later |
-| 2026-02-17 | Azure-native deployment | Aligns with organizational infrastructure, Key Vault integration |
-| 2026-02-17 | Azure Container Apps over App Service | 69% cost savings with scale-to-zero for seasonal operations |
-| 2026-02-17 | Bicep for IaC | Native Azure support, better tooling than Terraform for Azure |
-| 2026-02-17 | Multi-tenant via config | Enables multiple committees, supports seasonal spin-up/down |
-| 2026-02-17 | GitHub Actions for CI/CD | Native GitHub integration, free for public repos |
+| Date       | Decision                              | Rationale                                                        |
+| ---------- | ------------------------------------- | ---------------------------------------------------------------- |
+| 2026-02-17 | Use TypeScript for entire stack       | Type safety, better IDE support, reduced bugs                    |
+| 2026-02-17 | Zustand for refresh state             | Simpler than Redux, sufficient for our needs                     |
+| 2026-02-17 | Vitest > Jest for frontend            | Faster, better Vite integration                                  |
+| 2026-02-17 | Playwright for E2E                    | Modern, reliable, better DX than Selenium                        |
+| 2026-02-17 | Defer PWA to Phase 5                  | Core features first, enhancements later                          |
+| 2026-02-17 | Azure-native deployment               | Aligns with organizational infrastructure, Key Vault integration |
+| 2026-02-17 | Azure Container Apps over App Service | 69% cost savings with scale-to-zero for seasonal operations      |
+| 2026-02-17 | Bicep for IaC                         | Native Azure support, better tooling than Terraform for Azure    |
+| 2026-02-17 | Multi-tenant via config               | Enables multiple committees, supports seasonal spin-up/down      |
+| 2026-02-17 | GitHub Actions for CI/CD              | Native GitHub integration, free for public repos                 |
 
 ### C. Environment Variables
 
 **Backend** (`.env`):
+
 ```
 NODE_ENV=development
 PORT=3000
@@ -1686,6 +1833,7 @@ LOG_LEVEL=debug
 ```
 
 **Frontend** (`.env`):
+
 ```
 VITE_API_BASE_URL=http://localhost:3000/api
 VITE_APP_NAME=Shifts Dashboard

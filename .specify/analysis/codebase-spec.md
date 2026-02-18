@@ -16,6 +16,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 ## Current Technology Stack
 
 ### Backend
+
 - **Runtime**: Node.js (LTS)
 - **Framework**: Express 4.18+
 - **Dependencies**:
@@ -27,6 +28,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - `dotenv` - Environment configuration
 
 ### Frontend
+
 - **Framework**: React 18.2+ with TypeScript 5.2+
 - **Build Tool**: Vite 7.3+
 - **UI Library**: Material-UI (@mui/material) 5.14+
@@ -36,6 +38,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 - **HTTP Client**: axios 1.5+
 
 ### Development
+
 - **Package Manager**: npm
 - **Dev Server**: Vite dev server (port 5173)
 - **API Server**: Express (port 3000)
@@ -135,6 +138,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Vertical hourly timeline showing current and near-future shifts with visual overlap handling.
 
 **Implementation Details**:
+
 - **Component**: `ActiveShiftsView.tsx` (641 lines)
 - **Dynamic Time Window**:
   - Default: Current hour ±1 hour
@@ -159,10 +163,12 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - **Invalid Dates**: Gracefully skips shifts with parsing errors
 
 **User Interactions**:
+
 - Click shift card → Opens Shift Detail Modal
 - Animations on load (Fade/Grow transitions)
 
 **State Management**:
+
 - Props: `shifts`, `accounts`, `date`, `showFullDay`, `loading`
 - Local state: `currentTime` (updates every second), `modalOpen`, `selectedShift`, `forceDisplay`, `animateShifts`
 
@@ -171,6 +177,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Sortable data table with columnar presentation of shift data.
 
 **Implementation Details**:
+
 - **Component**: `TabularShiftView.tsx` (606 lines)
 - **Columns**:
   1. Start Time (sortable)
@@ -198,6 +205,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - Click → Opens Person Detail Modal
 
 **Refresh Indicators**:
+
 - **Last Refresh Display**: "Last refreshed: {time}" or "Last API sync: {time}"
 - **Success Indicator**: Green checkmark when API sync succeeds
 - **Failure Indicator**: Red X when API fails (falls back to cache)
@@ -206,17 +214,20 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - Refresh: Table remains visible with smaller spinner in header
 
 **Animations**:
+
 - Fade-in for rows on load
 - Grow transition on data update
 - Optional animation toggle (currently enabled by default)
 
 **User Interactions**:
+
 - Click column header → Sort by that column
 - Click person chip → Open Person Detail Modal
 - Click Info icon or row → Open Shift Detail Modal
 - Manual refresh button → Force API fetch
 
 **Data Loading**:
+
 - Initial load: `forceSync=true`
 - Workgroup change: `forceSync=true`
 - Auto-refresh: `forceSync=true`
@@ -227,6 +238,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Global dropdown selector in app header for filtering shifts by workgroup.
 
 **Implementation Details**:
+
 - **Component**: `WorkgroupFilter.tsx` within `AppHeader.tsx`
 - **Context**: `WorkgroupContext.tsx` (React Context API)
   - State: `selectedWorkgroup`, `workgroups`, `isLoading`
@@ -245,6 +257,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - Shows loading indicator if workgroups not yet loaded
 
 **Implementation Notes**:
+
 - Filter applied at API level (`?workgroup={id}` query param)
 - Server passes `select: { workgroup: id }` to Shiftboard
 - Client-side filtering happens on cached data during offline fallback
@@ -254,6 +267,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: On-demand dialog showing comprehensive shift information.
 
 **Implementation Details**:
+
 - **Component**: `ShiftDetailModal.tsx`
 - **Trigger**: Click shift card (calendar) or Info icon/row (table)
 - **Content Sections**:
@@ -275,6 +289,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - ARIA labels for screen readers
 
 **Data Source**:
+
 - Props: `shift` (Shift object), `accounts` (Account[]), `open`, `onClose`
 - Looks up person names from `accounts` using `assignedPeople` IDs
 - Falls back to ID if account not found
@@ -284,6 +299,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Contact information overlay with call/text actions.
 
 **Implementation Details**:
+
 - **Component**: `PersonDetailModal.tsx`
 - **Trigger**: Click person chip in table or name in Shift Detail Modal
 - **Content**:
@@ -304,6 +320,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - ESC key / click outside to close
 
 **Security**:
+
 - Phone numbers only visible in modal (not in main table view)
 - Requires intentional user action to view contact info
 - No export or copy functionality (reliance on OS clipboard)
@@ -313,6 +330,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Manual and automatic data refresh mechanisms with visibility into sync status.
 
 **Implementation Details**:
+
 - **Location**: Sidebar component
 - **Manual Refresh**:
   - "Refresh Now" button
@@ -334,6 +352,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
   - Remains unchanged when falling back to cache
 
 **Coordination**:
+
 - `AppLayout` manages `refreshTimestamp` state
 - `Outlet` context passes `{ refreshInterval, refreshTimestamp, triggerRefresh }` to routes
 - Child views listen to `refreshTimestamp` changes via `useEffect`
@@ -344,6 +363,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Browser-based persistent storage for offline resilience.
 
 **Implementation Details**:
+
 - **Service**: `db.service.ts` (188 lines)
 - **Library**: `idb` 7.1+ (Promise-based IndexedDB wrapper)
 - **Database**: `hlsr-shifts-db` version 1
@@ -363,6 +383,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
      - Stores `{ key: 'lastSync', timestamp: Date }`
 
 **Operations**:
+
 - `storeShifts(shifts: Shift[])`: Upsert shifts (uses `put` for update-or-insert)
 - `getShiftsByWorkgroup(workgroupId: string | null)`: Retrieve filtered or all shifts
 - `storeAccounts(accounts: Account[])`: Upsert accounts
@@ -374,12 +395,14 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 - `getLastSyncFormatted()`: Retrieve formatted timestamp string
 
 **Cache Strategy**:
+
 - **Write**: After every successful API response
 - **Read**: Only when API fetch fails OR cache <1 minute old (currently always forced)
 - **Expiration**: No automatic expiration; relies on forceSync flag
 - **Size Limits**: Browser-dependent (typically 50MB+ available)
 
 **Fallback Behavior**:
+
 - API failure → Automatic cache lookup
 - Empty cache + API failure → Show error message
 - Stale cache warning: "Last API sync: 15 minutes ago" with `isFreshData=false` flag
@@ -389,6 +412,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Global and component-level error management.
 
 **Implementation Details**:
+
 - **Error Boundary**: `ErrorBoundary.tsx` (React class component)
   - Wraps entire app tree
   - Catches uncaught render errors
@@ -414,6 +438,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Description**: Diagnostic and health check endpoints for infrastructure monitoring.
 
 **Implementation Details**:
+
 - **GET /api/system/health**:
   - Purpose: Azure App Service health probe
   - Response: `{ status: "healthy", timestamp: ISO string, uptime: seconds }`
@@ -429,6 +454,7 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 ## API Contract Specification
 
 ### Base Configuration
+
 - **Base URL (dev)**: `http://localhost:3000/api`
 - **Base URL (prod)**: `https://{app-name}.azurewebsites.net/api`
 - **Content-Type**: `application/json`
@@ -442,16 +468,19 @@ The Shifts Dashboard is a full-stack web application that provides real-time vis
 **Purpose**: Retrieve current shifts with assigned people and clock-in status.
 
 **Query Parameters**:
+
 - `workgroup` (string, optional): Workgroup ID to filter shifts
 - `batch` (number, optional): Page size (default: 100, max: 100)
 - `start` (number, optional): Starting index for pagination (default: 0)
 
 **Request Example**:
+
 ```
 GET /api/shifts/whos-on?workgroup=12345&batch=100
 ```
 
 **Response Schema**:
+
 ```json
 {
   "result": {
@@ -468,7 +497,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
         "clocked_in": true,
         "assignedPeople": ["member-id-1", "member-id-2"],
         "assignedPersonNames": ["John Doe", "Jane Smith"],
-        "clockStatuses": [true, false],
+        "clockStatuses": [true, false]
         // ... all other Shiftboard shift fields
       }
     ],
@@ -513,6 +542,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 ```
 
 **Backend Processing**:
+
 1. Calls Shiftboard `shift.whosOn` with `timeclock_status: true`, `extended: true`
 2. Handles pagination (fetches all pages up to 100)
 3. Applies `groupShiftsByAttributes` algorithm:
@@ -523,6 +553,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 5. Returns normalized response
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid parameters
 - `401 Unauthorized`: Shiftboard authentication failed
 - `500 Internal Server Error`: Shiftboard API error or grouping failure
@@ -532,6 +563,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 **Purpose**: Pass-through to Shiftboard `shift.list` (unprocessed shifts).
 
 **Query Parameters**:
+
 - `batch` (number): Page size
 - `start` (number): Starting index
 
@@ -542,6 +574,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 **Purpose**: Paginated list of accounts.
 
 **Query Parameters**:
+
 - `batch` (number): Page size
 - `start` (number): Starting index
 
@@ -564,6 +597,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 **Purpose**: All workgroups with optional extended fields.
 
 **Query Parameters**:
+
 - `extended` (boolean): Include additional fields
 
 **Response**: Array of Workgroup objects.
@@ -597,6 +631,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 **Purpose**: Health check for monitoring.
 
 **Response**:
+
 ```json
 {
   "status": "healthy",
@@ -624,11 +659,13 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 **Input**: Array of raw Shift objects from Shiftboard
 
 **Output**: Array of grouped Shift objects with added fields:
+
 - `assignedPeople: string[]` - Array of member IDs
 - `assignedPersonNames: string[]` - Array of readable names
 - `clockStatuses: boolean[]` - Parallel array of clock-in states
 
 **Logic**:
+
 ```
 1. Initialize empty shiftGroups = {}
 
@@ -649,12 +686,14 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 ```
 
 **Name Resolution**:
+
 - Looks up `covering_member` ID in accounts array
 - Prefers `screen_name` if present
 - Falls back to `first_name + last_name`
 - Uses "Unassigned" if member not found
 
 **Edge Cases**:
+
 - Invalid shift objects skipped with console warning
 - Missing required fields use defaults (empty string, current date)
 - Undefined `clocked_in` coerced to `false` (explicit boolean)
@@ -667,6 +706,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 **Purpose**: Fetch all pages from Shiftboard API automatically.
 
 **Logic**:
+
 ```
 1. Make initial request with batch=100, start=0
 2. Check response.result.page.next
@@ -680,6 +720,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 ```
 
 **Safety**:
+
 - Hard limit at 100 pages (~10,000 shifts max)
 - Prevents infinite loops from malformed API responses
 - Logs warnings when approaching limits
@@ -780,6 +821,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 ## Testing Strategy
 
 ### Current State
+
 - **Unit Tests**: None
 - **Integration Tests**: None
 - **E2E Tests**: None
@@ -788,18 +830,21 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 ### Recommended Testing
 
 #### Unit Tests (Jest + React Testing Library)
+
 - **API Service**: Mock axios, test cache fallback logic
 - **DB Service**: Mock idb, test CRUD operations
 - **Shift Utilities**: Test grouping algorithm edge cases
 - **Components**: Test rendering, user interactions, state changes
 
 #### Integration Tests (Vitest + MSW)
+
 - Mock Shiftboard API with realistic data
 - Test full data flow: API → Cache → UI
 - Test refresh mechanisms
 - Test workgroup filtering end-to-end
 
 #### E2E Tests (Playwright)
+
 - Critical user flows:
   1. Load app → View calendar → Click shift → See modal
   2. Filter by workgroup → Verify filtered data → Clear filter
@@ -808,6 +853,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
   5. Simulate API failure → Verify cache fallback → Verify error indicator
 
 #### Performance Tests
+
 - Load 1000+ shifts → Measure render time
 - Rapid filter changes → Check for memory leaks
 - Auto-refresh stability over 1 hour
@@ -874,6 +920,7 @@ The application follows cloud-native principles with all infrastructure provisio
 The application supports **configuration-driven multi-tenancy**, allowing multiple isolated instances for different organizational units (e.g., different committees within HLSR):
 
 **Design Principles**:
+
 - **No hardcoded organization data**: All organization/committee-specific values passed via deployment parameters
 - **Resource isolation**: Each instance has dedicated Container App, Key Vault, and Application Insights resources
 - **Shared repository**: Single public codebase cloned and configured for each deployment
@@ -881,6 +928,7 @@ The application supports **configuration-driven multi-tenancy**, allowing multip
 - **Scale-to-zero per instance**: Each committee's instance scales independently
 
 **Configuration Parameters**:
+
 ```bicep
 @description('Organization identifier (e.g., hlsr-security)')
 param organizationId string
@@ -913,6 +961,7 @@ param scaleConfig object = {
 ```
 
 **Deployment per Instance**:
+
 ```bash
 # Deploy Security Committee instance
 az deployment group create \
@@ -923,7 +972,7 @@ az deployment group create \
                imageTag=v1.0.0 \
                appSettings='{"organizationName":"Security Committee"}'
 
-# Deploy Parking Committee instance  
+# Deploy Parking Committee instance
 az deployment group create \
   --resource-group rg-shifts-parking-prod \
   --template-file infra/main.bicep \
@@ -938,6 +987,7 @@ az deployment group create \
 The application supports **elastic resource management** for seasonal operations with **scale-to-zero** capability:
 
 **Active Season (e.g., Rodeo weeks)**:
+
 ```bash
 # Container App automatically scales based on traffic
 # Scales from 0 → 1-10 replicas as HTTP requests arrive
@@ -945,6 +995,7 @@ The application supports **elastic resource management** for seasonal operations
 ```
 
 **Off-Season (Idle periods)**:
+
 ```bash
 # Container App automatically scales to 0 replicas after idle timeout (default: no traffic for 30 seconds)
 # Infrastructure remains provisioned but no compute charges
@@ -952,6 +1003,7 @@ The application supports **elastic resource management** for seasonal operations
 ```
 
 **Complete Shutdown Option** (If infrastructure removal preferred):
+
 ```bash
 # Delete resource group (all resources removed)
 az group delete \
@@ -964,6 +1016,7 @@ az group delete \
 ```
 
 **Re-activation**:
+
 ```bash
 # Option A: If scaled to zero, first request wakes container (3-10 sec)
 # Option B: If deleted, re-provision infrastructure (~10-15 minutes)
@@ -977,18 +1030,20 @@ az deployment group create \
 | Period | Container Apps (Scale-to-zero) | App Service (B1) |
 |--------|-------------------------------|------------------|
 | **Active Season** (traffic) | ~$10/month | ~$13/month |
-| **Off-Season** (idle, scaled to 0) | ~$0-2/month* | ~$13/month |
+| **Off-Season** (idle, scaled to 0) | ~$0-2/month\* | ~$13/month |
 | **Off-Season** (deleted) | $0/month | $0/month |
 
-*Small charges for Container Apps Environment and log analytics workspace; can be shared across instances
+\*Small charges for Container Apps Environment and log analytics workspace; can be shared across instances
 
 **Annual Savings** (Per instance, 3-month season):
+
 - Scale-to-zero: ~$48/year (vs $156 for always-on App Service)
 - **69% cost reduction**
 
 #### Infrastructure as Code (Bicep)
 
 **Repository Structure**:
+
 ```
 infra/
 ├── main.bicep                     # Main orchestration template
@@ -1044,6 +1099,7 @@ infra/
    - Custom metrics and alerts
 
 **CI/CD Pipeline** (`.github/workflows/deploy.yml`):
+
 ```yaml
 name: Deploy to Azure
 
@@ -1071,29 +1127,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Install and test
         run: |
           npm ci
           npm run build
           npm test
-          
+
       - name: Build Docker image
         run: |
           docker build -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} .
           docker tag $REGISTRY/$IMAGE_NAME:${{ github.sha }} $REGISTRY/$IMAGE_NAME:latest
-          
+
       - name: Login to Azure Container Registry
         uses: azure/docker-login@v1
         with:
           login-server: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
-          
+
       - name: Push to ACR
         run: |
           docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
@@ -1105,11 +1161,11 @@ jobs:
     environment: ${{ inputs.environment || 'staging' }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
+
       - name: Deploy Bicep templates
         uses: azure/arm-deploy@v1
         with:
@@ -1119,7 +1175,7 @@ jobs:
           parameters: >
             infra/params/${{ inputs.environment }}.json
             imageTag=${{ github.sha }}
-            
+
   deploy-application:
     needs: deploy-infrastructure
     runs-on: ubuntu-latest
@@ -1127,7 +1183,7 @@ jobs:
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
+
       - name: Update Container App
         run: |
           az containerapp update \
@@ -1151,6 +1207,7 @@ jobs:
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights | Auto-injected by Azure |
 
 **Bicep Integration** (Key Vault References):
+
 ```bicep
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: appName
@@ -1252,6 +1309,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
 #### Production Deployment Checklist
 
 **Pre-Deployment**:
+
 - [ ] Bicep templates validated (`az bicep build`)
 - [ ] Docker image builds successfully locally
 - [ ] Parameters file configured with correct values
@@ -1262,6 +1320,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
 - [ ] GitHub Actions secrets configured
 
 **Deployment**:
+
 - [ ] Container Registry accessible (`az acr login`)
 - [ ] Docker image pushed to ACR
 - [ ] Infrastructure deployed via Bicep (`az deployment group create`)
@@ -1272,6 +1331,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
 - [ ] CORS configured correctly
 
 **Post-Deployment**:
+
 - [ ] Manual smoke test (view shifts, filter, refresh)
 - [ ] Monitor Application Insights for errors (first 2 hours)
 - [ ] Verify Key Vault secrets accessible
@@ -1284,6 +1344,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
 #### Alternative Deployment Options
 
 **Docker** (for local development):
+
 ```dockerfile
 # Multi-stage Dockerfile
 FROM node:20-alpine AS builder
@@ -1305,13 +1366,14 @@ CMD ["node", "dist/index.js"]
 ```
 
 **Docker Compose** (local full-stack):
+
 ```yaml
 version: '3.8'
 services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=development
       - SHIFTBOARD_ACCESS_KEY_ID=${SHIFTBOARD_ACCESS_KEY_ID}
@@ -1327,6 +1389,7 @@ services:
 ## Security Considerations
 
 ### Current Security
+
 - ✅ Helmet.js for security headers
 - ✅ CORS configured with allowed origins
 - ✅ Credentials isolated to server
@@ -1335,6 +1398,7 @@ services:
 - ✅ Phone numbers hidden until modal opened
 
 ### Recommended Enhancements
+
 - ❌ **Authentication**: Add user login with JWT/OAuth
 - ❌ **Authorization**: Implement role-based access control
 - ❌ **Rate Limiting**: Add express-rate-limit middleware
@@ -1347,12 +1411,14 @@ services:
 ## Rebuild Guide
 
 ### Prerequisites
+
 1. Node.js 18+ LTS
 2. npm 9+
 3. Shiftboard API credentials (access key + secret)
 4. Modern browser with IndexedDB support
 
 ### Step 1: Initialize Project
+
 ```bash
 mkdir shifts-dashboard-v2
 cd shifts-dashboard-v2
@@ -1360,6 +1426,7 @@ npm init -y
 ```
 
 ### Step 2: Backend Setup
+
 ```bash
 npm install express cors helmet morgan axios jssha dotenv
 
@@ -1368,6 +1435,7 @@ mkdir -p src/{config,controllers,routes,services,middleware,utils}
 ```
 
 **Key Files**:
+
 - `src/index.js` - Express app setup
 - `src/config/api.config.js` - Shiftboard credentials
 - `src/services/shift.service.js` - Shift logic + grouping
@@ -1378,6 +1446,7 @@ mkdir -p src/{config,controllers,routes,services,middleware,utils}
 - `src/middleware/error.middleware.js` - Error handler
 
 ### Step 3: Frontend Setup
+
 ```bash
 cd client
 npm create vite@latest . -- --template react-ts
@@ -1386,6 +1455,7 @@ npm install react-router-dom axios date-fns idb
 ```
 
 **Key Files**:
+
 - `src/App.tsx` - Router setup
 - `src/services/api.service.ts` - API client
 - `src/services/db.service.ts` - IndexedDB wrapper
@@ -1396,13 +1466,17 @@ npm install react-router-dom axios date-fns idb
 - `src/types/shift.types.ts` - TypeScript interfaces
 
 ### Step 4: Core Algorithm Implementation
+
 Implement `groupShiftsByAttributes` per algorithm spec (see above).
 
 ### Step 5: Cache Layer
+
 Implement IndexedDB service with 4 stores: shifts, accounts, workgroups, metadata.
 
 ### Step 6: UI Components
+
 Build components in this order:
+
 1. AppLayout (shell)
 2. WorkgroupFilter (context + dropdown)
 3. TabularShiftView (simpler than calendar)
@@ -1411,17 +1485,20 @@ Build components in this order:
 6. ErrorBoundary
 
 ### Step 7: Integration
+
 - Wire up refresh mechanisms
 - Test workgroup filtering
 - Verify cache fallback
 - Test all user flows
 
 ### Step 8: Testing
+
 - Add unit tests for utilities
 - Add integration tests for API service
 - Manual QA of all features
 
 ### Step 9: Deployment
+
 - Configure environment variables
 - Build production bundle
 - Deploy to Azure App Service
