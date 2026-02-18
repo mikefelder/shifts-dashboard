@@ -46,12 +46,12 @@ services:
       context: ./client
       dockerfile: Dockerfile
       target: production
+      args:
+        VITE_API_BASE_URL: http://localhost:3000/api
+        VITE_APP_NAME: Shifts Dashboard
     container_name: shifts-frontend
     ports:
       - '8080:80'
-    environment:
-      - VITE_API_BASE_URL=http://localhost:3000/api
-      - VITE_APP_NAME=Shifts Dashboard
     depends_on:
       backend:
         condition: service_healthy
