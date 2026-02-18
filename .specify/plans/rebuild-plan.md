@@ -512,19 +512,19 @@ frontend/
 **Owner**: Backend Developer  
 **Effort**: 4 hours
 
-- [ ] `npm init` in `/backend`
-- [ ] Install dependencies (Express, Axios, Helmet, CORS, Winston, Zod)
-- [ ] Install dev dependencies (Jest, Supertest, ts-node, nodemon)
-- [ ] Configure `tsconfig.json` (target: ES2022, module: commonjs)
-- [ ] Configure `jest.config.js` (coverage thresholds: 70%)
-- [ ] Create basic Express app skeleton
-- [ ] Add `npm scripts`: dev, build, test, lint
+- [x] `npm init` in `/backend`
+- [x] Install dependencies (Express, Axios, Helmet, CORS, Winston, Zod)
+- [x] Install dev dependencies (Jest, Supertest, ts-node, nodemon)
+- [x] Configure `tsconfig.json` (target: ES2022, module: commonjs)
+- [x] Configure `jest.config.js` (coverage thresholds: 70%)
+- [x] Create basic Express app skeleton
+- [x] Add `npm scripts`: dev, build, test, lint
 
 **Acceptance**:
 
-- `npm run dev` starts server on port 3000
-- `npm test` runs Jest (0 tests)
-- TypeScript compilation works (`npm run build`)
+- [x] `npm run dev` starts server on port 3000
+- [x] `npm test` runs Jest (0 tests)
+- [x] TypeScript compilation works (`npm run build`)
 
 ---
 
