@@ -1,27 +1,38 @@
 {
-  "name": "hlsr-shiftboard-reporting-api",
+  "name": "shifts-dashboard",
   "version": "1.0.0",
-  "description": "A Node.js application for interacting with the Shiftboard API",
-  "main": "src/index.js",
+  "private": true,
+  "description": "Shift management dashboard for Shiftboard with Azure Container Apps deployment",
+  "keywords": [
+    "shiftboard",
+    "shifts",
+    "dashboard",
+    "azure",
+    "container-apps"
+  ],
+  "author": "",
+  "license": "MIT",
+  "workspaces": [
+    "backend",
+    "client"
+  ],
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "prod": "NODE_ENV=production node src/index.js",
-    "build": "npm run build:client",
-    "build:client": "cd client && npm install && npm run build"
-  },
-  "dependencies": {
-    "axios": "^1.6.0",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.0.0",
-    "jssha": "^3.3.1",
-    "morgan": "^1.10.0"
+    "prepare": "husky install",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,tsx,json,md,yml,yaml}\"",
+    "test": "npm test --workspaces --if-present",
+    "clean": "rm -rf backend/dist backend/coverage client/dist client/coverage"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
   },
-  "author": "Kris Halbert",
-  "license": "MIT"
+  "lint-staged": {
+    "*.{js,ts,tsx,json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
 }
