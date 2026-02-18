@@ -26,7 +26,7 @@ export default defineConfig({
       },
     },
   },
-  // @ts-expect-error - Vitest config is added via plugin
+  // @ts-expect-error - Vitest extends Vite config with test property at runtime
   test: {
     globals: true,
     environment: 'jsdom',
