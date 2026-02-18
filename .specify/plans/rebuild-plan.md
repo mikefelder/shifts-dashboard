@@ -554,17 +554,17 @@ frontend/
 **Owner**: DevOps Lead  
 **Effort**: 6 hours
 
-- [ ] Create `backend/Dockerfile` (multi-stage build)
-- [ ] Create `frontend/Dockerfile`
-- [ ] Create `docker-compose.yml` (backend + frontend + optional Redis)
-- [ ] Document local setup in `README.md`
-- [ ] Add `.dockerignore` files
+- [x] Create `backend/Dockerfile` (multi-stage build)
+- [x] Create `frontend/Dockerfile`
+- [x] Create `docker-compose.yml` (backend + frontend + optional Redis)
+- [x] Document local setup in `README.md`
+- [x] Add `.dockerignore` files
 
 **Acceptance**:
 
-- `docker-compose up` starts both services
-- Backend accessible at localhost:3000
-- Frontend accessible at localhost:5173 (dev) or 8080 (prod)
+- [x] `docker-compose up` starts both services
+- [x] Backend accessible at localhost:3000
+- [x] Frontend accessible at localhost:5173 (dev) or 8080 (prod)
 
 ---
 
