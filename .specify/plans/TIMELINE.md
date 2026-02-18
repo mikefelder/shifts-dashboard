@@ -172,7 +172,7 @@ Week 9-10   │ ░░░░░░░░ CONTINGENCY BUFFER
 **Focus**: Infrastructure provisioning, production deployment, monitoring, user training
 
 **Key Tasks** (5 tasks):
-- T401: Infrastructure deployment via Bicep (App Service, Key Vault, App Insights)
+- T401: Infrastructure deployment via Bicep (Container Apps, ACR, Key Vault, App Insights)
 - T402: Monitoring setup (Application Insights dashboards, alerts)
 - T403: Logging enhancement (structured JSON logs, correlation IDs)
 - T404: User acceptance testing (stakeholder walkthrough)
@@ -304,14 +304,34 @@ Total:                                    50 FTE-weeks (with DevOps)
 
 **Note**: Actual staffing can be 2-3 people working over 10 weeks.
 
-### Infrastructure Costs
+### Infrastructure Costs (Per Instance)
 
-- **Azure App Service**: ~$50-100/month (Basic B1 tier)
-- **Azure Application Insights**: ~$20-50/month (based on usage)
+**Azure Container Apps (Scale-to-Zero Model)**:
+
+| Period | Monthly Cost | Notes |
+|--------|--------------|-------|
+| **Active Season** (traffic) | ~$10-15/month | Container Apps compute + ACR |
+| **Off-Season** (scale-to-zero) | ~$1-3/month | Container Apps Environment + Log Analytics only |
+| **Off-Season** (deleted) | $0/month | Full infrastructure removal |
+
+**Additional Shared Resources**:
+- **Azure Container Registry**: ~$5/month (Basic tier, shared across instances)
+- **Azure Application Insights**: ~$10-20/month (based on usage, can be shared)
 - **Domain + SSL**: ~$15/year (if custom domain used)
-- **Monitoring (optional)**: ~$20-50/month (Sentry, Pingdom)
 
-**Estimated Monthly Infra**: $70-200
+**Cost Comparison** (Annual, per instance, 3-month active season):
+- **Container Apps (scale-to-zero)**: ~$48/year (vs ~$156 for always-on App Service)
+- **69% cost savings** due to scale-to-zero capability
+
+**Multi-Instance Example** (3 committees, 3-month season):
+- 3 instances × $48/year = ~$144/year total
+- Shared ACR + monitoring ÷ 3 = ~$8/year per instance
+- **Total per instance**: ~$52/year
+
+**Estimated Monthly Infra** (Single instance):
+- Development: $15-20/month (always-on for testing)
+- Production (active): $10-15/month
+- Production (idle): $1-3/month
 
 ---
 
@@ -383,7 +403,8 @@ All implementations align with project principles as defined in [constitution.md
 ### Infrastructure
 - **Containers**: Docker + Docker Compose
 - **CI/CD**: GitHub Actions
-- **Deployment**: Azure App Service (Linux)
+- **Deployment**: Azure Container Apps (Linux containers, scale-to-zero)
+- **Registry**: Azure Container Registry
 - **Monitoring**: Application Insights (Azure) or Sentry
 
 ---

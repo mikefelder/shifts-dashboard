@@ -60,7 +60,7 @@ This plan outlines the complete rebuild of the Shifts Dashboard application with
 - **Coverage Target**: 70% (Phase 1), 85% (Phase 2)
 
 ### Target Platform
-- **Backend**: Linux server (Ubuntu 22.04+), Docker, Azure App Service
+- **Backend**: Linux container (Azure Container Apps), Docker, Azure Container Registry
 - **Frontend**: Modern browsers (Chrome 90+, Firefox 88+, Safari 15+, Edge 90+)
 - **Mobile**: Responsive web (1024px+); future: React Native
 
@@ -287,7 +287,9 @@ docs/
 infra/                               # Infrastructure as Code (NEW)
 ├── main.bicep                       # Main orchestration template
 ├── modules/
-│   ├── app-service.bicep            # App Service Plan + App Service
+│   ├── container-registry.bicep     # Azure Container Registry
+│   ├── container-apps-env.bicep     # Container Apps Environment + Log Analytics
+│   ├── container-app.bicep          # Container App with scale config
 │   ├── key-vault.bicep              # Key Vault with secrets
 │   ├── app-insights.bicep           # Application Insights
 │   └── networking.bicep             # VNet/subnet (optional)
@@ -556,7 +558,9 @@ frontend/
 Create Bicep templates for Azure infrastructure provisioning:
 
 - [ ] Create `infra/main.bicep` (main orchestration template)
-- [ ] Create `infra/modules/app-service.bicep` (App Service Plan + App Service)
+- [ ] Create `infra/modules/container-registry.bicep` (Azure Container Registry)
+- [ ] Create `infra/modules/container-apps-env.bicep` (Container Apps Environment + Log Analytics)
+- [ ] Create `infra/modules/container-app.bicep` (Container App with scale-to-zero config)
 - [ ] Create `infra/modules/key-vault.bicep` (Key Vault with secrets)
 - [ ] Create `infra/modules/app-insights.bicep` (Application Insights)
 - [ ] Create `infra/params/dev.json` (development parameters template)
@@ -571,7 +575,8 @@ Create Bicep templates for Azure infrastructure provisioning:
 **Key Features**:
 - Multi-tenancy support via parameters (organizationId, environment)
 - Key Vault integration for secrets (Shiftboard credentials)
-- Managed identity for App Service → Key Vault access
+- Managed identity for Container App → Key Vault access
+- Scale-to-zero configuration (minReplicas: 0, maxReplicas: 10)
 - Application Insights auto-instrumentation
 - Health check configuration (`/api/system/health`)
 - Resource naming conventions: `{resourceType}-shifts-{orgId}-{env}`
@@ -579,7 +584,8 @@ Create Bicep templates for Azure infrastructure provisioning:
 **Acceptance**:
 - Bicep templates validate without errors (`az bicep build`)
 - `deploy.sh` provisions full infrastructure in dev subscription
-- App Service can read Key Vault secrets via managed identity
+- Container App can read Key Vault secrets via managed identity
+- Scale-to-zero verified (app scales to 0 replicas after idle)
 - Application Insights receiving telemetry
 - `destroy.sh` cleanly removes all resources (spin-down scenario)
 
@@ -1222,10 +1228,12 @@ Deploy Azure infrastructure using Bicep templates created in Phase 0 (T006):
 
 - [ ] Validate Bicep templates (`infra/scripts/validate.sh`)
 - [ ] Create Azure Resource Group
+- [ ] Create Azure Container Registry
+- [ ] Build and push initial Docker image to ACR
 - [ ] Configure deployment parameters file with environment-specific values
 - [ ] Populate Key Vault secrets (Shiftboard credentials)
 - [ ] Execute infrastructure deployment (`infra/scripts/deploy.sh`)
-- [ ] Verify managed identity for App Service → Key Vault access
+- [ ] Verify managed identity for Container App → Key Vault access
 - [ ] Verify health check endpoint responds
 - [ ] Configure custom domain + SSL certificate (if applicable)
 - [ ] Document deployment parameters used
@@ -1238,12 +1246,19 @@ az bicep build --file infra/main.bicep
 # Create resource group
 az group create --name rg-shifts-{orgId}-{env} --location eastus
 
-# Deploy infrastructure
+# Create Container Registry and push image
+az acr create --name acrshifts{orgId} --sku Basic
+docker build -t acrshifts{orgId}.azurecr.io/shifts-dashboard:v1.0.0 .
+az acr login --name acrshifts{orgId}
+docker push acrshifts{orgId}.azurecr.io/shifts-dashboard:v1.0.0
+
+# Deploy infrastructure with Container Apps
 az deployment group create \
   --resource-group rg-shifts-{orgId}-{env} \
   --template-file infra/main.bicep \
   --parameters @infra/params/{env}.json \
                organizationId={orgId} \
+               imageTag=v1.0.0 \
                shiftboardAccessKey=@secure-param \
                shiftboardSecretKey=@secure-param
 ```
@@ -1251,14 +1266,18 @@ az deployment group create \
 **Multi-Tenant Testing**:
 - [ ] Deploy dev environment for testing
 - [ ] Deploy staging environment with different organizationId
-- [ ] Verify instances are isolated (separate App Services, Key Vaults)
+- [ ] Verify instances are isolated (separate Container Apps, Key Vaults)
+- [ ] Verify scale-to-zero: check replicas count after 5 minutes idle
+- [ ] Test cold start: first request after scale-to-zero (~3-10 seconds)
 - [ ] Test spin-down: `infra/scripts/destroy.sh` removes all resources
 
 **Acceptance**:
 - Infrastructure deployed successfully via Bicep
-- App Service running with health check returning 200
+- Container App running with health check returning 200
 - Key Vault secrets accessible via managed identity
 - Application Insights receiving telemetry
+- Scale-to-zero verified (0 replicas when idle)
+- Cold start time acceptable (<10 seconds)
 - Multiple instances can coexist with different parameters
 
 **Reference**: `codebase-spec.md` § Azure-Native Deployment
@@ -1317,8 +1336,10 @@ az deployment group create \
 **Effort**: 3 hours
 
 **Production Deployment**:
+- [ ] Build production Docker image with semantic version tag
+- [ ] Push production image to Azure Container Registry
 - [ ] Deploy production infrastructure via Bicep (GitHub Actions or manual)
-- [ ] Deploy application via GitHub Actions workflow
+- [ ] Deploy container to Container App
 - [ ] Verify health check endpoint (`/api/system/health`)
 - [ ] Final smoke test on production (all critical user flows)
 - [ ] Verify Application Insights receiving telemetry
@@ -1326,15 +1347,18 @@ az deployment group create \
 
 **Infrastructure Validation**:
 - [ ] Verify Key Vault integration (secrets accessible)
+- [ ] Verify scale-to-zero behavior (wait 5 minutes idle, check replicas = 0)
+- [ ] Test cold start time (first request after scale-to-zero: <10 seconds acceptable)
 - [ ] Test spin-down scenario in dev environment (`destroy.sh`)
 - [ ] Verify spin-up time (<15 minutes from empty to running)
 - [ ] Document actual infrastructure costs (baseline for seasonal budgeting)
 - [ ] Test multi-tenant capability: deploy second instance with different organizationId
+- [ ] Verify instances are isolated (different Container Apps, separate scaling)
 
 **Release Communication**:
 - [ ] Announce to users (email, Slack)
 - [ ] Share quick start guide
-- [ ] Monitor for first 2 hours (watch error rates, performance)
+- [ ] Monitor for first 2 hours (watch error rates, performance, scale events)
 - [ ] Document any issues in incident log
 - [ ] Schedule post-release retrospective
 
@@ -1342,8 +1366,11 @@ az deployment group create \
 - Application accessible to users at production URL
 - No critical errors in first 2 hours
 - Users successfully view shifts, filter workgroups, view contact info
+- Scale-to-zero works (0 replicas during idle)
+- Cold start acceptable (<10 seconds from 0 to serving requests)
 - Infrastructure can be cleanly created and destroyed
 - Multi-tenant deployments work with different parameters
+- Monthly cost <$5 per instance at scale-to-zero
 
 **Reference**: `constitution.md` § Principle VII (Cloud-Native Infrastructure)
 
@@ -1639,6 +1666,7 @@ After Phase 3 completion, verify all principles upheld:
 | 2026-02-17 | Playwright for E2E | Modern, reliable, better DX than Selenium |
 | 2026-02-17 | Defer PWA to Phase 5 | Core features first, enhancements later |
 | 2026-02-17 | Azure-native deployment | Aligns with organizational infrastructure, Key Vault integration |
+| 2026-02-17 | Azure Container Apps over App Service | 69% cost savings with scale-to-zero for seasonal operations |
 | 2026-02-17 | Bicep for IaC | Native Azure support, better tooling than Terraform for Azure |
 | 2026-02-17 | Multi-tenant via config | Enables multiple committees, supports seasonal spin-up/down |
 | 2026-02-17 | GitHub Actions for CI/CD | Native GitHub integration, free for public repos |

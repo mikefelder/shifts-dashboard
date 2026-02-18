@@ -816,7 +816,7 @@ GET /api/shifts/whos-on?workgroup=12345&batch=100
 
 ### Azure-Native Deployment (Infrastructure as Code)
 
-The application follows cloud-native principles with all infrastructure provisioned via Bicep templates and deployed through GitHub Actions CI/CD.
+The application follows cloud-native principles with all infrastructure provisioned via Bicep templates and deployed through GitHub Actions CI/CD. Uses **Azure Container Apps** for scale-to-zero cost optimization.
 
 #### Architecture Overview
 
@@ -825,19 +825,31 @@ The application follows cloud-native principles with all infrastructure provisio
 │                    GitHub Actions CI/CD                      │
 │  - Build: Compile TypeScript, bundle frontend               │
 │  - Test: Run unit, integration, E2E tests                   │
+│  - Containerize: Build Docker image                         │
+│  - Push: Upload to Azure Container Registry                 │
 │  - Deploy: Execute Bicep templates, deploy container        │
 └──────────────────────┬──────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                  Azure Resource Group                        │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │         App Service Plan (B1 or higher)              │  │
+│  │        Azure Container Registry                      │  │
+│  │  - Docker image storage                              │  │
+│  │  - Version tags (latest, semantic versions)          │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                       ↓                                      │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │             App Service (Linux)                      │  │
-│  │  - Node.js 20 LTS runtime                            │  │
+│  │        Container Apps Environment                    │  │
+│  │  - Managed Kubernetes infrastructure                 │  │
+│  │  - Log Analytics workspace integration               │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                       ↓                                      │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │          Azure Container App                         │  │
+│  │  - Node.js 20 container                              │  │
 │  │  - Serves bundled client + API                       │  │
+│  │  - Scale-to-zero when idle (0 replicas)              │  │
+│  │  - Auto-scale 1-10 replicas on traffic               │  │
 │  │  - Health probe: /api/system/health                  │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                       ↓                                      │
@@ -845,6 +857,7 @@ The application follows cloud-native principles with all infrastructure provisio
 │  │            Azure Key Vault                           │  │
 │  │  - Shiftboard credentials                            │  │
 │  │  - App secrets                                       │  │
+│  │  - Accessed via managed identity                     │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                       ↓                                      │
 │  ┌──────────────────────────────────────────────────────┐  │
@@ -862,9 +875,10 @@ The application supports **configuration-driven multi-tenancy**, allowing multip
 
 **Design Principles**:
 - **No hardcoded organization data**: All organization/committee-specific values passed via deployment parameters
-- **Resource isolation**: Each instance has dedicated App Service, Key Vault, and Application Insights resources
+- **Resource isolation**: Each instance has dedicated Container App, Key Vault, and Application Insights resources
 - **Shared repository**: Single public codebase cloned and configured for each deployment
 - **Parameter-driven**: Bicep templates accept parameters for resource naming, credentials, and configuration
+- **Scale-to-zero per instance**: Each committee's instance scales independently
 
 **Configuration Parameters**:
 ```bicep
@@ -881,11 +895,20 @@ param shiftboardAccessKey string
 @secure()
 param shiftboardSecretKey string
 
+@description('Container image tag')
+param imageTag string = 'latest'
+
 @description('Application-specific settings')
 param appSettings object = {
   organizationName: 'Security Committee'
   timeZone: 'America/Chicago'
   allowedOrigins: 'https://security.hlsr.com'
+}
+
+@description('Scaling configuration')
+param scaleConfig object = {
+  minReplicas: 0  // Scale to zero when idle
+  maxReplicas: 10 // Scale up during peak
 }
 ```
 
@@ -897,6 +920,7 @@ az deployment group create \
   --template-file infra/main.bicep \
   --parameters organizationId=hlsr-security \
                environment=prod \
+               imageTag=v1.0.0 \
                appSettings='{"organizationName":"Security Committee"}'
 
 # Deploy Parking Committee instance  
@@ -905,84 +929,118 @@ az deployment group create \
   --template-file infra/main.bicep \
   --parameters organizationId=hlsr-parking \
                environment=prod \
+               imageTag=v1.0.0 \
                appSettings='{"organizationName":"Parking Committee"}'
 ```
 
 #### Seasonal Operations (Cost Optimization)
 
-The application supports **elastic resource management** for seasonal operations:
+The application supports **elastic resource management** for seasonal operations with **scale-to-zero** capability:
 
-**Spin-Up** (Before event season):
+**Active Season (e.g., Rodeo weeks)**:
 ```bash
-# Provision infrastructure from Bicep templates (~10-15 minutes)
-az deployment group create \
-  --resource-group rg-shifts-$ORG-prod \
-  --template-file infra/main.bicep \
-  --parameters @params/$ORG.prod.json
-
-# Deploy application via GitHub Actions
-gh workflow run deploy.yml \
-  --ref main \
-  -f environment=production \
-  -f organization=$ORG
+# Container App automatically scales based on traffic
+# Scales from 0 → 1-10 replicas as HTTP requests arrive
+# No manual intervention needed for scale-up
 ```
 
-**Spin-Down** (After event season):
+**Off-Season (Idle periods)**:
+```bash
+# Container App automatically scales to 0 replicas after idle timeout (default: no traffic for 30 seconds)
+# Infrastructure remains provisioned but no compute charges
+# First request after idle triggers cold start (~3-10 seconds)
+```
+
+**Complete Shutdown Option** (If infrastructure removal preferred):
 ```bash
 # Delete resource group (all resources removed)
 az group delete \
   --name rg-shifts-$ORG-prod \
   --yes --no-wait
 
-# Estimated monthly savings: ~$50-100 per instance (B1 App Service + Key Vault + App Insights)
+# Cost savings comparison:
+# Option A (Scale-to-zero): $0-2/month idle (keep infrastructure)
+# Option B (Full deletion): $0/month idle (remove infrastructure, ~10 min to recreate)
 ```
 
-**Automation Options**:
-- **Manual**: Run scripts before/after event season
-- **Scheduled**: Azure Automation runbooks triggered by calendar dates
-- **Cost-managed**: Use Azure Cost Management alerts to monitor spending
+**Re-activation**:
+```bash
+# Option A: If scaled to zero, first request wakes container (3-10 sec)
+# Option B: If deleted, re-provision infrastructure (~10-15 minutes)
+az deployment group create \
+  --resource-group rg-shifts-$ORG-prod \
+  --template-file infra/main.bicep \
+  --parameters @params/$ORG.prod.json
+```
+
+**Cost Analysis** (Per instance, monthly):
+| Period | Container Apps (Scale-to-zero) | App Service (B1) |
+|--------|-------------------------------|------------------|
+| **Active Season** (traffic) | ~$10/month | ~$13/month |
+| **Off-Season** (idle, scaled to 0) | ~$0-2/month* | ~$13/month |
+| **Off-Season** (deleted) | $0/month | $0/month |
+
+*Small charges for Container Apps Environment and log analytics workspace; can be shared across instances
+
+**Annual Savings** (Per instance, 3-month season):
+- Scale-to-zero: ~$48/year (vs $156 for always-on App Service)
+- **69% cost reduction**
 
 #### Infrastructure as Code (Bicep)
 
 **Repository Structure**:
 ```
 infra/
-├── main.bicep                 # Main orchestration template
+├── main.bicep                     # Main orchestration template
 ├── modules/
-│   ├── app-service.bicep      # App Service Plan + App Service
-│   ├── key-vault.bicep        # Key Vault with secrets
-│   ├── app-insights.bicep     # Application Insights
-│   └── networking.bicep       # VNet/subnet (optional for private endpoints)
+│   ├── container-registry.bicep   # Azure Container Registry
+│   ├── container-apps-env.bicep   # Container Apps Environment + Log Analytics
+│   ├── container-app.bicep        # Container App with scale config
+│   ├── key-vault.bicep            # Key Vault with secrets
+│   ├── app-insights.bicep         # Application Insights
+│   └── networking.bicep           # VNet/subnet (optional for private endpoints)
 ├── params/
-│   ├── dev.json               # Development environment parameters
-│   ├── staging.json           # Staging environment parameters
-│   └── prod.json              # Production environment parameters (template)
+│   ├── dev.json                   # Development environment parameters
+│   ├── staging.json               # Staging environment parameters
+│   └── prod.json                  # Production environment parameters (template)
 └── scripts/
-    ├── deploy.sh              # Deployment automation script
-    ├── destroy.sh             # Cleanup script (spin-down)
-    └── validate.sh            # Pre-deployment validation
+    ├── deploy.sh                  # Deployment automation script
+    ├── destroy.sh                 # Cleanup script (full deletion)
+    └── validate.sh                # Pre-deployment validation
 ```
 
 **Key Bicep Modules**:
 
-1. **App Service** (`modules/app-service.bicep`):
-   - App Service Plan (Linux, B1 or higher)
-   - App Service with Node.js 20 LTS runtime
-   - Application settings (Key Vault references for secrets)
-   - Health check configuration (`/api/system/health`)
-   - Custom domain + SSL certificate (optional)
+1. **Container Registry** (`modules/container-registry.bicep`):
+   - Azure Container Registry (Basic SKU)
+   - Admin access enabled for CI/CD
+   - Geo-replication (optional for production)
 
-2. **Key Vault** (`modules/key-vault.bicep`):
+2. **Container Apps Environment** (`modules/container-apps-env.bicep`):
+   - Managed Kubernetes environment
+   - Log Analytics workspace integration
+   - Shared across multiple Container Apps (cost optimization)
+   - VNet integration (optional)
+
+3. **Container App** (`modules/container-app.bicep`):
+   - Container configuration (image, port 3000)
+   - Scale rules: 0 to 10 replicas based on HTTP traffic
+   - Environment variables (from Key Vault)
+   - Health probes (`/api/system/health`)
+   - Ingress configuration (external, HTTPS)
+   - Managed identity for Key Vault access
+
+4. **Key Vault** (`modules/key-vault.bicep`):
    - Soft-delete enabled
    - Purge protection
    - RBAC authorization
    - Secrets: Shiftboard credentials, connection strings
-   - Access policies for App Service managed identity
+   - Access policies for Container App managed identity
 
-3. **Application Insights** (`modules/app-insights.bicep`):
+5. **Application Insights** (`modules/app-insights.bicep`):
    - Log Analytics workspace
    - Application Insights resource
-   - Integration with App Service
+   - Integration with Container App
    - Custom metrics and alerts
 
 **CI/CD Pipeline** (`.github/workflows/deploy.yml`):
@@ -1004,24 +1062,42 @@ on:
           - staging
           - production
 
+env:
+  REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
+  IMAGE_NAME: shifts-dashboard
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npm run build
-      - run: npm test
-      - uses: actions/upload-artifact@v4
+          
+      - name: Install and test
+        run: |
+          npm ci
+          npm run build
+          npm test
+          
+      - name: Build Docker image
+        run: |
+          docker build -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} .
+          docker tag $REGISTRY/$IMAGE_NAME:${{ github.sha }} $REGISTRY/$IMAGE_NAME:latest
+          
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
         with:
-          name: app-bundle
-          path: |
-            dist/
-            client/dist/
-            package*.json
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+          
+      - name: Push to ACR
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_NAME:latest
 
   deploy-infrastructure:
     needs: build
@@ -1029,25 +1105,35 @@ jobs:
     environment: ${{ inputs.environment || 'staging' }}
     steps:
       - uses: actions/checkout@v4
+      
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - uses: azure/arm-deploy@v1
+          
+      - name: Deploy Bicep templates
+        uses: azure/arm-deploy@v1
         with:
           scope: resourcegroup
           resourceGroupName: ${{ secrets.RESOURCE_GROUP }}
           template: infra/main.bicep
-          parameters: infra/params/${{ inputs.environment }}.json
-          
+          parameters: >
+            infra/params/${{ inputs.environment }}.json
+            imageTag=${{ github.sha }}
+            
   deploy-application:
     needs: deploy-infrastructure
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
-      - uses: azure/webapps-deploy@v2
+      - uses: azure/login@v1
         with:
-          app-name: ${{ secrets.APP_NAME }}
-          package: app-bundle/
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          
+      - name: Update Container App
+        run: |
+          az containerapp update \
+            --name ${{ secrets.CONTAINER_APP_NAME }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/shifts-dashboard:${{ github.sha }}
 ```
 
 #### Environment Configuration
@@ -1057,37 +1143,107 @@ jobs:
 |----------|--------|-------------|
 | `SHIFTBOARD_ACCESS_KEY_ID` | Key Vault | Shiftboard API access key |
 | `SHIFTBOARD_SECRET_KEY` | Key Vault | Shiftboard API secret |
-| `SHIFTBOARD_HOST` | App Setting | `api.shiftboard.com` |
-| `SHIFTBOARD_PATH` | App Setting | `/api/v1/` |
-| `ALLOWED_ORIGINS` | App Setting | CORS allowed origins (comma-separated) |
-| `PORT` | App Setting | `3000` (default) |
-| `NODE_ENV` | App Setting | `production` |
+| `SHIFTBOARD_HOST` | Container App Env | `api.shiftboard.com` |
+| `SHIFTBOARD_PATH` | Container App Env | `/api/v1/` |
+| `ALLOWED_ORIGINS` | Container App Env | CORS allowed origins (comma-separated) |
+| `PORT` | Container App Env | `3000` (default) |
+| `NODE_ENV` | Container App Env | `production` |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights | Auto-injected by Azure |
 
 **Bicep Integration** (Key Vault References):
 ```bicep
-resource appService 'Microsoft.Web/sites@2022-09-01' = {
+resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: appName
+  location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
-    siteConfig: {
-      appSettings: [
+    managedEnvironmentId: containerAppsEnvironment.id
+    configuration: {
+      ingress: {
+        external: true
+        targetPort: 3000
+        allowInsecure: false
+      }
+      secrets: [
         {
-          name: 'SHIFTBOARD_ACCESS_KEY_ID'
-          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=shiftboard-access-key)'
+          name: 'shiftboard-access-key'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/shiftboard-access-key'
+          identity: 'system'
         }
         {
-          name: 'SHIFTBOARD_SECRET_KEY'
-          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=shiftboard-secret-key)'
-        }
-        {
-          name: 'ALLOWED_ORIGINS'
-          value: appSettings.allowedOrigins
-        }
-        {
-          name: 'NODE_ENV'
-          value: 'production'
+          name: 'shiftboard-secret-key'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/shiftboard-secret-key'
+          identity: 'system'
         }
       ]
+      registries: [
+        {
+          server: containerRegistry.properties.loginServer
+          username: containerRegistry.name
+          passwordSecretRef: 'registry-password'
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'shifts-dashboard'
+          image: '${containerRegistry.properties.loginServer}/shifts-dashboard:${imageTag}'
+          resources: {
+            cpu: json('0.5')
+            memory: '1Gi'
+          }
+          env: [
+            {
+              name: 'SHIFTBOARD_ACCESS_KEY_ID'
+              secretRef: 'shiftboard-access-key'
+            }
+            {
+              name: 'SHIFTBOARD_SECRET_KEY'
+              secretRef: 'shiftboard-secret-key'
+            }
+            {
+              name: 'ALLOWED_ORIGINS'
+              value: appSettings.allowedOrigins
+            }
+            {
+              name: 'NODE_ENV'
+              value: 'production'
+            }
+            {
+              name: 'PORT'
+              value: '3000'
+            }
+          ]
+          probes: [
+            {
+              type: 'Liveness'
+              httpGet: {
+                path: '/api/system/health'
+                port: 3000
+              }
+              initialDelaySeconds: 10
+              periodSeconds: 30
+            }
+          ]
+        }
+      ]
+      scale: {
+        minReplicas: 0  // Scale to zero
+        maxReplicas: 10
+        rules: [
+          {
+            name: 'http-rule'
+            http: {
+              metadata: {
+                concurrentRequests: '10'
+              }
+            }
+          }
+        ]
+      }
     }
   }
 }
@@ -1097,15 +1253,19 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
 
 **Pre-Deployment**:
 - [ ] Bicep templates validated (`az bicep build`)
+- [ ] Docker image builds successfully locally
 - [ ] Parameters file configured with correct values
 - [ ] Azure subscription has sufficient quota
+- [ ] Azure Container Registry created
 - [ ] Key Vault secrets populated
 - [ ] Custom domain DNS configured (if applicable)
 - [ ] GitHub Actions secrets configured
 
 **Deployment**:
+- [ ] Container Registry accessible (`az acr login`)
+- [ ] Docker image pushed to ACR
 - [ ] Infrastructure deployed via Bicep (`az deployment group create`)
-- [ ] Application deployed via GitHub Actions or Azure CLI
+- [ ] Container App deployed and running
 - [ ] Health check endpoint returning 200 (`/api/system/health`)
 - [ ] Application Insights receiving telemetry
 - [ ] HTTPS redirect working
@@ -1117,49 +1277,52 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
 - [ ] Verify Key Vault secrets accessible
 - [ ] Test workgroup filtering
 - [ ] Verify cache fallback during API failure scenario
+- [ ] Verify scale-to-zero behavior (wait for idle timeout, check replicas)
+- [ ] Test cold start time (first request after scale-to-zero)
 - [ ] Document actual resource costs for cost tracking
 
 #### Alternative Deployment Options
 
-**Docker** (for local development or non-Azure hosting):
+**Docker** (for local development):
 ```dockerfile
-# Backend Dockerfile
-FROM node:20-alpine
+# Multi-stage Dockerfile
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 COPY . .
+RUN npm run build
 RUN npm run build:client
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/client/dist ./client/dist
+COPY --from=builder /app/package*.json ./
+RUN npm ci --only=production
 EXPOSE 3000
-CMD ["node", "src/index.js"]
+CMD ["node", "dist/index.js"]
 ```
 
 **Docker Compose** (local full-stack):
 ```yaml
 version: '3.8'
 services:
-  backend:
+  app:
     build: .
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - SHIFTBOARD_ACCESS_KEY_ID=${SHIFTBOARD_ACCESS_KEY_ID}
       - SHIFTBOARD_SECRET_KEY=${SHIFTBOARD_SECRET_KEY}
-  
-  # Optional: Redis for future session management
-  # redis:
-  #   image: redis:7-alpine
-  #   ports:
-  #     - "6379:6379"
+      - ALLOWED_ORIGINS=http://localhost:5173
+    volumes:
+      - ./dist:/app/dist
+      - ./client/dist:/app/client/dist
 ```
 
-**Static Hosting + Serverless** (alternative architecture):
-- Frontend: Azure Static Web Apps or CDN
-- Backend: Azure Functions (Express via adapter)
-- Storage: Cosmos DB or Table Storage (if needed)
-
-**Note**: Current focus is Azure App Service deployment for simplicity and operational efficiency.
+**Note**: Current focus is Azure Container Apps deployment for production cost optimization with scale-to-zero capability.
 
 ## Security Considerations
 

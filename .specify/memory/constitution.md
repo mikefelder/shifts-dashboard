@@ -133,8 +133,9 @@ The system MUST be deployable as cloud-native infrastructure with configuration-
 The following constraints apply stack-agnostic requirements for any implementation:
 
 - **Technology Stack**: Node.js/Express API (current); browser-based SPA with IndexedDB support; any replacement must maintain REST API contract
-- **Cloud Platform**: Azure-native deployment (App Service, Key Vault, Application Insights); infrastructure provisioned via Bicep templates
-- **CI/CD**: GitHub Actions for automated build, test, and deployment pipelines
+- **Cloud Platform**: Azure-native deployment (Container Apps, Key Vault, Application Insights, Container Registry); infrastructure provisioned via Bicep templates
+- **Container Strategy**: Docker-based deployment with multi-stage builds; container images stored in Azure Container Registry
+- **CI/CD**: GitHub Actions for automated build, test, containerization, and deployment pipelines
 - **Multi-Tenancy**: Configuration-driven instances supporting isolated deployments per organizational unit (e.g., different committees)
 - **Configuration**: Environment-specific parameters (organization name, Shiftboard credentials, resource names) passed via deployment parameters or Key Vault references
 - **Infrastructure as Code**: All Azure resources defined in versioned Bicep modules; manual portal changes prohibited in production
@@ -142,7 +143,7 @@ The following constraints apply stack-agnostic requirements for any implementati
 - **Date Formatting**: Use `MMM d, yyyy` and `h:mm a` patterns for operator familiarity; changes require user acceptance testing
 - **Pagination**: Batch sizes up to 100 pages with guard limits to prevent runaway loops; log warnings when approaching limits
 - **Error Responses**: JSON format `{error: <string>}` with appropriate HTTP status codes (400/401/403/404/500)
-- **Resource Management**: Support for automated spin-up/spin-down to minimize costs during off-season; infrastructure templates enable rapid provisioning (<15 minutes from parameters to running app)
+- **Resource Management**: Support for automated spin-up/spin-down to minimize costs during off-season; Container Apps scale-to-zero during idle periods; infrastructure templates enable rapid provisioning (<15 minutes from parameters to running app)
 
 ## Quality & Testing
 
