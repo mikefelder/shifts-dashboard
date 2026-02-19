@@ -5,14 +5,14 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from client subdirectory
+COPY client/package*.json ./
 
 # Install all dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy source code from client subdirectory
+COPY client/ .
 
 # Build application with Vite
 RUN npm run build
@@ -24,7 +24,7 @@ FROM nginx:1.27-alpine AS production
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy custom nginx configuration for SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Fix permissions for nginx user (already exists in base image)
 RUN chown -R nginx:nginx /usr/share/nginx/html && \

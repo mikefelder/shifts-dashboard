@@ -5,14 +5,17 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from backend subdirectory
+COPY backend/package*.json ./
 
 # Install all dependencies (including dev dependencies for TypeScript build)
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy root tsconfig for extends
+COPY tsconfig.json ../tsconfig.json
+
+# Copy source code from backend subdirectory
+COPY backend/ .
 
 # Build TypeScript to JavaScript
 RUN npm run build
@@ -22,8 +25,8 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from backend subdirectory
+COPY backend/package*.json ./
 
 # Install only production dependencies
 RUN npm install --omit=dev
