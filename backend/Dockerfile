@@ -9,7 +9,7 @@ WORKDIR /app
 COPY backend/package*.json ./
 
 # Install all dependencies (including dev dependencies for TypeScript build)
-RUN npm install
+RUN npm ci
 
 # Copy root tsconfig for extends
 COPY tsconfig.json ../tsconfig.json
@@ -29,7 +29,7 @@ WORKDIR /app
 COPY backend/package*.json ./
 
 # Install only production dependencies
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy built application from build stage
 COPY --from=build /app/dist ./dist
