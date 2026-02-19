@@ -46,7 +46,7 @@ jobs:
         working-directory: ./client
 
       - name: Run unit tests
-        run: npm test -- --run --passWithNoTests
+        run: npm test -- --run
         working-directory: ./client
 
       - name: Build
