@@ -160,10 +160,20 @@ npm run dev
 # Vite dev server starts at http://localhost:5173
 ```
 
-**Or use Docker Compose** (when T004 complete):
+**Or use Docker Compose**:
 
 ```bash
-docker-compose up
+# Production mode (Nginx + Node)
+docker-compose --profile prod up
+
+# Development mode (hot-reload for both services, dev-only)
+docker-compose --profile dev up backend-dev frontend-dev
+
+# Build images from scratch
+docker-compose build
+
+# Stop and remove containers
+docker-compose down
 ```
 
 ### 5. Build for Production

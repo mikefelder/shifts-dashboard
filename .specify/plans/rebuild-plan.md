@@ -554,17 +554,17 @@ frontend/
 **Owner**: DevOps Lead  
 **Effort**: 6 hours
 
-- [ ] Create `backend/Dockerfile` (multi-stage build)
-- [ ] Create `frontend/Dockerfile`
-- [ ] Create `docker-compose.yml` (backend + frontend + optional Redis)
-- [ ] Document local setup in `README.md`
-- [ ] Add `.dockerignore` files
+- [x] Create `backend/Dockerfile` (multi-stage build)
+- [x] Create `frontend/Dockerfile`
+- [x] Create `docker-compose.yml` (backend + frontend + optional Redis)
+- [x] Document local setup in `README.md`
+- [x] Add `.dockerignore` files
 
 **Acceptance**:
 
-- `docker-compose up` starts both services
-- Backend accessible at localhost:3000
-- Frontend accessible at localhost:5173 (dev) or 8080 (prod)
+- [x] `docker-compose up` starts both services
+- [x] Backend accessible at localhost:3000
+- [x] Frontend accessible at localhost:5173 (dev) or 8080 (prod)
 
 ---
 
@@ -573,17 +573,17 @@ frontend/
 **Owner**: DevOps Lead  
 **Effort**: 8 hours
 
-- [ ] Create `.github/workflows/backend-tests.yml` (lint, test, build)
-- [ ] Create `.github/workflows/frontend-tests.yml` (lint, test, build)
-- [ ] Create `.github/workflows/deploy.yml` (deploy to Azure on main push)
+- [x] Create `.github/workflows/backend-tests.yml` (lint, test, build)
+- [x] Create `.github/workflows/frontend-tests.yml` (lint, test, build)
+- [x] Create `.github/workflows/deploy.yml` (deploy to Azure on main push)
 - [ ] Configure GitHub secrets (Shiftboard credentials, Azure credentials)
 - [ ] Add status badges to README
 
 **Acceptance**:
 
-- Pull requests trigger automated tests
-- Failed tests block merge
-- Push to main triggers deployment
+- [x] Pull requests trigger automated tests
+- [x] Failed tests block merge
+- [x] Push to main triggers deployment
 
 ---
 

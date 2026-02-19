@@ -4,5 +4,5 @@ test('basic test', async ({ page }) => {
   await page.goto('/');
   // This is just a placeholder test for T003 acceptance criteria
   // Real tests will be added in later phases
-  await expect(page).toHaveTitle(/client/);
+  await expect(page).toHaveTitle(/Shifts Dashboard/);
 });

@@ -1,0 +1,54 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'package.json'
+      - '.github/workflows/backend-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'package.json'
+      - '.github/workflows/backend-tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./backend
+        env:
+          CI: true
+
+      - name: Run linter
+        run: npm run lint
+        working-directory: ./backend
+
+      - name: Run type check
+        run: npx tsc --noEmit
+        working-directory: ./backend
+
+      - name: Run tests
+        run: npm test
+        working-directory: ./backend
+
+      - name: Build
+        run: npm run build
+        working-directory: ./backend
