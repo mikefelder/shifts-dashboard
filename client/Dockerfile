@@ -9,7 +9,7 @@ WORKDIR /app
 COPY client/package*.json ./
 
 # Install all dependencies
-RUN npm install
+RUN npm ci
 
 # Copy source code from client subdirectory
 COPY client/ .
