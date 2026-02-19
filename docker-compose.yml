@@ -39,6 +39,8 @@ services:
       options:
         max-size: '10m'
         max-file: '3'
+    profiles:
+      - prod
 
   # Frontend SPA Service
   frontend:
@@ -46,12 +48,12 @@ services:
       context: ./client
       dockerfile: Dockerfile
       target: production
+      args:
+        VITE_API_BASE_URL: http://localhost:3000/api
+        VITE_APP_NAME: Shifts Dashboard
     container_name: shifts-frontend
     ports:
       - '8080:80'
-    environment:
-      - VITE_API_BASE_URL=http://localhost:3000/api
-      - VITE_APP_NAME=Shifts Dashboard
     depends_on:
       backend:
         condition: service_healthy
@@ -69,6 +71,8 @@ services:
       options:
         max-size: '10m'
         max-file: '3'
+    profiles:
+      - prod
 
   # Development Backend (with hot-reload)
   backend-dev:
