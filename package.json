@@ -17,7 +17,7 @@
     "client"
   ],
   "scripts": {
-    "prepare": "husky install",
+    "prepare": "husky install || true",
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{js,ts,tsx,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{js,ts,tsx,json,md,yml,yaml}\"",
