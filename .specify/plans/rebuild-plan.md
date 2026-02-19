@@ -573,17 +573,17 @@ frontend/
 **Owner**: DevOps Lead  
 **Effort**: 8 hours
 
-- [ ] Create `.github/workflows/backend-tests.yml` (lint, test, build)
-- [ ] Create `.github/workflows/frontend-tests.yml` (lint, test, build)
-- [ ] Create `.github/workflows/deploy.yml` (deploy to Azure on main push)
+- [x] Create `.github/workflows/backend-tests.yml` (lint, test, build)
+- [x] Create `.github/workflows/frontend-tests.yml` (lint, test, build)
+- [x] Create `.github/workflows/deploy.yml` (deploy to Azure on main push)
 - [ ] Configure GitHub secrets (Shiftboard credentials, Azure credentials)
 - [ ] Add status badges to README
 
 **Acceptance**:
 
-- Pull requests trigger automated tests
-- Failed tests block merge
-- Push to main triggers deployment
+- [x] Pull requests trigger automated tests
+- [x] Failed tests block merge
+- [x] Push to main triggers deployment
 
 ---
 

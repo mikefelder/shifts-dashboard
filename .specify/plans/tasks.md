@@ -32,7 +32,7 @@ description: 'Task list for Shifts Dashboard Rebuild'
 - [x] T003 Initialize frontend with Vite React-TS, install MUI/router/axios/idb/date-fns, configure vitest and Playwright
 - [x] T004 [P] Create backend/Dockerfile and frontend/Dockerfile with multi-stage builds
 - [x] T005 [P] Create docker-compose.yml for local development (backend + frontend services)
-- [ ] T006 [P] Create .github/workflows/ for CI/CD (backend-tests.yml, frontend-tests.yml, deploy.yml)
+- [x] T006 [P] Create .github/workflows/ for CI/CD (backend-tests.yml, frontend-tests.yml, deploy.yml)
 
 ---
 
