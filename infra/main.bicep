@@ -38,12 +38,13 @@ module containerAppsEnv './modules/container-apps-env.bicep' = {
   }
 }
 
-// Key Vault (deployed first, before backend needs it)
+// Key Vault (deployed after backend to get principal ID)
 module keyVault './modules/key-vault.bicep' = {
   name: 'key-vault-deployment'
   params: {
     location: location
     keyVaultName: keyVaultName
+    backendPrincipalId: backendApp.outputs.principalId
   }
 }
 
@@ -100,22 +101,6 @@ module frontendApp './modules/container-app.bicep' = {
     cpu: '0.25'
     memory: '0.5Gi'
     environmentVariables: []
-  }
-}
-
-// Reference to Key Vault for role assignment
-resource keyVaultResource 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: keyVaultName
-}
-
-// Grant Key Vault Secrets User role to backend Container App
-resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVaultName, '${appName}-backend-${environment}', 'Key Vault Secrets User')
-  scope: keyVaultResource
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Secrets User
-    principalId: backendApp.outputs.principalId
-    principalType: 'ServicePrincipal'
   }
 }
 

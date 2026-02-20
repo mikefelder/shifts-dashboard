@@ -4,6 +4,9 @@ param location string = resourceGroup().location
 @description('Key Vault name')
 param keyVaultName string
 
+@description('Backend Container App principal ID for Key Vault access')
+param backendPrincipalId string = ''
+
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
@@ -14,7 +17,19 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     tenantId: subscription().tenantId
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
-    enableRbacAuthorization: true
+    enableRbacAuthorization: false
+    accessPolicies: !empty(backendPrincipalId) ? [
+      {
+        tenantId: subscription().tenantId
+        objectId: backendPrincipalId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+          ]
+        }
+      }
+    ] : []
     sku: {
       name: 'standard'
       family: 'A'
