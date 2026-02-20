@@ -40,6 +40,39 @@ Notes:
 
 # Shift Dashboard Constitution
 
+**Version**: 1.2.0  
+**Display Context**: Large-Screen Room Monitoring System  
+**Date**: 2026-02-20
+
+## Application Purpose
+
+This application is a **large-screen dashboard display** designed for shared room monitoring of volunteer shift staffing. It is **NOT** a personal workstation application.
+
+### Display Context
+
+- **Primary Environment**: Large TV/monitor in operations room or command center
+- **Viewing Distance**: 5-15 feet from screen
+- **Primary Use**: Passive monitoring by multiple viewers simultaneously
+- **User Interaction**: Minimal (auto-refresh handles updates)
+- **Information Access**: Glanceable - users understand staffing status within 3-5 seconds
+
+### Core Use Cases
+
+1. **Who's On Shift**: Quickly identify currently active shifts and assigned personnel
+2. **Arrival Status**: Visual indication of who has clocked in (arrived on-site) vs. not yet arrived
+3. **Upcoming Shifts**: See next shift transitions to anticipate staffing changes
+4. **Staffing Gaps**: Identify no-shows or unstaffed positions requiring immediate action
+5. **Committee Response**: Provide real-time situational awareness for operations decisions
+
+### Design Implications
+
+- **Large Typography**: All text sized for distance viewing (minimum 18px body, 24px+ headers)
+- **High Contrast**: Colors must be distinguishable from across the room
+- **Auto-Refresh**: Automatic updates every 5-15 minutes without user interaction
+- **Minimal Chrome**: Reduce UI clutter; maximize information density
+- **Status Indicators**: Clear visual differentiation (clocked in = green, not arrived = red)
+- **Current Time**: Prominent display to contextualize shift timing
+
 ## Core Principles
 
 ### I. API-First Architecture

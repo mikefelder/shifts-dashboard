@@ -92,6 +92,10 @@ This plan outlines the complete rebuild of the Shift Dashboard application with 
 - **Shiftboard Rate Limits**: Unknown; implement exponential backoff
 - **Data Freshness**: <60 seconds for manual refresh
 - **Max Dataset**: 10,000 shifts (100 pages × 100 batch size)
+- **Display Context**: Large-screen display (TV/monitor) for room monitoring at 5-15 foot viewing distance
+- **Typography**: Minimum 18px body text, 24px+ headers for distance readability
+- **Contrast**: WCAG AAA (7:1) for text, minimum 4.5:1 for interactive elements
+- **Interaction Model**: Primarily passive viewing; auto-refresh critical (5-15 min intervals)
 
 ### Scale/Scope
 
@@ -1218,19 +1222,24 @@ Each test:
 **Effort**: 6 hours
 
 - [ ] Run Axe DevTools on all pages
-- [ ] Fix color contrast issues (WCAG AA)
+- [ ] Fix color contrast issues (WCAG AA minimum, AAA recommended for large-screen display)
 - [ ] Verify keyboard navigation (tab order, focus indicators)
 - [ ] Test with screen reader (VoiceOver / NVDA)
 - [ ] Add ARIA labels where needed
 - [ ] Verify focus trap in modals
+- [ ] Test large-screen display readability (minimum 18px body text, 24px+ headers)
+- [ ] Verify status indicators use both color AND shape/icon (colorblind accessibility)
 
 **Acceptance**:
 
 - No Axe violations
 - All interactive elements keyboard-accessible
 - Screen reader announces content correctly
+- Text readable at 10+ feet viewing distance (large-screen display context)
+- Color contrast meets WCAG AAA (7:1) for body text
+- Status indicators comprehensible without color (icon + text labels)
 
-**Reference**: `codebase-spec.md` § F9: Accessibility
+**Reference**: `codebase-spec.md` § F9: Accessibility, § Large-Screen Display Design Guidelines
 
 ---
 
