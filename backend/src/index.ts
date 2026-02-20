@@ -8,6 +8,12 @@ import { getShiftboardService } from './services/shiftboard.service';
 import { createShiftService } from './services/shift.service';
 import { createShiftController } from './controllers/shift.controller';
 import { createShiftRoutes } from './routes/shift.routes';
+import { createWorkgroupService } from './services/workgroup.service';
+import { createWorkgroupController } from './controllers/workgroup.controller';
+import { createWorkgroupRoutes } from './routes/workgroup.routes';
+import { createAccountService } from './services/account.service';
+import { createAccountController } from './controllers/account.controller';
+import { createAccountRoutes } from './routes/account.routes';
 
 // Load environment variables
 dotenv.config();
@@ -100,17 +106,28 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// API routes will be mounted here
-// Initialize services and controllers
+// Initialize shared Shiftboard service
 const shiftboardService = getShiftboardService();
+
+// Shift routes
 const shiftService = createShiftService(shiftboardService);
 const shiftController = createShiftController(shiftService);
-
-// Mount shift routes
 const shiftRoutes = createShiftRoutes(shiftController);
 app.use('/api/shifts', shiftRoutes);
 
-console.log('[app] Mounted routes: /api/shifts');
+// Workgroup routes
+const workgroupService = createWorkgroupService(shiftboardService);
+const workgroupController = createWorkgroupController(workgroupService);
+const workgroupRoutes = createWorkgroupRoutes(workgroupController);
+app.use('/api/workgroups', workgroupRoutes);
+
+// Account routes
+const accountService = createAccountService(shiftboardService);
+const accountController = createAccountController(accountService);
+const accountRoutes = createAccountRoutes(accountController);
+app.use('/api/accounts', accountRoutes);
+
+console.log('[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts');
 
 // ============================================================================
 // Error Handling

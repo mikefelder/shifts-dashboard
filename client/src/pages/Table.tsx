@@ -9,6 +9,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Alert, Box } from '@mui/material';
 import TabularShiftView from '../components/Calendar/TabularShiftView';
+import ShiftDetailModal from '../components/Calendar/ShiftDetailModal';
+import PersonDetailModal from '../components/Calendar/PersonDetailModal';
 import { useWorkgroup } from '../contexts/WorkgroupContext';
 import { getShifts } from '../services/api.service';
 import type { GroupedShift } from '../types/shift.types';
@@ -22,6 +24,32 @@ export default function Table() {
   const [error, setError] = useState<string | null>(null);
   const [isFreshData, setIsFreshData] = useState(true);
   const [lastSync, setLastSync] = useState('Never');
+  const [selectedShift, setSelectedShift] = useState<GroupedShift | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [selectedPersonName, setSelectedPersonName] = useState('');
+  const [selectedPersonClockedIn, setSelectedPersonClockedIn] = useState(false);
+  const [personModalOpen, setPersonModalOpen] = useState(false);
+
+  function handleShiftClick(shift: GroupedShift) {
+    setSelectedShift(shift);
+    setModalOpen(true);
+  }
+
+  function handleModalClose() {
+    setModalOpen(false);
+  }
+
+  function handlePersonClick(personId: string, personName: string, isClockedIn: boolean) {
+    setSelectedPersonId(personId);
+    setSelectedPersonName(personName);
+    setSelectedPersonClockedIn(isClockedIn);
+    setPersonModalOpen(true);
+  }
+
+  function handlePersonModalClose() {
+    setPersonModalOpen(false);
+  }
 
   // Fetch shifts when refresh triggered or workgroup changes
   useEffect(() => {
@@ -90,6 +118,25 @@ export default function Table() {
         loading={loading}
         isFreshData={isFreshData}
         lastSync={lastSync}
+        onShiftClick={handleShiftClick}
+        onPersonClick={handlePersonClick}
+      />
+
+      {/* Shift Detail Modal */}
+      <ShiftDetailModal
+        shift={selectedShift}
+        open={modalOpen}
+        onClose={handleModalClose}
+        onPersonClick={handlePersonClick}
+      />
+
+      {/* Person Detail Modal */}
+      <PersonDetailModal
+        personId={selectedPersonId}
+        personName={selectedPersonName}
+        isClockedIn={selectedPersonClockedIn}
+        open={personModalOpen}
+        onClose={handlePersonModalClose}
       />
     </Box>
   );

@@ -46,6 +46,10 @@ interface TabularShiftViewProps {
   loading?: boolean;
   isFreshData?: boolean;
   lastSync?: string;
+  /** Called when the Info icon button is clicked to open the shift detail modal. */
+  onShiftClick?: (shift: GroupedShift) => void;
+  /** Called when a person name chip is clicked to open the person detail modal. */
+  onPersonClick?: (personId: string, personName: string, isClockedIn: boolean) => void;
 }
 
 type SortColumn = 'start' | 'end' | 'name' | 'subject' | 'location' | 'people' | 'status';
@@ -83,6 +87,8 @@ export default function TabularShiftView({
   loading = false,
   isFreshData = true,
   lastSync = 'Never',
+  onShiftClick,
+  onPersonClick,
 }: TabularShiftViewProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('start');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -357,22 +363,33 @@ export default function TabularShiftView({
                       {/* Assigned People */}
                       <TableCell>
                         <Box display="flex" flexWrap="wrap" gap={1}>
-                          {shift.assignedPersonNames.map((name, idx) => (
-                            <Chip
-                              key={`${shift.id}-${idx}`}
-                              label={name}
-                              size="medium"
-                              color={shift.clockStatuses[idx] ? 'success' : 'error'}
-                              variant="outlined"
-                              icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
-                              sx={{
-                                '&:hover': {
-                                  transform: 'scale(1.05)',
-                                  transition: 'transform 0.2s',
-                                },
-                              }}
-                            />
-                          ))}
+                          {shift.assignedPersonNames.map((name, idx) => {
+                            const isClockedIn = shift.clockStatuses[idx] ?? false;
+                            const personId = shift.assignedPeople[idx] ?? '';
+                            return (
+                              <Chip
+                                key={`${shift.id}-${idx}`}
+                                label={name}
+                                size="medium"
+                                color={isClockedIn ? 'success' : 'error'}
+                                variant="outlined"
+                                icon={isClockedIn ? <CheckCircle /> : <Cancel />}
+                                onClick={
+                                  onPersonClick
+                                    ? () => onPersonClick(personId, name, isClockedIn)
+                                    : undefined
+                                }
+                                clickable={Boolean(onPersonClick)}
+                                aria-label={`${name} – ${isClockedIn ? 'clocked in' : 'not clocked in'}`}
+                                sx={{
+                                  '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s',
+                                  },
+                                }}
+                              />
+                            );
+                          })}
                         </Box>
                       </TableCell>
 
@@ -406,7 +423,12 @@ export default function TabularShiftView({
 
                       {/* Actions */}
                       <TableCell align="center">
-                        <IconButton color="primary" size="large" aria-label="View shift details">
+                        <IconButton
+                          color="primary"
+                          size="large"
+                          aria-label="View shift details"
+                          onClick={onShiftClick ? () => onShiftClick(shift) : undefined}
+                        >
                           <InfoIcon />
                         </IconButton>
                       </TableCell>

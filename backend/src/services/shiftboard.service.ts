@@ -381,6 +381,18 @@ export class ShiftboardService {
     return await this.listAccounts({ workgroup: workgroupId });
   }
 
+  /**
+   * Get a single account by ID.
+   * Calls account.get with the account param.
+   */
+  async getAccountById(accountId: string): Promise<ShiftboardAccount> {
+    const response = await this.call<{ account: ShiftboardAccount }>('account.get', {
+      account: accountId,
+      extended: true,
+    });
+    return response.account;
+  }
+
   // ==========================================================================
   // Workgroup Methods
   // ==========================================================================

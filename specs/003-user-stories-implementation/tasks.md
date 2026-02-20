@@ -109,13 +109,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 3
 
-- [ ] T035 [P] [US3] Implement workgroup service (listWorkgroups, getRoles) in backend/src/services/workgroup.service.ts
-- [ ] T036 [P] [US3] Create workgroup controller (listWorkgroups, getRoles handlers) in backend/src/controllers/workgroup.controller.ts
-- [ ] T037 [P] [US3] Define workgroup routes (GET /api/workgroups/list, GET /api/workgroups/:id/roles) in backend/src/routes/workgroup.routes.ts
-- [ ] T038 [P] [US3] Create WorkgroupFilter component (dropdown with "All" + workgroup list) in frontend/src/components/Filters/WorkgroupFilter.tsx
-- [ ] T039 [US3] Integrate WorkgroupFilter into AppHeader in frontend/src/components/Layout/AppHeader.tsx
-- [ ] T040 [US3] Update API service to pass workgroup filter to backend in frontend/src/services/api.service.ts
-- [ ] T041 [US3] Update backend shift service to apply workgroup filter to Shiftboard calls in backend/src/services/shift.service.ts
+- [x] T035 [P] [US3] Implement workgroup service (listWorkgroups, getRoles) in backend/src/services/workgroup.service.ts
+- [x] T036 [P] [US3] Create workgroup controller (listWorkgroups, getRoles handlers) in backend/src/controllers/workgroup.controller.ts
+- [x] T037 [P] [US3] Define workgroup routes (GET /api/workgroups/list, GET /api/workgroups/:id/roles) in backend/src/routes/workgroup.routes.ts
+- [x] T038 [P] [US3] Create WorkgroupFilter component (dropdown with "All" + workgroup list) in frontend/src/components/Filters/WorkgroupFilter.tsx
+- [x] T039 [US3] Integrate WorkgroupFilter into AppHeader in frontend/src/components/Layout/AppHeader.tsx
+- [x] T040 [US3] Update API service to pass workgroup filter to backend in frontend/src/services/api.service.ts
+- [x] T041 [US3] Update backend shift service to apply workgroup filter to Shiftboard calls in backend/src/services/shift.service.ts
 
 **Checkpoint**: All three user stories (Timeline, Table, Workgroup Filter) should work together seamlessly
 
@@ -129,13 +129,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 4
 
-- [ ] T042 [P] [US4] Create ShiftDetailModal component (MUI Dialog, close handlers) in frontend/src/components/Calendar/ShiftDetailModal.tsx
-- [ ] T043 [P] [US4] Display shift header (name, time formatted as "MMM d, yyyy h:mm a") in ShiftDetailModal.tsx
-- [ ] T044 [P] [US4] Display shift details (subject, location) in ShiftDetailModal.tsx
-- [ ] T045 [P] [US4] List assigned people with green/red clock status badges in ShiftDetailModal.tsx
-- [ ] T046 [US4] Wire up modal trigger in ActiveShiftsView (onClick shift card) in frontend/src/components/Calendar/ActiveShiftsView.tsx
-- [ ] T047 [US4] Wire up modal trigger in TabularShiftView (onClick Info icon/row) in frontend/src/components/Calendar/TabularShiftView.tsx
-- [ ] T048 [US4] Add ESC key and click-outside-to-close handlers in ShiftDetailModal.tsx
+- [x] T042 [P] [US4] Create ShiftDetailModal component (MUI Dialog, close handlers) in frontend/src/components/Calendar/ShiftDetailModal.tsx
+- [x] T043 [P] [US4] Display shift header (name, time formatted as "MMM d, yyyy h:mm a") in ShiftDetailModal.tsx
+- [x] T044 [P] [US4] Display shift details (subject, location) in ShiftDetailModal.tsx
+- [x] T045 [P] [US4] List assigned people with green/red clock status badges in ShiftDetailModal.tsx
+- [x] T046 [US4] Wire up modal trigger in ActiveShiftsView (onClick shift card) in frontend/src/components/Calendar/ActiveShiftsView.tsx
+- [x] T047 [US4] Wire up modal trigger in TabularShiftView (onClick Info icon/row) in frontend/src/components/Calendar/TabularShiftView.tsx
+- [x] T048 [US4] Add ESC key and click-outside-to-close handlers in ShiftDetailModal.tsx
 
 **Checkpoint**: Users can now drill into any shift to see full details from both timeline and table views
 
@@ -149,14 +149,14 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 5
 
-- [ ] T049 [P] [US5] Implement account service (listAccounts, getSelf, getByWorkgroup, getById) in backend/src/services/account.service.ts
-- [ ] T050 [P] [US5] Create account controller (list, self, workgroup, byId handlers) in backend/src/controllers/account.controller.ts
-- [ ] T051 [P] [US5] Define account routes (GET /api/accounts/\*) in backend/src/routes/account.routes.ts
-- [ ] T052 [P] [US5] Create PersonDetailModal component (MUI Dialog, contact info) in frontend/src/components/Calendar/PersonDetailModal.tsx
-- [ ] T053 [P] [US5] Display person name (screen_name or first+last) and clock status badge in PersonDetailModal.tsx
-- [ ] T054 [P] [US5] Display formatted phone number with Call (tel:) and Text (sms:) buttons in PersonDetailModal.tsx
-- [ ] T055 [US5] Wire up person chip clicks in TabularShiftView to open PersonDetailModal in frontend/src/components/Calendar/TabularShiftView.tsx
-- [ ] T056 [US5] Wire up person name clicks in ShiftDetailModal to open PersonDetailModal in frontend/src/components/Calendar/ShiftDetailModal.tsx
+- [x] T049 [P] [US5] Implement account service (listAccounts, getSelf, getByWorkgroup, getById) in backend/src/services/account.service.ts
+- [x] T050 [P] [US5] Create account controller (list, self, workgroup, byId handlers) in backend/src/controllers/account.controller.ts
+- [x] T051 [P] [US5] Define account routes (GET /api/accounts/\*) in backend/src/routes/account.routes.ts
+- [x] T052 [P] [US5] Create PersonDetailModal component (MUI Dialog, contact info) in frontend/src/components/Calendar/PersonDetailModal.tsx
+- [x] T053 [P] [US5] Display person name (screen_name or first+last) and clock status badge in PersonDetailModal.tsx
+- [x] T054 [P] [US5] Display formatted phone number with Call (tel:) and Text (sms:) buttons in PersonDetailModal.tsx
+- [x] T055 [US5] Wire up person chip clicks in TabularShiftView to open PersonDetailModal in frontend/src/components/Calendar/TabularShiftView.tsx
+- [x] T056 [US5] Wire up person name clicks in ShiftDetailModal to open PersonDetailModal in frontend/src/components/Calendar/ShiftDetailModal.tsx
 
 **Checkpoint**: Users can now contact any team member directly from shift views
 

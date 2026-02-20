@@ -34,6 +34,8 @@ interface ActiveShiftsViewProps {
   shifts: GroupedShift[];
   loading?: boolean;
   isFreshData?: boolean;
+  /** Called when a shift card is clicked to open the detail modal. */
+  onShiftClick?: (shift: GroupedShift) => void;
 }
 
 const MAX_SHIFTS_THRESHOLD = 25;
@@ -42,6 +44,7 @@ export default function ActiveShiftsView({
   shifts,
   loading = false,
   isFreshData = true,
+  onShiftClick,
 }: ActiveShiftsViewProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [forceDisplay, setForceDisplay] = useState(false);
@@ -146,11 +149,13 @@ export default function ActiveShiftsView({
               <Grow in timeout={500 + index * 50}>
                 <Card
                   elevation={2}
+                  onClick={onShiftClick ? () => onShiftClick(shift) : undefined}
                   sx={{
                     transition: 'all 0.3s ease',
+                    cursor: onShiftClick ? 'pointer' : 'default',
                     '&:hover': {
                       elevation: 4,
-                      transform: 'translateY(-2px)',
+                      transform: onShiftClick ? 'translateY(-2px)' : 'none',
                     },
                   }}
                 >

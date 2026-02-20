@@ -336,6 +336,19 @@ async function getAccountsFromCache(): Promise<DataWithFreshness<Account[]>> {
 // ============================================================================
 
 /**
+ * Get a single account by ID.
+ *
+ * @param accountId - The account ID to look up
+ * @returns Promise resolving to account data
+ */
+export async function getAccountById(accountId: string): Promise<Account> {
+  const response = await apiClient.get<ApiResponse<{ account: Account }>>(
+    `/api/accounts/${accountId}`
+  );
+  return response.data.result.account;
+}
+
+/**
  * Get all workgroups
  *
  * @param forceSync - Force fresh API fetch (default: true)
