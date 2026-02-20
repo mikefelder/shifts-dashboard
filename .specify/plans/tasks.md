@@ -89,13 +89,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 2
 
-- [ ] T028 [P] [US2] Create TabularShiftView component (MUI Table, 8 columns) in frontend/src/components/Calendar/TabularShiftView.tsx
-- [ ] T029 [P] [US2] Implement column sorting (click header toggles asc/desc) in TabularShiftView.tsx
-- [ ] T030 [P] [US2] Create person chips (clickable, colored by clock status) in TabularShiftView.tsx
-- [ ] T031 [P] [US2] Create status chips (All Clocked In / Not Clocked In / X/Y) in TabularShiftView.tsx
-- [ ] T032 [US2] Add loading states (initial vs refresh spinner) in TabularShiftView.tsx
-- [ ] T033 [US2] Add Fade/Grow animations on data update in TabularShiftView.tsx
-- [ ] T034 [US2] Display last sync timestamp and success/failure indicators in TabularShiftView.tsx
+- [x] T028 [P] [US2] Create TabularShiftView component (MUI Table, 8 columns) in frontend/src/components/Calendar/TabularShiftView.tsx
+- [x] T029 [P] [US2] Implement column sorting (click header toggles asc/desc) in TabularShiftView.tsx
+- [x] T030 [P] [US2] Create person chips (clickable, colored by clock status) in TabularShiftView.tsx
+- [x] T031 [P] [US2] Create status chips (All Clocked In / Not Clocked In / X/Y) in TabularShiftView.tsx
+- [x] T032 [US2] Add loading states (initial vs refresh spinner) in TabularShiftView.tsx
+- [x] T033 [US2] Add Fade/Grow animations on data update in TabularShiftView.tsx
+- [x] T034 [US2] Display last sync timestamp and success/failure indicators in TabularShiftView.tsx
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - users can toggle between views
 
