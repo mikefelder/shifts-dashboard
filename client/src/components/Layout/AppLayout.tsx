@@ -290,12 +290,12 @@ export default function AppLayout() {
           flexGrow: 1,
           p: 4,
           marginTop: '72px', // Height of AppBar
-          marginLeft: drawerOpen ? 0 : `-${DRAWER_WIDTH}px`,
           transition: (theme) =>
             theme.transitions.create('margin', {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.leavingScreen,
             }),
+          overflow: 'auto',
         }}
       >
         <Outlet context={outletContext} />

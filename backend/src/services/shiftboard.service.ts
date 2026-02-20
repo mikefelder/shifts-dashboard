@@ -15,7 +15,7 @@
  */
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { buildAuthenticatedUrl, validateAuthConfig } from '../utils/shiftboard-auth';
+import { buildAuthenticatedPostRequest, validateAuthConfig } from '../utils/shiftboard-auth';
 // Pagination utilities - uncomment when callPaginated method is needed
 // import {
 //   fetchAllPages,
@@ -38,8 +38,8 @@ export interface ShiftboardConfig {
 function getConfig(): ShiftboardConfig {
   const accessKeyId = process.env.SHIFTBOARD_ACCESS_KEY_ID || '';
   const secretKey = process.env.SHIFTBOARD_SECRET_KEY || '';
-  const host = process.env.SHIFTBOARD_HOST || 'api.shiftboard.com';
-  const path = process.env.SHIFTBOARD_PATH || '/api/v1/';
+  const host = process.env.SHIFTBOARD_HOST || 'api.shiftdata.com';
+  const path = process.env.SHIFTBOARD_PATH || '/servola/api/api.cgi';
   const timeout = parseInt(process.env.SHIFTBOARD_TIMEOUT || '30000', 10);
 
   validateAuthConfig(accessKeyId, secretKey);
@@ -182,6 +182,7 @@ export class ShiftboardService {
   constructor(config?: Partial<ShiftboardConfig>) {
     const envConfig = getConfig();
     this.config = { ...envConfig, ...config };
+    // Full API URL including path
     this.baseUrl = `https://${this.config.host}${this.config.path}`;
 
     this.axios = axios.create({
@@ -218,18 +219,19 @@ export class ShiftboardService {
 
   /**
    * Generic RPC call method
-   * Makes authenticated request to Shiftboard JSON-RPC API
+   * Makes authenticated POST request to Shiftboard JSON-RPC API
    */
   private async call<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
     try {
-      const url = buildAuthenticatedUrl(this.baseUrl, '', {
+      // Build authenticated POST request (signs the full JSON-RPC body)
+      const { url, body } = buildAuthenticatedPostRequest(this.baseUrl, {
         method,
         params,
         accessKeyId: this.config.accessKeyId,
         secretKey: this.config.secretKey,
       });
 
-      const response = await this.axios.get<ShiftboardResponse<T>>(url);
+      const response = await this.axios.post<ShiftboardResponse<T>>(url, body);
 
       // Check for Shiftboard API errors
       if (response.data.error) {
@@ -239,6 +241,7 @@ export class ShiftboardService {
 
       // Return result or throw if missing
       if (response.data.result === undefined) {
+        console.log('[Shiftboard] ERROR: No result in response');
         throw new Error('Shiftboard API returned no result');
       }
 

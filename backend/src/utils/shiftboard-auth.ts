@@ -4,9 +4,9 @@ import * as crypto from 'crypto';
  * Shiftboard HMAC SHA-1 Authentication Utility
  *
  * Implements Shiftboard's authentication protocol using HMAC SHA-1 signatures.
- * Required for all API calls to Shiftboard.
+ * Uses POST-based JSON-RPC 2.0 with the full request body as the HMAC message.
  *
- * @see https://www.shiftboard.com/api-docs
+ * @see https://www.shiftdata.com/tryit.html
  */
 
 export interface ShiftboardAuthParams {
@@ -16,100 +16,51 @@ export interface ShiftboardAuthParams {
   params?: Record<string, unknown>;
 }
 
-export interface AuthenticatedRequest {
-  method: string;
+export interface AuthenticatedPostRequest {
   url: string;
-  timestamp: number;
+  body: string;
   signature: string;
 }
 
 /**
- * Generate HMAC SHA-1 signature for Shiftboard API request
+ * Build an authenticated POST request for the Shiftboard JSON-RPC API.
  *
- * @param method - RPC method name (e.g., 'shift.whosOn')
- * @param params - Method parameters as object
- * @param timestamp - Unix timestamp in seconds
- * @param secretKey - Shiftboard secret key
- * @returns Hex-encoded HMAC SHA-1 signature
- */
-export function generateSignature(
-  method: string,
-  params: Record<string, unknown>,
-  timestamp: number,
-  secretKey: string
-): string {
-  // Serialize parameters as JSON (empty object if no params)
-  const paramsJson = JSON.stringify(params || {});
-
-  // Construct message: method + params + timestamp + secret
-  const message = `${method}${paramsJson}${timestamp}${secretKey}`;
-
-  // Compute HMAC SHA-1
-  const hmac = crypto.createHmac('sha1', secretKey);
-  hmac.update(message);
-
-  return hmac.digest('hex');
-}
-
-/**
- * Build authenticated URL for Shiftboard API request
+ * Authentication algorithm (from working implementation):
+ * 1. Build the full JSON-RPC 2.0 request body as a JSON string
+ * 2. HMAC SHA-1 sign the entire body string using the secret key
+ * 3. Base64-encode the signature
+ * 4. Append access_key_id and signature as query parameters
  *
- * @param baseUrl - Shiftboard API base URL (e.g., 'https://api.shiftboard.com')
- * @param path - API path (e.g., '/api/v1/')
- * @param authParams - Authentication parameters
- * @returns Complete URL with authentication parameters
+ * @param baseUrl - Full API URL (e.g., 'https://api.shiftdata.com/servola/api/api.cgi')
+ * @param authParams - Authentication parameters including method and params
+ * @returns Object with url, body, and signature for the POST request
  */
-export function buildAuthenticatedUrl(
+export function buildAuthenticatedPostRequest(
   baseUrl: string,
-  path: string,
   authParams: ShiftboardAuthParams
-): string {
+): AuthenticatedPostRequest {
   const { accessKeyId, secretKey, method, params = {} } = authParams;
 
-  // Generate current timestamp (seconds since epoch)
-  const timestamp = Math.floor(Date.now() / 1000);
-
-  // Generate signature
-  const signature = generateSignature(method, params, timestamp, secretKey);
-
-  // Serialize params for URL
-  const paramsJson = JSON.stringify(params);
-
-  // Build URL with query parameters
-  const url = new URL(path, baseUrl);
-  url.searchParams.set('method', method);
-  url.searchParams.set('params', paramsJson);
-  url.searchParams.set('access_key_id', accessKeyId);
-  url.searchParams.set('timestamp', timestamp.toString());
-  url.searchParams.set('signature', signature);
-
-  return url.toString();
-}
-
-/**
- * Create authenticated request object for Shiftboard API
- *
- * @param baseUrl - Shiftboard API base URL
- * @param path - API path
- * @param authParams - Authentication parameters
- * @returns Authenticated request object with URL and metadata
- */
-export function createAuthenticatedRequest(
-  baseUrl: string,
-  path: string,
-  authParams: ShiftboardAuthParams
-): AuthenticatedRequest {
-  const { method, params = {} } = authParams;
-  const timestamp = Math.floor(Date.now() / 1000);
-  const signature = generateSignature(method, params, timestamp, authParams.secretKey);
-  const url = buildAuthenticatedUrl(baseUrl, path, authParams);
-
-  return {
+  // 1. Build JSON-RPC 2.0 request body
+  const body = JSON.stringify({
+    id: 1,
+    jsonrpc: '2.0',
     method,
-    url,
-    timestamp,
-    signature,
-  };
+    params,
+  });
+
+  // 2. Sign the full body with HMAC SHA-1, output as base64
+  const signature = crypto.createHmac('sha1', secretKey).update(body).digest('base64');
+
+  // 3. Build URL with auth query parameters only
+  const url =
+    baseUrl +
+    '?access_key_id=' +
+    encodeURIComponent(accessKeyId) +
+    '&signature=' +
+    encodeURIComponent(signature);
+
+  return { url, body, signature };
 }
 
 /**
