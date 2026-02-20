@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { Container, Typography, Alert, Box } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import ActiveShiftsView from '../components/Calendar/ActiveShiftsView';
 import { getShifts } from '../services/api.service';
@@ -25,6 +25,7 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFreshData, setIsFreshData] = useState(true);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   const { selectedWorkgroup } = useWorkgroup();
   const context = useOutletContext<RefreshContext>();
@@ -53,6 +54,7 @@ export default function Calendar() {
 
         setShifts(result.data);
         setIsFreshData(result.isFreshData);
+        setLastFetched(new Date());
         setLoading(false);
 
         console.log('[Calendar] Loaded shifts:', {
@@ -78,25 +80,30 @@ export default function Calendar() {
 
   if (error) {
     return (
-      <Box p={3}>
+      <Container maxWidth={false} disableGutters sx={{ p: 2 }}>
         <Alert severity="error">{error}</Alert>
-      </Box>
+      </Container>
     );
   }
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        Active Shifts Timeline
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary" gutterBottom>
-        Viewing {selectedWorkgroup ? 'filtered' : 'all'} shifts
-      </Typography>
-
-      <Box mt={3}>
+    <Container
+      maxWidth={false}
+      disableGutters
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {lastFetched && (
+        <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
+          Last fetched: {lastFetched.toLocaleTimeString()}
+        </Typography>
+      )}
+      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         <ActiveShiftsView shifts={shifts} loading={loading} isFreshData={isFreshData} />
       </Box>
-    </Box>
+    </Container>
   );
 }

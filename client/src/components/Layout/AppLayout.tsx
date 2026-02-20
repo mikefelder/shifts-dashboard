@@ -1,15 +1,13 @@
 /**
  * AppLayout Component
  *
- * Main application layout optimized for large-screen display viewing.
- * Designed for operations room monitoring at 5-15 feet viewing distance.
+ * Main application layout with always-visible sidebar navigation.
+ * Matches the reference UI from commit 894389c.
  *
  * Features:
  * - Refresh state management (manual + auto-refresh)
  * - Workgroup filtering integration
- * - Navigation structure
- * - Large typography for distance readability
- * - Prominent status indicators
+ * - Permanent sidebar with navigation and controls
  * - Outlet context for child routes
  */
 
@@ -19,43 +17,32 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  IconButton,
   Drawer,
   List,
   ListItem,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   Button,
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
-  CircularProgress,
+  useTheme,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
+  Schedule as ScheduleIcon,
   Refresh as RefreshIcon,
-  ViewWeek as ViewWeekIcon,
-  TableChart as TableChartIcon,
+  ViewDay as ViewDayIcon,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
-import { getLastSyncFormatted } from '../../services/db.service';
+import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 const DRAWER_WIDTH = 240;
-
-const AUTO_REFRESH_OPTIONS = [
-  { value: 0, label: 'Off' },
-  { value: 5, label: '5 minutes' },
-  { value: 10, label: '10 minutes' },
-  { value: 15, label: '15 minutes' },
-] as const;
+const APPBAR_HEIGHT = 64;
 
 // ============================================================================
 // Outlet Context Type
@@ -75,74 +62,46 @@ export interface RefreshContext {
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   const { selectedWorkgroup, workgroups, setSelectedWorkgroup } = useWorkgroup();
 
   // State
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
-  const [refreshInterval, setRefreshInterval] = useState(0); // 0 = off
+  const [refreshInterval, setRefreshInterval] = useState(5); // Default 5 min
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastSync, setLastSync] = useState('Never');
-
-  // Update last sync timestamp periodically
-  useEffect(() => {
-    async function updateLastSync() {
-      const formatted = await getLastSyncFormatted();
-      setLastSync(formatted);
-    }
-
-    updateLastSync();
-    const interval = setInterval(updateLastSync, 10000); // Update every 10 seconds
-
-    return () => clearInterval(interval);
-  }, [refreshTimestamp]);
 
   // Manual refresh trigger
   const triggerRefresh = useCallback(() => {
+    console.log('Manual refresh triggered at:', new Date().toISOString());
     setRefreshTimestamp(Date.now());
   }, []);
 
   // Auto-refresh interval
   useEffect(() => {
-    if (refreshInterval === 0) {
-      return;
-    }
-
-    // Trigger immediate refresh when interval changes
-    triggerRefresh();
+    if (refreshInterval === 0) return;
 
     const intervalMs = refreshInterval * 60 * 1000;
+    console.log(`Setting up auto-refresh interval: ${refreshInterval} minutes`);
     const timer = setInterval(() => {
-      console.log(`[AppLayout] Auto-refresh triggered (${refreshInterval}min interval)`);
-      triggerRefresh();
+      console.log('Auto-refresh triggered at:', new Date().toISOString());
+      setRefreshTimestamp(Date.now());
     }, intervalMs);
 
-    return () => clearInterval(timer);
-  }, [refreshInterval, triggerRefresh]);
+    return () => {
+      console.log('Clearing auto-refresh interval');
+      clearInterval(timer);
+    };
+  }, [refreshInterval]);
 
-  // Handle workgroup selection
-  const handleWorkgroupChange = (event: { target: { value: string } }) => {
-    const value = event.target.value === '' ? null : event.target.value;
-    setSelectedWorkgroup(value);
-    triggerRefresh(); // Force refresh when workgroup changes
+  const handleRefreshIntervalChange = (interval: number) => {
+    setRefreshInterval(interval);
+    if (interval > 0) {
+      triggerRefresh();
+    }
   };
 
-  // Handle manual refresh button
-  const handleRefreshClick = () => {
-    setIsRefreshing(true);
-    triggerRefresh();
-
-    // Clear refreshing state after a delay
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 1000);
-  };
-
-  // Navigation items
-  const navItems = [
-    { label: 'Timeline View', path: '/calendar', icon: <ViewWeekIcon /> },
-    { label: 'Table View', path: '/table', icon: <TableChartIcon /> },
-  ];
+  // Navigation active check
+  const isActive = (path: string) => location.pathname === path;
 
   // Outlet context for child routes
   const outletContext: RefreshContext = {
@@ -153,134 +112,156 @@ export default function AppLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* App Bar */}
       <AppBar
         position="fixed"
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
+          left: 0,
+          width: '100%',
         }}
       >
-        <Toolbar sx={{ minHeight: '72px', py: 1 }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={() => setDrawerOpen(!drawerOpen)}
-            sx={{ mr: 2 }}
-            size="large"
-          >
-            <MenuIcon fontSize="large" />
-          </IconButton>
-
-          <Typography variant="h5" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Shift Dashboard
+        <Toolbar
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            px: 2,
+          }}
+        >
+          <Typography variant="h6" noWrap component="div">
+            Shiftboard Reporting
           </Typography>
 
-          {/* Workgroup Filter */}
-          <FormControl
-            variant="outlined"
-            size="medium"
-            sx={{ minWidth: 220, mr: 3, bgcolor: 'rgba(255,255,255,0.1)' }}
-          >
-            <InputLabel sx={{ color: 'white', fontSize: '1.125rem' }}>Workgroup</InputLabel>
-            <Select
-              value={selectedWorkgroup || ''}
-              onChange={handleWorkgroupChange}
-              label="Workgroup"
-              sx={{
-                color: 'white',
-                fontSize: '1.125rem',
-                '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255,255,255,0.5)',
-                },
-                '.MuiSvgIcon-root': { color: 'white' },
-              }}
-            >
-              <MenuItem value="">All Workgroups</MenuItem>
-              {workgroups.map((wg: { id: string; name: string }) => (
-                <MenuItem key={wg.id} value={wg.id}>
-                  {wg.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Last Sync Display */}
-          <Typography variant="body1" sx={{ mr: 3, opacity: 0.9, fontWeight: 500 }}>
-            Last sync: {lastSync}
-          </Typography>
-
-          {/* Refresh Button */}
-          <Button
-            color="inherit"
-            size="large"
-            startIcon={
-              isRefreshing ? <CircularProgress size={24} color="inherit" /> : <RefreshIcon />
-            }
-            onClick={handleRefreshClick}
-            disabled={isRefreshing}
-            sx={{ fontWeight: 600 }}
-          >
-            Refresh
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <WorkgroupFilter
+              selectedWorkgroup={selectedWorkgroup || ''}
+              onWorkgroupChange={setSelectedWorkgroup}
+              workgroups={workgroups || []}
+            />
+          </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Sidebar Drawer */}
+      {/* Sidebar — always visible */}
       <Drawer
         variant="permanent"
-        open={drawerOpen}
         sx={{
-          width: drawerOpen ? DRAWER_WIDTH : 0,
+          width: DRAWER_WIDTH,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
-            marginTop: '72px', // Height of AppBar
-            transition: (theme) =>
-              theme.transitions.create('transform', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            transform: drawerOpen ? 'translateX(0)' : `translateX(-${DRAWER_WIDTH}px)`,
+            borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+            top: `${APPBAR_HEIGHT}px`,
+            height: `calc(100% - ${APPBAR_HEIGHT}px)`,
+            backgroundColor: theme.palette.primary.main,
+            color: 'white',
           },
         }}
       >
-        <Box sx={{ p: 2.5 }}>
-          {/* Auto-refresh Selector */}
-          <FormControl fullWidth size="medium">
-            <InputLabel>Auto-refresh</InputLabel>
+        <List>
+          <ListItem
+            onClick={() => navigate('/')}
+            selected={isActive('/') || isActive('/calendar')}
+            sx={{
+              cursor: 'pointer',
+              color: 'white',
+              '& .MuiListItemIcon-root': { color: 'white' },
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(255, 255, 255, 0.16)',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
+              },
+            }}
+          >
+            <ListItemIcon>
+              <ScheduleIcon />
+            </ListItemIcon>
+            <ListItemText primary="Current Shifts" />
+          </ListItem>
+          <ListItem
+            onClick={() => navigate('/table')}
+            selected={isActive('/table')}
+            sx={{
+              cursor: 'pointer',
+              color: 'white',
+              '& .MuiListItemIcon-root': { color: 'white' },
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(255, 255, 255, 0.16)',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
+              },
+            }}
+          >
+            <ListItemIcon>
+              <ViewDayIcon />
+            </ListItemIcon>
+            <ListItemText primary="Tabular View" />
+          </ListItem>
+        </List>
+
+        <Box sx={{ p: 2, mt: 'auto' }}>
+          <Typography variant="subtitle2" gutterBottom sx={{ color: 'white' }}>
+            Auto Refresh
+          </Typography>
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
             <Select
               value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
-              label="Auto-refresh"
+              onChange={(e) => handleRefreshIntervalChange(Number(e.target.value))}
+              sx={{
+                color: 'white',
+                '.MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.8)',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'white',
+                },
+                '& .MuiSvgIcon-root': { color: 'white' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: theme.palette.primary.main,
+                    '& .MuiMenuItem-root': {
+                      color: 'white',
+                      '&:hover': { backgroundColor: theme.palette.primary.dark },
+                      '&.Mui-selected': {
+                        backgroundColor: theme.palette.primary.dark,
+                        '&:hover': { backgroundColor: theme.palette.primary.dark },
+                      },
+                    },
+                  },
+                },
+              }}
             >
-              {AUTO_REFRESH_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
+              <MenuItem value={0}>Off</MenuItem>
+              <MenuItem value={5}>Every 5 minutes</MenuItem>
+              <MenuItem value={10}>Every 10 minutes</MenuItem>
+              <MenuItem value={15}>Every 15 minutes</MenuItem>
             </Select>
           </FormControl>
+
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={triggerRefresh}
+            fullWidth
+            sx={{
+              color: 'white',
+              borderColor: 'white',
+              '&:hover': {
+                borderColor: 'rgba(255, 255, 255, 0.8)',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              },
+            }}
+          >
+            Refresh Now
+          </Button>
         </Box>
-
-        <Divider />
-
-        {/* Navigation */}
-        <List>
-          {navItems.map((item) => (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                selected={location.pathname === item.path}
-                onClick={() => navigate(item.path)}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
       </Drawer>
 
       {/* Main Content Area */}
@@ -288,14 +269,16 @@ export default function AppLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 4,
-          marginTop: '72px', // Height of AppBar
-          transition: (theme) =>
-            theme.transitions.create('margin', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.leavingScreen,
-            }),
-          overflow: 'auto',
+          pt: 2,
+          pb: 2,
+          pl: 0,
+          pr: 0,
+          mt: `${APPBAR_HEIGHT}px`,
+          ml: '8px',
+          mr: '8px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: `calc(100vh - ${APPBAR_HEIGHT}px)`,
         }}
       >
         <Outlet context={outletContext} />
