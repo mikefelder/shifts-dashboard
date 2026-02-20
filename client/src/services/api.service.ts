@@ -29,7 +29,8 @@ import {
   updateLastSync,
   getLastSync,
 } from './db.service';
-import type { Shift, Account, Workgroup } from './db.service';
+import type { Account, Workgroup } from './db.service';
+import type { GroupedShift } from '../types/shift.types';
 
 // ============================================================================
 // Configuration
@@ -96,7 +97,7 @@ export interface ApiResponse<T> {
 }
 
 export interface ShiftsResponse {
-  shifts: Shift[];
+  shifts: GroupedShift[];
   referenced_objects?: {
     account?: Account[];
     workgroup?: Workgroup[];
@@ -197,7 +198,7 @@ function getErrorMessage(error: unknown): string {
 export async function getShifts(options?: {
   forceSync?: boolean;
   workgroupId?: string | null;
-}): Promise<DataWithFreshness<Shift[]>> {
+}): Promise<DataWithFreshness<GroupedShift[]>> {
   const { forceSync = true, workgroupId = null } = options || {};
 
   // Always attempt API fetch first
@@ -253,14 +254,16 @@ export async function getShifts(options?: {
 /**
  * Get shifts from cache
  */
-async function getShiftsFromCache(workgroupId: string | null): Promise<DataWithFreshness<Shift[]>> {
+async function getShiftsFromCache(
+  workgroupId: string | null
+): Promise<DataWithFreshness<GroupedShift[]>> {
   const shifts = await getShiftsByWorkgroup(workgroupId);
   const lastSync = await getLastSync();
 
   console.log(`[API] Loaded ${shifts.length} shifts from cache (stale data)`);
 
   return {
-    data: shifts,
+    data: shifts as GroupedShift[],
     isFreshData: false,
     lastSync,
   };

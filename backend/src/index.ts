@@ -4,7 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
-import { createDefaultShiftboardService } from './services/shiftboard.service';
+import { getShiftboardService } from './services/shiftboard.service';
 import { createShiftService } from './services/shift.service';
 import { createShiftController } from './controllers/shift.controller';
 import { createShiftRoutes } from './routes/shift.routes';
@@ -102,7 +102,7 @@ app.get('/', (_req: Request, res: Response) => {
 
 // API routes will be mounted here
 // Initialize services and controllers
-const shiftboardService = createDefaultShiftboardService();
+const shiftboardService = getShiftboardService();
 const shiftService = createShiftService(shiftboardService);
 const shiftController = createShiftController(shiftService);
 

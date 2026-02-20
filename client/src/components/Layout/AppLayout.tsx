@@ -39,8 +39,8 @@ import {
   TableChart as TableChartIcon,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useWorkgroup } from '../contexts/WorkgroupContext';
-import { getLastSyncFormatted } from '../services/db.service';
+import { useWorkgroup } from '../../contexts/WorkgroupContext';
+import { getLastSyncFormatted } from '../../services/db.service';
 
 // ============================================================================
 // Constants
