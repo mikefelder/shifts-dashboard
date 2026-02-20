@@ -1,13 +1,15 @@
 /**
  * AppLayout Component
  *
- * Main application layout with header, sidebar, and content area.
- * Manages refresh state and passes context to child routes.
+ * Main application layout optimized for large-screen display viewing.
+ * Designed for operations room monitoring at 5-15 feet viewing distance.
  *
  * Features:
  * - Refresh state management (manual + auto-refresh)
  * - Workgroup filtering integration
  * - Navigation structure
+ * - Large typography for distance readability
+ * - Prominent status indicators
  * - Outlet context for child routes
  */
 
@@ -159,33 +161,35 @@ export default function AppLayout() {
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ minHeight: '72px', py: 1 }}>
           <IconButton
             color="inherit"
             edge="start"
             onClick={() => setDrawerOpen(!drawerOpen)}
             sx={{ mr: 2 }}
+            size="large"
           >
-            <MenuIcon />
+            <MenuIcon fontSize="large" />
           </IconButton>
 
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h5" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
             Shift Dashboard
           </Typography>
 
           {/* Workgroup Filter */}
           <FormControl
             variant="outlined"
-            size="small"
-            sx={{ minWidth: 200, mr: 2, bgcolor: 'rgba(255,255,255,0.1)' }}
+            size="medium"
+            sx={{ minWidth: 220, mr: 3, bgcolor: 'rgba(255,255,255,0.1)' }}
           >
-            <InputLabel sx={{ color: 'white' }}>Workgroup</InputLabel>
+            <InputLabel sx={{ color: 'white', fontSize: '1.125rem' }}>Workgroup</InputLabel>
             <Select
               value={selectedWorkgroup || ''}
               onChange={handleWorkgroupChange}
               label="Workgroup"
               sx={{
                 color: 'white',
+                fontSize: '1.125rem',
                 '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
                 '&:hover .MuiOutlinedInput-notchedOutline': {
                   borderColor: 'rgba(255,255,255,0.5)',
@@ -203,18 +207,20 @@ export default function AppLayout() {
           </FormControl>
 
           {/* Last Sync Display */}
-          <Typography variant="body2" sx={{ mr: 2, opacity: 0.8 }}>
+          <Typography variant="body1" sx={{ mr: 3, opacity: 0.9, fontWeight: 500 }}>
             Last sync: {lastSync}
           </Typography>
 
           {/* Refresh Button */}
           <Button
             color="inherit"
+            size="large"
             startIcon={
-              isRefreshing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />
+              isRefreshing ? <CircularProgress size={24} color="inherit" /> : <RefreshIcon />
             }
             onClick={handleRefreshClick}
             disabled={isRefreshing}
+            sx={{ fontWeight: 600 }}
           >
             Refresh
           </Button>
@@ -231,7 +237,7 @@ export default function AppLayout() {
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
-            marginTop: '64px', // Height of AppBar
+            marginTop: '72px', // Height of AppBar
             transition: (theme) =>
               theme.transitions.create('transform', {
                 easing: theme.transitions.easing.sharp,
@@ -241,9 +247,9 @@ export default function AppLayout() {
           },
         }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2.5 }}>
           {/* Auto-refresh Selector */}
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="medium">
             <InputLabel>Auto-refresh</InputLabel>
             <Select
               value={refreshInterval}
@@ -282,8 +288,8 @@ export default function AppLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          marginTop: '64px', // Height of AppBar
+          p: 4,
+          marginTop: '72px', // Height of AppBar
           marginLeft: drawerOpen ? 0 : `-${DRAWER_WIDTH}px`,
           transition: (theme) =>
             theme.transitions.create('margin', {

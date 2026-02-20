@@ -1,15 +1,16 @@
 /**
  * Material-UI Theme Configuration
  *
- * Defines the application theme with navy primary color.
- * Supports Material Design principles with customizations for shift management.
+ * Defines the application theme optimized for large-screen display viewing.
+ * Designed for 5-15 foot viewing distance in operations room context.
  *
  * Features:
- * - Navy primary color palette
- * - Consistent typography scale
- * - Custom component overrides
+ * - Navy primary color palette with WCAG AAA contrast
+ * - Large-screen typography (18px+ body, 24px+ headers)
+ * - Enhanced letter-spacing for distance readability
+ * - Custom component overrides optimized for display viewing
  * - Responsive breakpoints
- * - WCAG AA compliant color contrasts
+ * - WCAG AAA compliant color contrasts (7:1 for text)
  */
 
 import { createTheme } from '@mui/material/styles';
@@ -56,15 +57,15 @@ const palette = {
     paper: '#ffffff',
   },
   text: {
-    primary: 'rgba(0, 0, 0, 0.87)',
-    secondary: 'rgba(0, 0, 0, 0.6)',
-    disabled: 'rgba(0, 0, 0, 0.38)',
+    primary: 'rgba(0, 0, 0, 0.95)', // Increased from 0.87 for WCAG AAA
+    secondary: 'rgba(0, 0, 0, 0.75)', // Increased from 0.6 for better readability
+    disabled: 'rgba(0, 0, 0, 0.45)', // Increased from 0.38
   },
-  divider: 'rgba(0, 0, 0, 0.12)',
+  divider: 'rgba(0, 0, 0, 0.15)', // Slightly increased for visibility
 };
 
 // ============================================================================
-// Typography
+// Typography - Optimized for Large-Screen Display (5-15 feet)
 // ============================================================================
 
 const typography = {
@@ -80,47 +81,78 @@ const typography = {
     '"Segoe UI Emoji"',
     '"Segoe UI Symbol"',
   ].join(','),
+  // Headers - Minimum 24px for distance viewing
   h1: {
-    fontSize: '2.5rem',
-    fontWeight: 500,
-    lineHeight: 1.2,
+    fontSize: '3rem', // 48px - Large display headers
+    fontWeight: 600, // Medium weight for better visibility
+    lineHeight: 1.3,
+    letterSpacing: '0.01em',
   },
   h2: {
-    fontSize: '2rem',
-    fontWeight: 500,
+    fontSize: '2.5rem', // 40px
+    fontWeight: 600,
     lineHeight: 1.3,
+    letterSpacing: '0.01em',
   },
   h3: {
-    fontSize: '1.75rem',
-    fontWeight: 500,
+    fontSize: '2rem', // 32px
+    fontWeight: 600,
     lineHeight: 1.4,
+    letterSpacing: '0.01em',
   },
   h4: {
-    fontSize: '1.5rem',
-    fontWeight: 500,
+    fontSize: '1.75rem', // 28px - Shift names, critical info
+    fontWeight: 600,
     lineHeight: 1.4,
+    letterSpacing: '0.01em',
   },
   h5: {
-    fontSize: '1.25rem',
-    fontWeight: 500,
+    fontSize: '1.5rem', // 24px - Minimum for headers
+    fontWeight: 600,
     lineHeight: 1.5,
+    letterSpacing: '0.01em',
   },
   h6: {
-    fontSize: '1rem',
-    fontWeight: 500,
+    fontSize: '1.25rem', // 20px
+    fontWeight: 600,
     lineHeight: 1.6,
+    letterSpacing: '0.01em',
   },
+  // Body text - Minimum 18px for distance readability
   body1: {
-    fontSize: '1rem',
-    lineHeight: 1.5,
+    fontSize: '1.125rem', // 18px - Standard body text
+    lineHeight: 1.7, // Increased for readability
+    fontWeight: 400,
+    letterSpacing: '0.015em', // Enhanced spacing
   },
   body2: {
-    fontSize: '0.875rem',
-    lineHeight: 1.43,
+    fontSize: '1rem', // 16px - Minimum for secondary text
+    lineHeight: 1.65,
+    fontWeight: 400,
+    letterSpacing: '0.015em',
   },
   button: {
-    textTransform: 'none' as const, // Disable uppercase transformation
+    fontSize: '1.125rem', // 18px - Larger buttons for distance viewing
+    textTransform: 'none' as const,
+    fontWeight: 600,
+    letterSpacing: '0.02em',
+  },
+  caption: {
+    fontSize: '0.875rem', // 14px - Minimum, use sparingly
+    lineHeight: 1.6,
+    letterSpacing: '0.02em',
+  },
+  subtitle1: {
+    fontSize: '1.125rem', // 18px
     fontWeight: 500,
+    lineHeight: 1.65,
+    letterSpacing: '0.015em',
+  },
+  subtitle2: {
+    fontSize: '1rem', // 16px
+    fontWeight: 500,
+    lineHeight: 1.6,
+    letterSpacing: '0.015em',
   },
 };
 
@@ -147,66 +179,178 @@ const breakpoints = {
 };
 
 // ============================================================================
-// Component Overrides
+// Component Overrides - Optimized for Large-Screen Display
 // ============================================================================
 
 const components = {
   MuiButton: {
     styleOverrides: {
       root: {
-        borderRadius: 4,
+        borderRadius: 6,
         textTransform: 'none' as const,
-        fontWeight: 500,
+        fontWeight: 600,
+        fontSize: '1.125rem', // 18px
+        padding: '10px 24px', // Larger touch targets
       },
       contained: {
         boxShadow: 'none',
         '&:hover': {
-          boxShadow: 'none',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
         },
       },
+      sizeSmall: {
+        fontSize: '1rem',
+        padding: '8px 16px',
+      },
+      sizeLarge: {
+        fontSize: '1.25rem',
+        padding: '12px 32px',
+      },
+    },
+    defaultProps: {
+      disableElevation: false,
     },
   },
   MuiCard: {
     styleOverrides: {
       root: {
-        borderRadius: 8,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        borderRadius: 12, // More prominent rounded corners
+        boxShadow: '0 4px 8px rgba(0,0,0,0.12)',
+        '&:hover': {
+          boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
+        },
+      },
+    },
+  },
+  MuiCardContent: {
+    styleOverrides: {
+      root: {
+        padding: '20px', // Increased from default 16px
+        '&:last-child': {
+          paddingBottom: '20px',
+        },
       },
     },
   },
   MuiChip: {
     styleOverrides: {
       root: {
-        borderRadius: 4,
+        borderRadius: 6,
+        fontSize: '1rem', // 16px - Increased from default
+        height: '36px', // Increased from 32px
+        fontWeight: 500,
+      },
+      sizeSmall: {
+        fontSize: '0.875rem',
+        height: '28px',
+      },
+      sizeMedium: {
+        fontSize: '1rem',
+        height: '36px',
+      },
+      icon: {
+        fontSize: '1.25rem', // 20px for chip icons
+      },
+      deleteIcon: {
+        fontSize: '1.25rem',
+      },
+    },
+  },
+  MuiIconButton: {
+    styleOverrides: {
+      root: {
+        padding: '12px', // Increased from 8px for larger touch target
+      },
+      sizeSmall: {
+        padding: '8px',
+      },
+      sizeLarge: {
+        padding: '16px',
       },
     },
   },
   MuiAppBar: {
     styleOverrides: {
       root: {
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
       },
     },
   },
   MuiTableCell: {
     styleOverrides: {
+      root: {
+        fontSize: '1rem', // 16px
+        padding: '16px', // Increased from default 12px
+      },
       head: {
         fontWeight: 600,
         backgroundColor: '#fafafa',
+        fontSize: '1.125rem', // 18px for headers
       },
     },
   },
   MuiAlert: {
     styleOverrides: {
       root: {
-        borderRadius: 4,
+        borderRadius: 8,
+        fontSize: '1rem',
+        padding: '12px 16px',
+      },
+      icon: {
+        fontSize: '1.5rem', // 24px for alert icons
       },
     },
   },
   MuiDialog: {
     styleOverrides: {
       paper: {
-        borderRadius: 8,
+        borderRadius: 12,
+      },
+    },
+  },
+  MuiDialogTitle: {
+    styleOverrides: {
+      root: {
+        fontSize: '1.5rem', // 24px
+        fontWeight: 600,
+        padding: '20px 24px',
+      },
+    },
+  },
+  MuiDialogContent: {
+    styleOverrides: {
+      root: {
+        padding: '20px 24px',
+        fontSize: '1.125rem',
+      },
+    },
+  },
+  MuiTypography: {
+    defaultProps: {
+      variantMapping: {
+        h1: 'h1',
+        h2: 'h2',
+        h3: 'h3',
+        h4: 'h4',
+        h5: 'h5',
+        h6: 'h6',
+        subtitle1: 'h6',
+        subtitle2: 'h6',
+        body1: 'p',
+        body2: 'p',
+      },
+    },
+  },
+  MuiSvgIcon: {
+    styleOverrides: {
+      root: {
+        fontSize: '1.5rem', // 24px default - increased from 20px
+      },
+      fontSizeSmall: {
+        fontSize: '1.25rem', // 20px
+      },
+      fontSizeLarge: {
+        fontSize: '2rem', // 32px
       },
     },
   },

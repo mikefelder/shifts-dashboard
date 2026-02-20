@@ -2,11 +2,15 @@
  * ActiveShiftsView Component
  *
  * Timeline view of active shifts with clock-in status.
+ * Optimized for large-screen display (5-15 feet viewing distance).
+ *
  * Features:
  * - Dynamic time window (current hour ±1 hour)
  * - Current time indicator (updates every second)
  * - Too many shifts guard (>25 threshold)
- * - Person chips with clock-in status colors
+ * - Person chips with clock-in status colors AND icons
+ * - Large typography for distance readability (18px+ body text)
+ * - High contrast colors (WCAG AAA compliant)
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -22,7 +26,7 @@ import {
   Fade,
   Grow,
 } from '@mui/material';
-import { AccessTime, LocationOn, Group } from '@mui/icons-material';
+import { AccessTime, LocationOn, Group, CheckCircle, Cancel } from '@mui/icons-material';
 import type { GroupedShift } from '../../types/shift.types';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
 
@@ -87,7 +91,7 @@ export default function ActiveShiftsView({
   if (activeShifts.length === 0) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant="h5" color="text.secondary">
           No active shifts at this time
         </Typography>
       </Box>
@@ -117,17 +121,19 @@ export default function ActiveShiftsView({
           zIndex: 10,
           bgcolor: 'primary.main',
           color: 'primary.contrastText',
-          py: 1,
-          px: 2,
-          mb: 2,
-          borderRadius: 1,
+          py: 1.5,
+          px: 3,
+          mb: 3,
+          borderRadius: 2,
         }}
       >
-        <Typography variant="body2">Current Time: {format(currentTime, 'h:mm:ss a')}</Typography>
+        <Typography variant="h6" fontWeight={600}>
+          Current Time: {format(currentTime, 'h:mm:ss a')}
+        </Typography>
       </Box>
 
       {/* Shifts Grid */}
-      <Box display="flex" flexDirection="column" gap={2}>
+      <Box display="flex" flexDirection="column" gap={3}>
         {shouldDisplay &&
           activeShifts.map((shift, index) => (
             <Fade key={shift.id} in timeout={300 + index * 50}>
@@ -144,23 +150,23 @@ export default function ActiveShiftsView({
                 >
                   <CardContent>
                     {/* Shift Header */}
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h5" fontWeight={600} gutterBottom>
                       {shift.name}
                     </Typography>
 
                     {/* Time Display */}
-                    <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <AccessTime fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary">
+                    <Box display="flex" alignItems="center" gap={1.5} mb={1.5}>
+                      <AccessTime color="action" />
+                      <Typography variant="body1" color="text.secondary">
                         {shift.display_time || formatShiftTime(shift)}
                       </Typography>
                     </Box>
 
                     {/* Location */}
                     {shift.location && (
-                      <Box display="flex" alignItems="center" gap={1} mb={1}>
-                        <LocationOn fontSize="small" color="action" />
-                        <Typography variant="body2" color="text.secondary">
+                      <Box display="flex" alignItems="center" gap={1.5} mb={1.5}>
+                        <LocationOn color="action" />
+                        <Typography variant="body1" color="text.secondary">
                           {shift.location}
                         </Typography>
                       </Box>
@@ -168,30 +174,31 @@ export default function ActiveShiftsView({
 
                     {/* Subject */}
                     {shift.subject && (
-                      <Typography variant="body2" color="text.secondary" mb={2}>
+                      <Typography variant="body1" color="text.secondary" mb={2}>
                         {shift.subject}
                       </Typography>
                     )}
 
                     {/* Assigned People */}
-                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                      <Group fontSize="small" color="action" />
+                    <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap" mt={2}>
+                      <Group color="action" />
                       {shift.assignedPersonNames.map((name, idx) => (
                         <Chip
                           key={`${shift.id}-${idx}`}
                           label={name}
-                          size="small"
+                          size="medium"
                           color={shift.clockStatuses[idx] ? 'success' : 'error'}
                           variant="outlined"
+                          icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
                         />
                       ))}
                     </Box>
 
                     {/* Clock Status Summary */}
                     <Typography
-                      variant="caption"
+                      variant="body2"
                       color="text.secondary"
-                      sx={{ mt: 1, display: 'block' }}
+                      sx={{ mt: 2, display: 'block', fontWeight: 500 }}
                     >
                       {countClockedIn(shift.clockStatuses)} of {shift.assignedPeople.length} clocked
                       in
@@ -204,8 +211,8 @@ export default function ActiveShiftsView({
       </Box>
 
       {/* Stats Summary */}
-      <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-        <Typography variant="body2" color="text.secondary">
+      <Box sx={{ mt: 4, p: 2.5, bgcolor: 'grey.100', borderRadius: 2 }}>
+        <Typography variant="body1" color="text.secondary" fontWeight={500}>
           Showing {activeShifts.length} active {activeShifts.length === 1 ? 'shift' : 'shifts'}
         </Typography>
       </Box>
