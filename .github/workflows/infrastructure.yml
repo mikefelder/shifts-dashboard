@@ -1,0 +1,127 @@
+name: Infrastructure Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infrastructure.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Bicep Templates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Validate Bicep
+        run: |
+          az bicep build --file infra/main.bicep
+          echo "✅ Bicep validation successful"
+
+  preview:
+    name: Preview Infrastructure Changes
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: What-If Deployment
+        run: |
+          az deployment group what-if \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --template-file infra/main.bicep \
+            --parameters environment=${{ github.event.inputs.environment || 'dev' }}
+
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: [validate, preview]
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    outputs:
+      registryName: ${{ steps.deploy.outputs.registryName }}
+      registryLoginServer: ${{ steps.deploy.outputs.registryLoginServer }}
+      backendUrl: ${{ steps.deploy.outputs.backendUrl }}
+      frontendUrl: ${{ steps.deploy.outputs.frontendUrl }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure
+        id: deploy
+        run: |
+          echo "🚀 Deploying infrastructure..."
+
+          output=$(az deployment group create \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --template-file infra/main.bicep \
+            --parameters environment=${{ github.event.inputs.environment || 'dev' }} \
+            --query 'properties.outputs' \
+            --output json)
+
+          echo "Deployment output: $output"
+
+          # Extract outputs
+          registryName=$(echo $output | jq -r '.containerRegistryName.value')
+          registryLoginServer=$(echo $output | jq -r '.containerRegistryLoginServer.value')
+          backendUrl=$(echo $output | jq -r '.backendUrl.value')
+          frontendUrl=$(echo $output | jq -r '.frontendUrl.value')
+
+          echo "registryName=$registryName" >> $GITHUB_OUTPUT
+          echo "registryLoginServer=$registryLoginServer" >> $GITHUB_OUTPUT
+          echo "backendUrl=$backendUrl" >> $GITHUB_OUTPUT
+          echo "frontendUrl=$frontendUrl" >> $GITHUB_OUTPUT
+
+          echo "✅ Infrastructure deployment complete"
+          echo ""
+          echo "📦 Container Registry: $registryLoginServer"
+          echo "🔗 Backend URL: $backendUrl"
+          echo "🔗 Frontend URL: $frontendUrl"
+
+      - name: Summary
+        run: |
+          echo "## Infrastructure Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Deployment successful**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Registry**: \`${{ steps.deploy.outputs.registryLoginServer }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend URL**: ${{ steps.deploy.outputs.backendUrl }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend URL**: ${{ steps.deploy.outputs.frontendUrl }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: \`${{ github.event.inputs.environment || 'dev' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resource Group**: \`${{ secrets.AZURE_RESOURCE_GROUP }}\`" >> $GITHUB_STEP_SUMMARY

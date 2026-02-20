@@ -148,3 +148,8 @@ lerna-debug.log
 **.log
 logs
 # Logs
+# Azure Infrastructure
+infra/main.json
+infra/modules/*.json
+deployment-output.json
+.env.infrastructure
