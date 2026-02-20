@@ -4,6 +4,10 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
+import { createDefaultShiftboardService } from './services/shiftboard.service';
+import { createShiftService } from './services/shift.service';
+import { createShiftController } from './controllers/shift.controller';
+import { createShiftRoutes } from './routes/shift.routes';
 
 // Load environment variables
 dotenv.config();
@@ -97,7 +101,16 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 // API routes will be mounted here
-// TODO: Mount API routes (e.g., app.use('/api', apiRouter))
+// Initialize services and controllers
+const shiftboardService = createDefaultShiftboardService();
+const shiftService = createShiftService(shiftboardService);
+const shiftController = createShiftController(shiftService);
+
+// Mount shift routes
+const shiftRoutes = createShiftRoutes(shiftController);
+app.use('/api/shifts', shiftRoutes);
+
+console.log('[app] Mounted routes: /api/shifts');
 
 // ============================================================================
 // Error Handling

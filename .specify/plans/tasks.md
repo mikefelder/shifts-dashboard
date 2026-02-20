@@ -42,17 +42,17 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 [P] Implement Shiftboard HMAC SHA-1 authentication utility in backend/src/utils/shiftboard-auth.ts
-- [ ] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts
-- [ ] T009 Implement Shiftboard service client (generic RPC, auth, pagination, errors) in backend/src/services/shiftboard.service.ts
-- [ ] T010 [P] Setup error middleware (convert to {error:string} format) in backend/src/middleware/error.middleware.ts
-- [ ] T011 [P] Setup validation middleware (Zod schemas) in backend/src/middleware/validation.middleware.ts
-- [ ] T012 [P] Configure CORS, Helmet security headers, Morgan logging in backend/src/index.ts
-- [ ] T013 Create IndexedDB service with 4 stores (shifts, accounts, workgroups, metadata) in frontend/src/services/db.service.ts
-- [ ] T014 Create API service with cache fallback logic in frontend/src/services/api.service.ts
-- [ ] T015 [P] Define MUI theme (navy primary) in frontend/src/theme/theme.ts
-- [ ] T016 [P] Create AppLayout with header, sidebar, outlet, refresh state in frontend/src/components/Layout/AppLayout.tsx
-- [ ] T017 [P] Create Workgroup Context (provider, selectedWorkgroup, workgroups) in frontend/src/contexts/WorkgroupContext.tsx
+- [x] T007 [P] Implement Shiftboard HMAC SHA-1 authentication utility in backend/src/utils/shiftboard-auth.ts
+- [x] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts
+- [x] T009 Implement Shiftboard service client (generic RPC, auth, pagination, errors) in backend/src/services/shiftboard.service.ts
+- [x] T010 [P] Setup error middleware (convert to {error:string} format) in backend/src/middleware/error.middleware.ts
+- [x] T011 [P] Setup validation middleware (Zod schemas) in backend/src/middleware/validation.middleware.ts
+- [x] T012 [P] Configure CORS, Helmet security headers, Morgan logging in backend/src/index.ts
+- [x] T013 Create IndexedDB service with 4 stores (shifts, accounts, workgroups, metadata) in frontend/src/services/db.service.ts
+- [x] T014 Create API service with cache fallback logic in frontend/src/services/api.service.ts
+- [x] T015 [P] Define MUI theme (navy primary) in frontend/src/theme/theme.ts
+- [x] T016 [P] Create AppLayout with header, sidebar, outlet, refresh state in frontend/src/components/Layout/AppLayout.tsx
+- [x] T017 [P] Create Workgroup Context (provider, selectedWorkgroup, workgroups) in frontend/src/contexts/WorkgroupContext.tsx
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -66,10 +66,10 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Implement shift grouping algorithm (group by name+time+workgroup) in backend/src/utils/shift.utils.ts
-- [ ] T019 [US1] Implement shift service business logic (shiftWhosOn, shiftList, metrics) in backend/src/services/shift.service.ts
-- [ ] T020 [US1] Create shift controller (listShifts, whosOn handlers) in backend/src/controllers/shift.controller.ts
-- [ ] T021 [US1] Define shift routes (GET /api/shifts/whos-on, GET /api/shifts/list) in backend/src/routes/shift.routes.ts
+- [x] T018 [P] [US1] Implement shift grouping algorithm (group by name+time+workgroup) in backend/src/utils/shift.utils.ts
+- [x] T019 [US1] Implement shift service business logic (shiftWhosOn, shiftList, metrics) in backend/src/services/shift.service.ts
+- [x] T020 [US1] Create shift controller (listShifts, whosOn handlers) in backend/src/controllers/shift.controller.ts
+- [x] T021 [US1] Define shift routes (GET /api/shifts/whos-on, GET /api/shifts/list) in backend/src/routes/shift.routes.ts
 - [ ] T022 [P] [US1] Create ActiveShiftsView component (timeline, dynamic window, overlap handling) in frontend/src/components/Calendar/ActiveShiftsView.tsx
 - [ ] T023 [P] [US1] Implement "too many shifts" guard (>25 threshold, show anyway option) in ActiveShiftsView.tsx
 - [ ] T024 [P] [US1] Add current time indicator line (updates every second) in ActiveShiftsView.tsx
