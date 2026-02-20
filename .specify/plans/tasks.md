@@ -70,12 +70,12 @@ description: 'Task list for Shift Dashboard Rebuild'
 - [x] T019 [US1] Implement shift service business logic (shiftWhosOn, shiftList, metrics) in backend/src/services/shift.service.ts
 - [x] T020 [US1] Create shift controller (listShifts, whosOn handlers) in backend/src/controllers/shift.controller.ts
 - [x] T021 [US1] Define shift routes (GET /api/shifts/whos-on, GET /api/shifts/list) in backend/src/routes/shift.routes.ts
-- [ ] T022 [P] [US1] Create ActiveShiftsView component (timeline, dynamic window, overlap handling) in frontend/src/components/Calendar/ActiveShiftsView.tsx
-- [ ] T023 [P] [US1] Implement "too many shifts" guard (>25 threshold, show anyway option) in ActiveShiftsView.tsx
-- [ ] T024 [P] [US1] Add current time indicator line (updates every second) in ActiveShiftsView.tsx
-- [ ] T025 [US1] Create CalendarPage component (renders ActiveShiftsView + DayView) in frontend/src/pages/Calendar.tsx
-- [ ] T026 [US1] Setup router (/, /tabular-view routes) in frontend/src/App.tsx
-- [ ] T027 [US1] Wire up data fetching (useEffect on mount/refresh) in CalendarPage component
+- [x] T022 [P] [US1] Create ActiveShiftsView component (timeline, dynamic window, overlap handling) in frontend/src/components/Calendar/ActiveShiftsView.tsx
+- [x] T023 [P] [US1] Implement "too many shifts" guard (>25 threshold, show anyway option) in ActiveShiftsView.tsx
+- [x] T024 [P] [US1] Add current time indicator line (updates every second) in ActiveShiftsView.tsx
+- [x] T025 [US1] Create CalendarPage component (renders ActiveShiftsView + DayView) in frontend/src/pages/Calendar.tsx
+- [x] T026 [US1] Setup router (/, /tabular-view routes) in frontend/src/App.tsx
+- [x] T027 [US1] Wire up data fetching (useEffect on mount/refresh) in CalendarPage component
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - timeline displays active shifts with clock status
 
