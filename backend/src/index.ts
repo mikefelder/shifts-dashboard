@@ -14,6 +14,8 @@ import { createWorkgroupRoutes } from './routes/workgroup.routes';
 import { createAccountService } from './services/account.service';
 import { createAccountController } from './controllers/account.controller';
 import { createAccountRoutes } from './routes/account.routes';
+import { createSystemController } from './controllers/system.controller';
+import { createSystemRoutes } from './routes/system.routes';
 
 // Load environment variables
 dotenv.config();
@@ -127,7 +129,12 @@ const accountController = createAccountController(accountService);
 const accountRoutes = createAccountRoutes(accountController);
 app.use('/api/accounts', accountRoutes);
 
-console.log('[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts');
+// System routes
+const systemController = createSystemController();
+const systemRoutes = createSystemRoutes(systemController);
+app.use('/api/system', systemRoutes);
+
+console.log('[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts, /api/system');
 
 // ============================================================================
 // Error Handling

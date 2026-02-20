@@ -170,13 +170,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 6
 
-- [ ] T057 [P] [US6] Create Sidebar component with refresh controls in frontend/src/components/Layout/Sidebar.tsx
-- [ ] T058 [P] [US6] Implement "Refresh Now" button with loading spinner in Sidebar.tsx
-- [ ] T059 [P] [US6] Implement auto-refresh dropdown (Off / 5min / 10min / 15min) in Sidebar.tsx
-- [ ] T060 [P] [US6] Add setInterval logic in AppLayout for auto-refresh in frontend/src/components/Layout/AppLayout.tsx
-- [ ] T061 [US6] Pass refresh trigger via Outlet context to CalendarPage and TabularShiftView in AppLayout.tsx
-- [ ] T062 [US6] Update IndexedDB metadata with last sync timestamp after successful refresh in frontend/src/services/db.service.ts
-- [ ] T063 [US6] Display "Last refreshed: X minutes ago" or "Last API sync: timestamp" in Sidebar.tsx
+- [x] T057 [P] [US6] Create Sidebar component with refresh controls in frontend/src/components/Layout/Sidebar.tsx
+- [x] T058 [P] [US6] Implement "Refresh Now" button with loading spinner in Sidebar.tsx
+- [x] T059 [P] [US6] Implement auto-refresh dropdown (Off / 5min / 10min / 15min) in Sidebar.tsx
+- [x] T060 [P] [US6] Add setInterval logic in AppLayout for auto-refresh in frontend/src/components/Layout/AppLayout.tsx
+- [x] T061 [US6] Pass refresh trigger via Outlet context to CalendarPage and TabularShiftView in AppLayout.tsx
+- [x] T062 [US6] Update IndexedDB metadata with last sync timestamp after successful refresh in frontend/src/services/db.service.ts
+- [x] T063 [US6] Display "Last refreshed: X minutes ago" or "Last API sync: timestamp" in Sidebar.tsx
 
 **Checkpoint**: Users can manually refresh or configure automatic data updates
 
@@ -190,13 +190,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 7
 
-- [ ] T064 [P] [US7] Implement cache-first logic in API service (check cache age, fallback on error) in frontend/src/services/api.service.ts
-- [ ] T065 [P] [US7] Add isFreshData flag to distinguish live vs cached responses in frontend/src/services/api.service.ts
-- [ ] T066 [P] [US7] Create ErrorBoundary component (catches render errors, displays MUI Alert) in frontend/src/components/ErrorBoundary.tsx
-- [ ] T067 [US7] Display stale data warning when isFreshData=false in TabularShiftView and ActiveShiftsView
-- [ ] T068 [US7] Show inline error message "Failed to load shifts" when cache empty and API fails in views
-- [ ] T069 [US7] Implement system controller (health, echo endpoints) in backend/src/controllers/system.controller.ts
-- [ ] T070 [US7] Define system routes (GET /api/system/health, POST /api/system/echo) in backend/src/routes/system.routes.ts
+- [x] T064 [P] [US7] Implement cache-first logic in API service (check cache age, fallback on error) in frontend/src/services/api.service.ts
+- [x] T065 [P] [US7] Add isFreshData flag to distinguish live vs cached responses in frontend/src/services/api.service.ts
+- [x] T066 [P] [US7] Create ErrorBoundary component (catches render errors, displays MUI Alert) in frontend/src/components/ErrorBoundary.tsx
+- [x] T067 [US7] Display stale data warning when isFreshData=false in TabularShiftView and ActiveShiftsView
+- [x] T068 [US7] Show inline error message "Failed to load shifts" when cache empty and API fails in views
+- [x] T069 [US7] Implement system controller (health, echo endpoints) in backend/src/controllers/system.controller.ts
+- [x] T070 [US7] Define system routes (GET /api/system/health, POST /api/system/echo) in backend/src/routes/system.routes.ts
 
 **Checkpoint**: App works with degraded functionality when offline - all cached data remains accessible
 

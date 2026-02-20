@@ -7,35 +7,16 @@
  * Features:
  * - Refresh state management (manual + auto-refresh)
  * - Workgroup filtering integration
- * - Permanent sidebar with navigation and controls
+ * - Permanent sidebar with navigation and controls (via Sidebar component)
  * - Outlet context for child routes
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Box,
-  AppBar,
-  Toolbar,
-  Typography,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Button,
-  Select,
-  MenuItem,
-  FormControl,
-  useTheme,
-} from '@mui/material';
-import {
-  Schedule as ScheduleIcon,
-  Refresh as RefreshIcon,
-  ViewDay as ViewDayIcon,
-} from '@mui/icons-material';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Box, AppBar, Toolbar, Typography, Drawer, useTheme } from '@mui/material';
+import { Outlet } from 'react-router-dom';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
+import Sidebar from './Sidebar';
 
 // ============================================================================
 // Constants
@@ -60,8 +41,6 @@ export interface RefreshContext {
 // ============================================================================
 
 export default function AppLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const theme = useTheme();
   const { selectedWorkgroup, workgroups, setSelectedWorkgroup } = useWorkgroup();
 
@@ -73,7 +52,10 @@ export default function AppLayout() {
   // Manual refresh trigger
   const triggerRefresh = useCallback(() => {
     console.log('Manual refresh triggered at:', new Date().toISOString());
+    setIsRefreshing(true);
     setRefreshTimestamp(Date.now());
+    // isRefreshing is reset by child pages after data loads
+    setTimeout(() => setIsRefreshing(false), 3000);
   }, []);
 
   // Auto-refresh interval
@@ -99,9 +81,6 @@ export default function AppLayout() {
       triggerRefresh();
     }
   };
-
-  // Navigation active check
-  const isActive = (path: string) => location.pathname === path;
 
   // Outlet context for child routes
   const outletContext: RefreshContext = {
@@ -143,7 +122,7 @@ export default function AppLayout() {
         </Toolbar>
       </AppBar>
 
-      {/* Sidebar — always visible */}
+      {/* Sidebar — always visible, delegated to Sidebar component */}
       <Drawer
         variant="permanent"
         sx={{
@@ -160,108 +139,12 @@ export default function AppLayout() {
           },
         }}
       >
-        <List>
-          <ListItem
-            onClick={() => navigate('/')}
-            selected={isActive('/') || isActive('/calendar')}
-            sx={{
-              cursor: 'pointer',
-              color: 'white',
-              '& .MuiListItemIcon-root': { color: 'white' },
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(255, 255, 255, 0.16)',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
-              },
-            }}
-          >
-            <ListItemIcon>
-              <ScheduleIcon />
-            </ListItemIcon>
-            <ListItemText primary="Current Shifts" />
-          </ListItem>
-          <ListItem
-            onClick={() => navigate('/table')}
-            selected={isActive('/table')}
-            sx={{
-              cursor: 'pointer',
-              color: 'white',
-              '& .MuiListItemIcon-root': { color: 'white' },
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(255, 255, 255, 0.16)',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
-              },
-            }}
-          >
-            <ListItemIcon>
-              <ViewDayIcon />
-            </ListItemIcon>
-            <ListItemText primary="Tabular View" />
-          </ListItem>
-        </List>
-
-        <Box sx={{ p: 2, mt: 'auto' }}>
-          <Typography variant="subtitle2" gutterBottom sx={{ color: 'white' }}>
-            Auto Refresh
-          </Typography>
-          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-            <Select
-              value={refreshInterval}
-              onChange={(e) => handleRefreshIntervalChange(Number(e.target.value))}
-              sx={{
-                color: 'white',
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255, 255, 255, 0.5)',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255, 255, 255, 0.8)',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'white',
-                },
-                '& .MuiSvgIcon-root': { color: 'white' },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: theme.palette.primary.main,
-                    '& .MuiMenuItem-root': {
-                      color: 'white',
-                      '&:hover': { backgroundColor: theme.palette.primary.dark },
-                      '&.Mui-selected': {
-                        backgroundColor: theme.palette.primary.dark,
-                        '&:hover': { backgroundColor: theme.palette.primary.dark },
-                      },
-                    },
-                  },
-                },
-              }}
-            >
-              <MenuItem value={0}>Off</MenuItem>
-              <MenuItem value={5}>Every 5 minutes</MenuItem>
-              <MenuItem value={10}>Every 10 minutes</MenuItem>
-              <MenuItem value={15}>Every 15 minutes</MenuItem>
-            </Select>
-          </FormControl>
-
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={triggerRefresh}
-            fullWidth
-            sx={{
-              color: 'white',
-              borderColor: 'white',
-              '&:hover': {
-                borderColor: 'rgba(255, 255, 255, 0.8)',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              },
-            }}
-          >
-            Refresh Now
-          </Button>
-        </Box>
+        <Sidebar
+          isRefreshing={isRefreshing}
+          refreshInterval={refreshInterval}
+          onRefreshNow={triggerRefresh}
+          onIntervalChange={handleRefreshIntervalChange}
+        />
       </Drawer>
 
       {/* Main Content Area */}
