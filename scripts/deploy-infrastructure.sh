@@ -18,7 +18,7 @@ RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shifts-dashboard-rg}
 LOCATION=${AZURE_LOCATION:-eastus}
 TEMPLATE_FILE="infra/main.bicep"
 
-echo -e "${GREEN}🚀 Deploying Shift Dashboard Infrastructure${NC}"
+echo -e "${GREEN}Deploying Shift Dashboard Infrastructure${NC}"
 echo "======================================================"
 echo "Environment: $ENVIRONMENT"
 echo "Resource Group: $RESOURCE_GROUP"
@@ -28,44 +28,44 @@ echo ""
 
 # Check if Azure CLI is installed
 if ! command -v az &> /dev/null; then
-    echo -e "${RED}❌ Azure CLI is not installed. Please install it first.${NC}"
+    echo -e "${RED}ERROR: Azure CLI is not installed. Please install it first.${NC}"
     echo "Visit: https://docs.microsoft.com/cli/azure/install-azure-cli"
     exit 1
 fi
 
 # Check if logged in
 if ! az account show &> /dev/null; then
-    echo -e "${YELLOW}⚠️  Not logged into Azure. Running 'az login'...${NC}"
+    echo -e "${YELLOW}WARNING: Not logged into Azure. Running 'az login'...${NC}"
     az login
 fi
 
 # Show current subscription
 SUBSCRIPTION=$(az account show --query name -o tsv)
-echo -e "${GREEN}✓${NC} Using subscription: ${YELLOW}${SUBSCRIPTION}${NC}"
+echo -e "${GREEN}[OK]${NC} Using subscription: ${YELLOW}${SUBSCRIPTION}${NC}"
 echo ""
 
 # Create resource group if it doesn't exist
-echo -e "${YELLOW}🔍 Checking resource group...${NC}"
+echo -e "${YELLOW}Checking resource group...${NC}"
 if ! az group show --name $RESOURCE_GROUP &> /dev/null; then
     echo -e "${YELLOW}Creating resource group: $RESOURCE_GROUP${NC}"
     az group create --name $RESOURCE_GROUP --location $LOCATION
-    echo -e "${GREEN}✓${NC} Resource group created"
+    echo -e "${GREEN}[OK]${NC} Resource group created"
 else
-    echo -e "${GREEN}✓${NC} Resource group exists"
+    echo -e "${GREEN}[OK]${NC} Resource group exists"
 fi
 echo ""
 
 # Validate Bicep template
-echo -e "${YELLOW}🔍 Validating Bicep template...${NC}"
+echo -e "${YELLOW}Validating Bicep template...${NC}"
 if ! az bicep build --file $TEMPLATE_FILE; then
-    echo -e "${RED}❌ Bicep validation failed${NC}"
+    echo -e "${RED}ERROR: Bicep validation failed${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓${NC} Bicep validation successful"
+echo -e "${GREEN}[OK]${NC} Bicep validation successful"
 echo ""
 
 # Show what-if preview
-echo -e "${YELLOW}📋 Preview of changes:${NC}"
+echo -e "${YELLOW}Preview of changes:${NC}"
 az deployment group what-if \
     --resource-group $RESOURCE_GROUP \
     --template-file $TEMPLATE_FILE \
@@ -81,7 +81,7 @@ if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
 fi
 
 # Deploy infrastructure
-echo -e "${GREEN}🚀 Deploying infrastructure...${NC}"
+echo -e "${GREEN}Deploying infrastructure...${NC}"
 DEPLOYMENT_NAME="shifts-dashboard-$(date +%Y%m%d-%H%M%S)"
 
 az deployment group create \
@@ -93,7 +93,7 @@ az deployment group create \
 
 # Extract outputs
 echo ""
-echo -e "${GREEN}✅ Deployment complete!${NC}"
+echo -e "${GREEN}Deployment complete!${NC}"
 echo ""
 echo "======================================================"
 echo -e "${GREEN}Deployment Outputs:${NC}"
@@ -115,7 +115,7 @@ BACKEND_URL=$BACKEND_URL
 FRONTEND_URL=$FRONTEND_URL
 EOF
 
-echo -e "${GREEN}✓${NC} Outputs saved to .env.infrastructure"
+echo -e "${GREEN}[OK]${NC} Outputs saved to .env.infrastructure"
 echo ""
 echo -e "${GREEN}Next steps:${NC}"
 echo "1. Push Docker images to: $REGISTRY_LOGIN_SERVER"

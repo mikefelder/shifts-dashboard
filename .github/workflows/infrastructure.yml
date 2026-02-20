@@ -38,7 +38,7 @@ jobs:
       - name: Validate Bicep
         run: |
           az bicep build --file infra/main.bicep
-          echo "✅ Bicep validation successful"
+          echo "Bicep validation successful"
 
   preview:
     name: Preview Infrastructure Changes
@@ -83,7 +83,7 @@ jobs:
       - name: Deploy to Azure
         id: deploy
         run: |
-          echo "🚀 Deploying infrastructure..."
+          echo "Deploying infrastructure..."
 
           output=$(az deployment group create \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
@@ -99,29 +99,63 @@ jobs:
           registryLoginServer=$(echo $output | jq -r '.containerRegistryLoginServer.value')
           backendUrl=$(echo $output | jq -r '.backendUrl.value')
           frontendUrl=$(echo $output | jq -r '.frontendUrl.value')
+          keyVaultName=$(echo $output | jq -r '.keyVaultName.value')
+          backendAppName=$(echo $output | jq -r '.backendAppName.value')
+          frontendAppName=$(echo $output | jq -r '.frontendAppName.value')
 
           echo "registryName=$registryName" >> $GITHUB_OUTPUT
           echo "registryLoginServer=$registryLoginServer" >> $GITHUB_OUTPUT
           echo "backendUrl=$backendUrl" >> $GITHUB_OUTPUT
           echo "frontendUrl=$frontendUrl" >> $GITHUB_OUTPUT
+          echo "keyVaultName=$keyVaultName" >> $GITHUB_OUTPUT
+          echo "backendAppName=$backendAppName" >> $GITHUB_OUTPUT
+          echo "frontendAppName=$frontendAppName" >> $GITHUB_OUTPUT
 
-          echo "✅ Infrastructure deployment complete"
+          echo "Infrastructure deployment complete"
           echo ""
-          echo "📦 Container Registry: $registryLoginServer"
-          echo "🔗 Backend URL: $backendUrl"
-          echo "🔗 Frontend URL: $frontendUrl"
+          echo "Container Registry: $registryLoginServer"
+          echo "Backend URL: $backendUrl"
+          echo "Frontend URL: $frontendUrl"
+          echo "Key Vault: $keyVaultName"
+
+      - name: Populate Key Vault Secrets
+        run: |
+          KV_NAME="${{ steps.deploy.outputs.keyVaultName }}"
+
+          echo "Storing Shiftboard secrets in Key Vault: $KV_NAME"
+
+          # Store Shiftboard API credentials
+          az keyvault secret set \
+            --vault-name $KV_NAME \
+            --name sb-access-key \
+            --value "${{ secrets.SB_ACCESS_KEY }}" \
+            --output none
+
+          az keyvault secret set \
+            --vault-name $KV_NAME \
+            --name sb-signature-key \
+            --value "${{ secrets.SB_SIGNATURE_KEY }}" \
+            --output none
+
+          echo "Secrets stored in Key Vault"
 
       - name: Summary
         run: |
           echo "## Infrastructure Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Deployment successful**" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment successful**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Resources" >> $GITHUB_STEP_SUMMARY
           echo "- **Container Registry**: \`${{ steps.deploy.outputs.registryLoginServer }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Key Vault**: \`${{ steps.deploy.outputs.keyVaultName }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend App**: \`${{ steps.deploy.outputs.backendAppName }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend App**: \`${{ steps.deploy.outputs.frontendAppName }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Backend URL**: ${{ steps.deploy.outputs.backendUrl }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend URL**: ${{ steps.deploy.outputs.frontendUrl }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: \`${{ github.event.inputs.environment || 'dev' }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Resource Group**: \`${{ secrets.AZURE_RESOURCE_GROUP }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Secrets" >> $GITHUB_STEP_SUMMARY
+          echo "Shiftboard credentials stored in Key Vault" >> $GITHUB_STEP_SUMMARY

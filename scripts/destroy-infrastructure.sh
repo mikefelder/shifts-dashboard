@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shifts-dashboard-rg}
 
-echo -e "${RED}⚠️  WARNING: DESTRUCTIVE OPERATION${NC}"
+echo -e "${RED}WARNING: DESTRUCTIVE OPERATION${NC}"
 echo "======================================================"
 echo "This will DELETE the following resource group:"
 echo "  Resource Group: $RESOURCE_GROUP"
@@ -24,13 +24,13 @@ echo ""
 
 # Check if Azure CLI is installed
 if ! command -v az &> /dev/null; then
-    echo -e "${RED}❌ Azure CLI is not installed.${NC}"
+    echo -e "${RED}ERROR: Azure CLI is not installed.${NC}"
     exit 1
 fi
 
 # Check if logged in
 if ! az account show &> /dev/null; then
-    echo -e "${YELLOW}⚠️  Not logged into Azure. Running 'az login'...${NC}"
+    echo -e "${YELLOW}WARNING: Not logged into Azure. Running 'az login'...${NC}"
     az login
 fi
 
@@ -70,16 +70,16 @@ if [[ "$REPLY" != "DELETE" ]]; then
 fi
 
 # Delete resource group
-echo -e "${RED}🗑️  Deleting resource group: $RESOURCE_GROUP${NC}"
+echo -e "${RED}Deleting resource group: $RESOURCE_GROUP${NC}"
 az group delete --name $RESOURCE_GROUP --yes --no-wait
 
 echo ""
-echo -e "${GREEN}✓${NC} Deletion initiated (running in background)"
+echo -e "${GREEN}[OK]${NC} Deletion initiated (running in background)"
 echo ""
 echo "To check deletion status:"
 echo "  az group show --name $RESOURCE_GROUP"
 echo ""
 echo "Clean up local files:"
 rm -f deployment-output.json .env.infrastructure
-echo -e "${GREEN}✓${NC} Cleaned up local deployment files"
+echo -e "${GREEN}[OK]${NC} Cleaned up local deployment files"
 echo ""

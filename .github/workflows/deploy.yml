@@ -44,30 +44,30 @@ jobs:
           environment="${{ github.event.inputs.environment || 'dev' }}"
           rg="${{ secrets.AZURE_RESOURCE_GROUP }}"
 
-          echo "🔍 Checking for required Azure resources in $rg..."
+          echo "Checking for required Azure resources in $rg..."
 
           # Find Container Registry
           registry=$(az acr list --resource-group $rg --query "[0].loginServer" -o tsv)
           if [ -z "$registry" ]; then
-            echo "❌ No Container Registry found. Run infrastructure deployment first."
+            echo "ERROR: No Container Registry found. Run infrastructure deployment first."
             exit 1
           fi
 
           # Find Backend Container App
           backendApp=$(az containerapp list --resource-group $rg --query "[?contains(name, 'backend')].name | [0]" -o tsv)
           if [ -z "$backendApp" ]; then
-            echo "❌ No backend Container App found. Run infrastructure deployment first."
+            echo "ERROR: No backend Container App found. Run infrastructure deployment first."
             exit 1
           fi
 
           # Find Frontend Container App
           frontendApp=$(az containerapp list --resource-group $rg --query "[?contains(name, 'frontend')].name | [0]" -o tsv)
           if [ -z "$frontendApp" ]; then
-            echo "❌ No frontend Container App found. Run infrastructure deployment first."
+            echo "ERROR: No frontend Container App found. Run infrastructure deployment first."
             exit 1
           fi
 
-          echo "✅ All required resources found"
+          echo "All required resources found"
           echo "registry=$registry" >> $GITHUB_OUTPUT
           echo "backendApp=$backendApp" >> $GITHUB_OUTPUT
           echo "frontendApp=$frontendApp" >> $GITHUB_OUTPUT
@@ -137,7 +137,7 @@ jobs:
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
-          echo "✅ Backend deployed"
+          echo "Backend deployed"
 
       - name: Deploy Frontend
         run: |
@@ -146,7 +146,7 @@ jobs:
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
-          echo "✅ Frontend deployed"
+          echo "Frontend deployed"
 
       - name: Get URLs
         id: urls
@@ -168,7 +168,7 @@ jobs:
         run: |
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Deployment successful**" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment successful**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Application URLs" >> $GITHUB_STEP_SUMMARY
           echo "- **Backend**: ${{ steps.urls.outputs.backendUrl }}" >> $GITHUB_STEP_SUMMARY

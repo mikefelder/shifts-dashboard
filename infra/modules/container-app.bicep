@@ -42,9 +42,15 @@ param targetPort int = 3000
 @description('External ingress enabled')
 param external bool = true
 
+@description('Enable managed identity')
+param enableManagedIdentity bool = false
+
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: appName
   location: location
+  identity: enableManagedIdentity ? {
+    type: 'SystemAssigned'
+  } : null
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
@@ -106,3 +112,5 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
 output fqdn string = containerApp.properties.configuration.ingress.fqdn
 output appUrl string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
 output appId string = containerApp.id
+output appName string = containerApp.name
+output principalId string = enableManagedIdentity ? containerApp.identity.principalId : ''
