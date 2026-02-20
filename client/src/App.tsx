@@ -10,6 +10,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { WorkgroupProvider } from './contexts/WorkgroupContext';
 import AppLayout from './components/Layout/AppLayout';
 import Calendar from './pages/Calendar';
+import Table from './pages/Table';
 import theme from './theme/theme';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
             <Route path="/" element={<AppLayout />}>
               <Route index element={<Calendar />} />
               <Route path="calendar" element={<Calendar />} />
+              <Route path="table" element={<Table />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

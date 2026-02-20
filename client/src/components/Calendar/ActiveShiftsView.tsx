@@ -80,20 +80,19 @@ export default function ActiveShiftsView({
     );
   }
 
-  if (!isFreshData) {
-    return (
-      <Alert severity="warning" sx={{ mb: 2 }}>
-        Displaying cached data - unable to connect to API
-      </Alert>
-    );
-  }
-
   if (activeShifts.length === 0) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography variant="h5" color="text.secondary">
-          No active shifts at this time
-        </Typography>
+        <Box textAlign="center">
+          <Typography variant="h5" color="text.secondary" gutterBottom>
+            No active shifts at this time
+          </Typography>
+          {!isFreshData && (
+            <Alert severity="warning" sx={{ mt: 2, maxWidth: '600px' }}>
+              Unable to connect to API. Using cached data (if available).
+            </Alert>
+          )}
+        </Box>
       </Box>
     );
   }
@@ -113,6 +112,13 @@ export default function ActiveShiftsView({
 
   return (
     <Box>
+      {/* Stale Data Warning */}
+      {!isFreshData && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          Displaying cached data - unable to connect to API
+        </Alert>
+      )}
+
       {/* Current Time Indicator */}
       <Box
         sx={{
