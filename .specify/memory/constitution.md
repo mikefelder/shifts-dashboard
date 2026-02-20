@@ -38,7 +38,7 @@ Notes:
   - Version bump: MINOR (new principle added without breaking existing principles)
 -->
 
-# Shifts Dashboard Constitution
+# Shift Dashboard Constitution
 
 ## Core Principles
 

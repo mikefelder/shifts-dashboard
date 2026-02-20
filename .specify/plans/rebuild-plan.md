@@ -1,4 +1,4 @@
-# Implementation Plan: Shifts Dashboard Rebuild
+# Implementation Plan: Shift Dashboard Rebuild
 
 **Version**: 1.0.0  
 **Date**: 2026-02-17  
@@ -14,7 +14,7 @@
 
 ## Executive Summary
 
-This plan outlines the complete rebuild of the Shifts Dashboard application with feature parity to the original implementation, plus foundational enhancements. All legacy code has been removed; this is a greenfield implementation following constitutional principles and modern best practices.
+This plan outlines the complete rebuild of the Shift Dashboard application with feature parity to the original implementation, plus foundational enhancements. All legacy code has been removed; this is a greenfield implementation following constitutional principles and modern best practices.
 
 **Timeline**: 8-10 weeks  
 **Team**: 2 full-stack developers + 1 QA engineer  
@@ -1849,7 +1849,7 @@ LOG_LEVEL=debug
 
 ```
 VITE_API_BASE_URL=http://localhost:3000/api
-VITE_APP_NAME=Shifts Dashboard
+VITE_APP_NAME=Shift Dashboard
 ```
 
 ---

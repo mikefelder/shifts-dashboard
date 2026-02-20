@@ -1,6 +1,6 @@
 # Azure Infrastructure
 
-This directory contains Infrastructure as Code (IaC) for the Shifts Dashboard application using Azure Bicep.
+This directory contains Infrastructure as Code (IaC) for the Shift Dashboard application using Azure Bicep.
 
 ## Architecture
 

@@ -2,7 +2,7 @@
 
 **Version**: 1.0.0  
 **Date**: 2026-02-17  
-**Purpose**: Prioritized improvements for Shifts Dashboard based on codebase analysis
+**Purpose**: Prioritized improvements for Shift Dashboard based on codebase analysis
 
 ## Overview
 

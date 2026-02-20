@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Deploy Azure Infrastructure for Shifts Dashboard
+# Deploy Azure Infrastructure for Shift Dashboard
 # Usage: ./scripts/deploy-infrastructure.sh [environment]
 # Example: ./scripts/deploy-infrastructure.sh dev
 
@@ -18,7 +18,7 @@ RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shifts-dashboard-rg}
 LOCATION=${AZURE_LOCATION:-eastus}
 TEMPLATE_FILE="infra/main.bicep"
 
-echo -e "${GREEN}🚀 Deploying Shifts Dashboard Infrastructure${NC}"
+echo -e "${GREEN}🚀 Deploying Shift Dashboard Infrastructure${NC}"
 echo "======================================================"
 echo "Environment: $ENVIRONMENT"
 echo "Resource Group: $RESOURCE_GROUP"

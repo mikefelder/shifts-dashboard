@@ -32,7 +32,7 @@ app.get('/health', (_req: Request, res: Response) => {
 // Root endpoint
 app.get('/', (_req: Request, res: Response) => {
   res.json({
-    message: 'Shifts Dashboard API',
+    message: 'Shift Dashboard API',
     version: '1.0.0',
   });
 });

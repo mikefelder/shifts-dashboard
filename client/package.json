@@ -1,6 +1,6 @@
 {
   "name": "client",
-  "description": "Shifts Dashboard Frontend - React TypeScript SPA with MUI",
+  "description": "Shift Dashboard Frontend - React TypeScript SPA with MUI",
   "private": true,
   "version": "1.0.0",
   "type": "module",

@@ -1,6 +1,6 @@
-# Shifts Dashboard Rebuild: Visual Timeline
+# Shift Dashboard Rebuild: Visual Timeline
 
-**Project**: Shifts Dashboard - Complete Rebuild  
+**Project**: Shift Dashboard - Complete Rebuild  
 **Duration**: 8-10 weeks (+ 2 week contingency)  
 **Team**: 2 FTE developers + 0.5 FTE QA engineer  
 **Status**: Planning Complete → Awaiting Approval
@@ -11,7 +11,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    SHIFTS DASHBOARD REBUILD TIMELINE                     │
+│                    SHIFT DASHBOARD REBUILD TIMELINE                      │
 └─────────────────────────────────────────────────────────────────────────┘
 
 Week 1-2    │ ████████████████ PHASE 0: SETUP & FOUNDATION

@@ -1,4 +1,4 @@
-# Shifts Dashboard - Codebase Analysis & Feature Specification
+# Shift Dashboard - Codebase Analysis & Feature Specification
 
 **Analysis Date**: 2026-02-17  
 **Purpose**: Complete feature specification extracted from existing codebase for rebuilding with feature parity  
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The Shifts Dashboard is a full-stack web application that provides real-time visibility into volunteer shift assignments and clock-in status sourced from the Shiftboard API. The application consists of:
+The Shift Dashboard is a full-stack web application that provides real-time visibility into volunteer shift assignments and clock-in status sourced from the Shiftboard API. The application consists of:
 
 - **Backend**: Node.js/Express API proxy that authenticates to Shiftboard, normalizes responses, and groups shift data
 - **Frontend**: React/TypeScript SPA with Material-UI providing calendar and tabular views

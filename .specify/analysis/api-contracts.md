@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document provides detailed API contract specifications for all endpoints in the Shifts Dashboard API. These contracts are **implementation-agnostic** and can be satisfied by any backend technology stack.
+This document provides detailed API contract specifications for all endpoints in the Shift Dashboard API. These contracts are **implementation-agnostic** and can be satisfied by any backend technology stack.
 
 ## Base Configuration
 

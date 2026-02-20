@@ -1,4 +1,4 @@
-# Multi-stage build for Shifts Dashboard Backend
+# Multi-stage build for Shift Dashboard Backend
 
 # Stage 1: Build
 FROM node:20-alpine AS build

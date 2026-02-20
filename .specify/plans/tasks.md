@@ -1,8 +1,8 @@
 ---
-description: 'Task list for Shifts Dashboard Rebuild'
+description: 'Task list for Shift Dashboard Rebuild'
 ---
 
-# Tasks: Shifts Dashboard Rebuild
+# Tasks: Shift Dashboard Rebuild
 
 **Input**: Design documents from `.specify/analysis/` and `.specify/plans/`
 **Prerequisites**: plan.md (rebuild-plan.md), spec.md (codebase-spec.md), contracts (api-contracts.md)

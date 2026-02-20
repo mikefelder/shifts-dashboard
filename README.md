@@ -1,4 +1,4 @@
-# Shifts Dashboard
+# Shift Dashboard
 
 [![Phase](https://img.shields.io/badge/Phase-0%3A%20Setup-blue)](.specify/plans/tasks.md)
 [![Progress](https://img.shields.io/badge/Progress-2%2F80%20Tasks-orange)](.specify/plans/tasks.md)
@@ -10,7 +10,7 @@ Real-time volunteer shift visibility dashboard with clock-in status tracking, po
 
 ## Overview
 
-The Shifts Dashboard provides real-time visibility into volunteer shift assignments and clock-in status. Built as a full-stack web application with offline-first capabilities and Azure Container Apps deployment.
+The Shift Dashboard provides real-time visibility into volunteer shift assignments and clock-in status. Built as a full-stack web application with offline-first capabilities and Azure Container Apps deployment.
 
 ### Key Features
 

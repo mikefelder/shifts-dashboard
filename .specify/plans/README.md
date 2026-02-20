@@ -1,6 +1,6 @@
 # Development Plans
 
-This directory contains implementation plans for the Shifts Dashboard project.
+This directory contains implementation plans for the Shift Dashboard project.
 
 ## Current Plans
 

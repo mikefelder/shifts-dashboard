@@ -1,6 +1,6 @@
 # Deployment Scripts
 
-This directory contains scripts for managing Azure infrastructure for the Shifts Dashboard application.
+This directory contains scripts for managing Azure infrastructure for the Shift Dashboard application.
 
 ## Prerequisites
 

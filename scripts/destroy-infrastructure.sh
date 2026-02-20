@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Destroy Azure Infrastructure for Shifts Dashboard
+# Destroy Azure Infrastructure for Shift Dashboard
 # Usage: ./scripts/destroy-infrastructure.sh
 # WARNING: This will delete ALL resources in the resource group
 
