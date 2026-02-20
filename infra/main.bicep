@@ -14,7 +14,7 @@ param appName string = 'shift-dashboard'
 param uniqueSuffix string = uniqueString(resourceGroup().id)
 
 // Computed values
-var registryName = '${appName}${uniqueSuffix}'
+var registryName = replace('${appName}${uniqueSuffix}', '-', '')
 var keyVaultName = '${appName}-kv-${uniqueSuffix}'
 
 // Container Registry
