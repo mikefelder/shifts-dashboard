@@ -14,6 +14,12 @@ import { createWorkgroupRoutes } from './routes/workgroup.routes';
 import { createAccountService } from './services/account.service';
 import { createAccountController } from './controllers/account.controller';
 import { createAccountRoutes } from './routes/account.routes';
+import { createRoleService } from './services/role.service';
+import { createRoleController } from './controllers/role.controller';
+import { createRoleRoutes } from './routes/role.routes';
+import { createCalendarService } from './services/calendar.service';
+import { createCalendarController } from './controllers/calendar.controller';
+import { createCalendarRoutes } from './routes/calendar.routes';
 import { createSystemController } from './controllers/system.controller';
 import { createSystemRoutes } from './routes/system.routes';
 
@@ -129,12 +135,26 @@ const accountController = createAccountController(accountService);
 const accountRoutes = createAccountRoutes(accountController);
 app.use('/api/accounts', accountRoutes);
 
+// Role routes
+const roleService = createRoleService(shiftboardService);
+const roleController = createRoleController(roleService);
+const roleRoutes = createRoleRoutes(roleController);
+app.use('/api/roles', roleRoutes);
+
+// Calendar routes
+const calendarService = createCalendarService();
+const calendarController = createCalendarController(calendarService);
+const calendarRoutes = createCalendarRoutes(calendarController);
+app.use('/api/calendar', calendarRoutes);
+
 // System routes
 const systemController = createSystemController();
 const systemRoutes = createSystemRoutes(systemController);
 app.use('/api/system', systemRoutes);
 
-console.log('[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts, /api/system');
+console.log(
+  '[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts, /api/roles, /api/calendar, /api/system'
+);
 
 // ============================================================================
 // Error Handling

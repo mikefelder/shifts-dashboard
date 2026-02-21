@@ -206,12 +206,12 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T071 [P] Add role service and controller (getRole, listRoles) in backend/src/services/role.service.ts and backend/src/controllers/role.controller.ts
-- [ ] T072 [P] Add calendar service and controller (getSummary stub) in backend/src/services/calendar.service.ts and backend/src/controllers/calendar.controller.ts
-- [ ] T073 [P] Create Bicep infrastructure templates (main.bicep, modules for ACR, Container Apps, Key Vault, App Insights) in infra/
-- [ ] T074 [P] Create deployment scripts (deploy.sh, destroy.sh, validate.sh) in infra/scripts/
-- [ ] T075 [P] Add Bicep parameter files (dev.json, staging.json, prod.json) in infra/params/
-- [ ] T076 [P] Document deployment process and seasonal operations in docs/deployment.md
+- [x] T071 [P] Add role service and controller (getRole, listRoles) in backend/src/services/role.service.ts and backend/src/controllers/role.controller.ts
+- [x] T072 [P] Add calendar service and controller (getSummary stub) in backend/src/services/calendar.service.ts and backend/src/controllers/calendar.controller.ts
+- [x] T073 [P] Create Bicep infrastructure templates (main.bicep, modules for ACR, Container Apps, Key Vault, App Insights) in infra/
+- [x] T074 [P] Create deployment scripts (deploy.sh, destroy.sh, validate.sh) in infra/scripts/
+- [x] T075 [P] Add Bicep parameter files (dev.json, staging.json, prod.json) in infra/params/
+- [x] T076 [P] Document deployment process and seasonal operations in docs/deployment.md
 - [ ] T077 Code cleanup and refactoring across all modules
 - [ ] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
 - [ ] T079 Security hardening (rate limiting, input sanitization, CSP headers)
