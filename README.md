@@ -65,13 +65,13 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 
 **Frontend**:
 
-- React 18.2+
-- TypeScript 5.2+
-- Vite 5.0+ (build tool)
-- Material-UI 5.15+
-- React Router 6.21+
+- React 19.2+
+- TypeScript 5.x
+- Vite 7.3+ (build tool)
+- Material-UI (MUI) 7.3+
+- React Router 7.13+
 - IndexedDB/idb 8.0+
-- date-fns 3.0+
+- date-fns 4.1+
 - Vitest + Playwright (testing)
 
 **Infrastructure**:
@@ -121,11 +121,14 @@ cp backend/.env.example backend/.env
 Edit `backend/.env`:
 
 ```env
-PORT=3000
 NODE_ENV=development
-SHIFTBOARD_ACCESS_KEY_ID=your_access_key_id
-SHIFTBOARD_SECRET_KEY=your_secret_key
-SHIFTBOARD_SITE_URL=https://yoursite.shiftboard.com
+PORT=3000
+SHIFTBOARD_ACCESS_KEY_ID=your-access-key-id
+SHIFTBOARD_SECRET_KEY=your-secret-key
+SHIFTBOARD_HOST=api.shiftboard.com
+SHIFTBOARD_PATH=/api/v1/
+ALLOWED_ORIGINS=http://localhost:5173
+LOG_LEVEL=debug
 ```
 
 **Frontend** (`client/.env`):
@@ -137,7 +140,8 @@ cp client/.env.example client/.env
 Edit `client/.env`:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3000/api
+VITE_APP_NAME=Shift Dashboard
 ```
 
 ### 4. Development
@@ -204,16 +208,21 @@ shifts-dashboard/
 │   └── workflows/           # CI/CD pipelines (T005)
 ├── .specify/
 │   ├── analysis/            # Codebase analysis & specs
-│   │   ├── codebase-spec.md # Feature specification
-│   │   ├── api-contracts.md # API endpoint contracts
-│   │   └── enhancements.md  # Future improvements
 │   ├── memory/
 │   │   └── constitution.md  # 7 core principles (v1.1.0)
 │   ├── plans/
-│   │   ├── rebuild-plan.md  # Implementation plan (8-10 weeks)
-│   │   ├── tasks.md         # Task breakdown (80 tasks)
-│   │   └── TIMELINE.md      # Phase timeline
+│   ├── scripts/             # Helper bash scripts
 │   └── templates/           # Document templates
+├── specs/
+│   └── 003-user-stories-implementation/
+│       ├── spec.md          # Feature specification
+│       ├── plan.md          # Implementation plan
+│       ├── tasks.md         # Task breakdown
+│       ├── contracts/
+│       │   └── api-contracts.md # API endpoint contracts
+│       ├── data-model.md    # Data structures
+│       ├── quickstart.md    # Quick start guide
+│       └── research.md      # Technical research
 ├── backend/
 │   ├── src/
 │   │   ├── config/          # Configuration management
@@ -234,23 +243,17 @@ shifts-dashboard/
 │   └── .env.example         # ✅ Frontend env template
 ├── infra/                   # Bicep IaC (T073-T076)
 │   ├── main.bicep
-│   ├── modules/
-│   │   ├── container-registry.bicep
-│   │   ├── container-apps-env.bicep
-│   │   ├── container-app.bicep
-│   │   ├── key-vault.bicep
-│   │   └── app-insights.bicep
-│   ├── params/
-│   │   ├── dev.json
-│   │   ├── staging.json
-│   │   └── prod.json
-│   └── scripts/
-│       ├── deploy.sh
-│       ├── destroy.sh
-│       └── validate.sh
-├── docs/                    # Documentation
-│   ├── API-reference.md
-│   └── deployment.md        # (T076)
+│   ├── main.json
+│   ├── README.md
+│   └── modules/
+│       ├── container-registry.bicep
+│       ├── container-apps-env.bicep
+│       ├── container-app.bicep
+│       └── key-vault.bicep
+├── scripts/                 # Deployment scripts
+│   ├── deploy-infrastructure.sh
+│   ├── destroy-infrastructure.sh
+│   └── README.md
 ├── .eslintrc.json           # ✅ ESLint config
 ├── .prettierrc.json         # ✅ Prettier config
 ├── tsconfig.json            # ✅ Root TypeScript config
@@ -262,7 +265,7 @@ shifts-dashboard/
 
 ## API Endpoints
 
-> See [docs/API-reference.md](docs/API-reference.md) and [.specify/analysis/api-contracts.md](.specify/analysis/api-contracts.md) for complete specifications.
+> See [specs/003-user-stories-implementation/contracts/api-contracts.md](specs/003-user-stories-implementation/contracts/api-contracts.md) for complete specifications.
 
 ### Shifts
 
@@ -275,21 +278,17 @@ shifts-dashboard/
 
 - **GET** `/api/accounts/list` - Get all accounts
 - **GET** `/api/accounts/self` - Get current user's account
-- **GET** `/api/accounts/workgroup/:id` - Get accounts in workgroup
-- **GET** `/api/accounts/:id` - Get account by ID
+- **GET** `/api/accounts/workgroup/:workgroupId` - Get accounts in workgroup
+- **GET** `/api/accounts/:accountId` - Get account by ID
 
 ### Workgroups
 
 - **GET** `/api/workgroups/list` - Get all workgroups
-- **GET** `/api/workgroups/:id/roles` - Get roles for workgroup
-
-### Roles
-
-- **GET** `/api/roles/:id` - Get role by ID
-- **GET** `/api/roles/list` - Get all roles
+- **GET** `/api/workgroups/:workgroupId/roles` - Get roles for workgroup
 
 ### System
 
+- **GET** `/health` - Health check (200 OK with uptime)
 - **GET** `/api/system/health` - Health check (200 OK with uptime)
 - **POST** `/api/system/echo` - Connectivity test (proxies to Shiftboard)
 
@@ -356,24 +355,24 @@ npm run format           # Format with Prettier
 
    ```bash
    cd infra
-   ./scripts/validate.sh
+   az bicep build --file main.bicep
    ```
 
 2. **Deploy to dev environment**:
 
    ```bash
-   ./scripts/deploy.sh dev
+   ./scripts/deploy-infrastructure.sh
    ```
 
 3. **Verify deployment**:
 
    ```bash
-   curl https://ca-shifts-yourorg-dev.azurecontainerapps.io/api/system/health
+   curl https://ca-shifts-yourorg-dev.azurecontainerapps.io/health
    ```
 
 4. **Spin down for seasonal idle** (saves ~$10/month):
    ```bash
-   ./scripts/destroy.sh dev
+   ./scripts/destroy-infrastructure.sh
    ```
 
 **Cost breakdown**:
@@ -397,11 +396,11 @@ Push to `main` branch triggers:
 ## Documentation
 
 - **[Constitution](.specify/memory/constitution.md)**: 7 core principles guiding architecture
-- **[Codebase Spec](.specify/analysis/codebase-spec.md)**: Complete feature specification
-- **[API Contracts](.specify/analysis/api-contracts.md)**: Endpoint contracts & schemas
-- **[Rebuild Plan](.specify/plans/rebuild-plan.md)**: 8-10 week implementation plan
-- **[Tasks Breakdown](.specify/plans/tasks.md)**: 80 tasks organized by user story
-- **[Enhancements](.specify/analysis/enhancements.md)**: Future improvements roadmap
+- **[Feature Specification](specs/003-user-stories-implementation/spec.md)**: Complete feature specification
+- **[API Contracts](specs/003-user-stories-implementation/contracts/api-contracts.md)**: Endpoint contracts & schemas
+- **[Implementation Plan](specs/003-user-stories-implementation/plan.md)**: Technical implementation plan
+- **[Tasks Breakdown](specs/003-user-stories-implementation/tasks.md)**: Tasks organized by user story
+- **[Data Model](specs/003-user-stories-implementation/data-model.md)**: Data structures & schemas
 
 ## Contributing
 
