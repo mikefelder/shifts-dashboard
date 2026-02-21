@@ -455,4 +455,4 @@ export { apiClient };
 // Export Types
 // ============================================================================
 
-export type { Shift, Account, Workgroup };
+export type { Account, Workgroup };

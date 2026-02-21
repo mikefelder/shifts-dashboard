@@ -16,6 +16,7 @@ import {
   Box,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Button,
@@ -92,46 +93,48 @@ export default function Sidebar({
     <Box data-testid="sidebar" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Navigation Links */}
       <List>
-        <ListItem
-          data-testid="nav-current-shifts"
-          onClick={() => navigate('/')}
-          selected={isActive('/') || isActive('/calendar')}
-          sx={{
-            cursor: 'pointer',
-            color: 'white',
-            '& .MuiListItemIcon-root': { color: 'white' },
-            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
-            '&.Mui-selected': {
-              backgroundColor: 'rgba(255, 255, 255, 0.16)',
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
-            },
-          }}
-        >
-          <ListItemIcon>
-            <ScheduleIcon />
-          </ListItemIcon>
-          <ListItemText primary="Current Shifts" />
+        <ListItem disablePadding>
+          <ListItemButton
+            data-testid="nav-current-shifts"
+            onClick={() => navigate('/')}
+            selected={isActive('/') || isActive('/calendar')}
+            sx={{
+              color: 'white',
+              '& .MuiListItemIcon-root': { color: 'white' },
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(255, 255, 255, 0.16)',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
+              },
+            }}
+          >
+            <ListItemIcon>
+              <ScheduleIcon />
+            </ListItemIcon>
+            <ListItemText primary="Current Shifts" />
+          </ListItemButton>
         </ListItem>
 
-        <ListItem
-          data-testid="nav-tabular-view"
-          onClick={() => navigate('/table')}
-          selected={isActive('/table')}
-          sx={{
-            cursor: 'pointer',
-            color: 'white',
-            '& .MuiListItemIcon-root': { color: 'white' },
-            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
-            '&.Mui-selected': {
-              backgroundColor: 'rgba(255, 255, 255, 0.16)',
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
-            },
-          }}
-        >
-          <ListItemIcon>
-            <ViewDayIcon />
-          </ListItemIcon>
-          <ListItemText primary="Tabular View" />
+        <ListItem disablePadding>
+          <ListItemButton
+            data-testid="nav-tabular-view"
+            onClick={() => navigate('/table')}
+            selected={isActive('/table')}
+            sx={{
+              color: 'white',
+              '& .MuiListItemIcon-root': { color: 'white' },
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(255, 255, 255, 0.16)',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.24)' },
+              },
+            }}
+          >
+            <ListItemIcon>
+              <ViewDayIcon />
+            </ListItemIcon>
+            <ListItemText primary="Tabular View" />
+          </ListItemButton>
         </ListItem>
       </List>
 
