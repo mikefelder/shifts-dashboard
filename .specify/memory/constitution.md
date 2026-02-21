@@ -40,9 +40,9 @@ Notes:
 
 # Shift Dashboard Constitution
 
-**Version**: 1.2.0  
+**Version**: 1.3.0  
 **Display Context**: Large-Screen Room Monitoring System  
-**Date**: 2026-02-20
+**Date**: 2026-02-21
 
 ## Application Purpose
 
@@ -98,6 +98,19 @@ The system MUST provide graceful degradation through local caching when external
 - Cache enables read-only operations during connectivity issues; no offline writes
 
 **Rationale**: Field operations during Rodeo require reliability despite intermittent Shiftboard connectivity. Transparent cache fallback prevents operational disruptions while maintaining data freshness expectations.
+
+### VIII. Code Quality Standards
+
+All code MUST pass automated quality checks before being considered complete or deployed.
+
+- ESLint and Prettier enforce consistent code style and catch common errors
+- TypeScript strict mode is enabled; all types must be explicit (no implicit `any`)
+- Linting must pass with zero errors before commits (`npm run lint` returns exit code 0)
+- Test files may use relaxed rules (e.g., `any` types allowed) but production code must be strict
+- Pre-commit hooks enforce linting and formatting automatically
+- CI/CD pipelines fail builds if linting fails, preventing broken code from deploying
+
+**Rationale**: Automated quality checks catch bugs early, ensure maintainable code, and prevent common mistakes. Consistent code style improves readability and reduces cognitive load. Type safety catches errors at compile time rather than runtime. Failing fast on quality issues prevents technical debt accumulation.
 
 ### III. Real-Time Operations
 

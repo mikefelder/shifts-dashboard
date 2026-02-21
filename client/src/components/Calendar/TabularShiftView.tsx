@@ -131,13 +131,14 @@ export default function TabularShiftView({
         case 'people':
           compareValue = a.assignedPersonNames.length - b.assignedPersonNames.length;
           break;
-        case 'status':
+        case 'status': {
           const aClocked = countClockedIn(a.clockStatuses);
           const bClocked = countClockedIn(b.clockStatuses);
           const aRatio = a.clockStatuses.length > 0 ? aClocked / a.clockStatuses.length : 0;
           const bRatio = b.clockStatuses.length > 0 ? bClocked / b.clockStatuses.length : 0;
           compareValue = aRatio - bRatio;
           break;
+        }
       }
 
       return sortDirection === 'asc' ? compareValue : -compareValue;

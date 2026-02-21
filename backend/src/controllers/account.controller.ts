@@ -5,7 +5,7 @@
  * Supports listing, workgroup filtering, and individual account lookup.
  */
 
-import type { Request, Response } from 'express';
+import type { Request, Response, RequestHandler } from 'express';
 import { AccountService } from '../services/account.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateParams, validateQuery, CommonSchemas } from '../middleware/validation.middleware';
@@ -190,8 +190,8 @@ export function createAccountController(accountService: AccountService) {
 // ============================================================================
 
 export interface AccountController {
-  list: Array<any>;
-  self: Array<any>;
-  byWorkgroup: Array<any>;
-  byId: Array<any>;
+  list: Array<RequestHandler>;
+  self: Array<RequestHandler>;
+  byWorkgroup: Array<RequestHandler>;
+  byId: Array<RequestHandler>;
 }

@@ -11,6 +11,18 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
+## Task Completion Criteria
+
+✅ **A task is only considered complete when:**
+
+1. All code is written and functional
+2. **Code passes ESLint/Prettier linting** (`npm run lint` succeeds)
+3. Code follows TypeScript strict mode requirements
+4. No compilation errors exist
+5. Code adheres to project standards and conventions
+
+⚠️ **IMPORTANT**: Always run `npm run lint` after completing code changes to verify compliance before marking tasks as complete.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)

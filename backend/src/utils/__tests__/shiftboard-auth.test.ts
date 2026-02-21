@@ -153,7 +153,7 @@ describe('buildAuthenticatedPostRequest', () => {
     expect(url.searchParams.get('signature')).toBe(result.signature);
     // Base64 can contain +, /, = — all must be percent-encoded in the query string
     if (result.signature.includes('+') || result.signature.includes('/')) {
-      expect(rawSearch).not.toMatch(/[+\/](?=[^&=]*signature)/); // no raw + or / in sig portion
+      expect(rawSearch).not.toMatch(/[+/](?=[^&=]*signature)/); // no raw + or / in sig portion
     }
     expect(encodedSig).toBeTruthy();
   });

@@ -283,9 +283,35 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ---
 
+### Principle VIII: Code Quality Standards ✅
+
+**Requirement**: All code must pass automated quality checks before deployment.
+
+**Implementation**:
+
+- ✅ ESLint configured for TypeScript with strict rules
+- ✅ Prettier for consistent code formatting
+- ✅ TypeScript strict mode enabled (no implicit `any`)
+- ✅ Test files use relaxed rules (e.g., `any` allowed), production code is strict
+- ✅ Pre-commit hooks enforce linting and formatting
+- ✅ CI/CD pipelines fail on linting errors
+
+**Gates**:
+
+- [ ] `npm run lint` passes with exit code 0 for both backend and frontend
+- [ ] All production code uses explicit types (no implicit `any`)
+- [ ] ESLint configured with @typescript-eslint/parser
+- [ ] Prettier integrated with ESLint
+- [ ] GitHub Actions workflow includes linting step
+- [ ] Linting errors block PR merge
+
+**Status**: PASS (design compliant)
+
+---
+
 ### Summary
 
-**All 6 constitutional principles satisfied by design.**
+**All 8 constitutional principles satisfied by design.**
 
 No gates failed. Proceed to implementation.
 

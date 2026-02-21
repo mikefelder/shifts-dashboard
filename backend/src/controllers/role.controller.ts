@@ -5,7 +5,7 @@
  * Provides role lookup by ID and role list.
  */
 
-import type { Request, Response } from 'express';
+import type { Request, Response, RequestHandler } from 'express';
 import { RoleService } from '../services/role.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateParams } from '../middleware/validation.middleware';
@@ -16,8 +16,8 @@ import { CommonSchemas } from '../middleware/validation.middleware';
 // ============================================================================
 
 export interface RoleController {
-  getRole: Array<any>;
-  listRoles: Array<any>;
+  getRole: Array<RequestHandler>;
+  listRoles: Array<RequestHandler>;
 }
 
 // ============================================================================

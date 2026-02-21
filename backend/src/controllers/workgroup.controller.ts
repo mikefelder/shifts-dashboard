@@ -5,7 +5,7 @@
  * Provides workgroup list and per-workgroup role lookup.
  */
 
-import type { Request, Response } from 'express';
+import type { Request, Response, RequestHandler } from 'express';
 import { WorkgroupService } from '../services/workgroup.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateParams } from '../middleware/validation.middleware';
@@ -116,6 +116,6 @@ export function createWorkgroupController(workgroupService: WorkgroupService) {
 // ============================================================================
 
 export interface WorkgroupController {
-  listWorkgroups: Array<any>;
-  getRoles: Array<any>;
+  listWorkgroups: Array<RequestHandler>;
+  getRoles: Array<RequestHandler>;
 }

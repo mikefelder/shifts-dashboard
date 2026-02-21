@@ -5,7 +5,7 @@
  * Orchestrates validation, service calls, and response formatting.
  */
 
-import type { Request, Response } from 'express';
+import type { Request, Response, RequestHandler } from 'express';
 import { ShiftService } from '../services/shift.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateQuery } from '../middleware/validation.middleware';
@@ -144,6 +144,6 @@ export function createShiftController(shiftService: ShiftService) {
  * Used for type-safe route registration
  */
 export interface ShiftController {
-  whosOn: Array<any>; // Array includes middleware + handler
-  listShifts: Array<any>;
+  whosOn: Array<RequestHandler>; // Array includes middleware + handler
+  listShifts: Array<RequestHandler>;
 }

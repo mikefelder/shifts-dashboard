@@ -37,7 +37,7 @@ export default function Calendar() {
 
   const { selectedWorkgroup } = useWorkgroup();
   const context = useOutletContext<RefreshContext>();
-  const refreshTimestamp = context?.refreshTimestamp || Date.now();
+  const refreshTimestamp = context?.refreshTimestamp || 0;
 
   function handleShiftClick(shift: GroupedShift) {
     setSelectedShift(shift);

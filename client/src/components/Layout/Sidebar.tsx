@@ -73,8 +73,10 @@ export default function Sidebar({
   }, []);
 
   useEffect(() => {
-    refreshLabel();
-  }, [refreshLabel, isRefreshing]);
+    // Load initial label on mount and when refresh completes
+    void refreshLabel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRefreshing]);
 
   // Refresh label every 60 seconds so "X minutes ago" text stays current
   useEffect(() => {

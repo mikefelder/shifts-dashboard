@@ -45,7 +45,7 @@ export default function AppLayout() {
   const { selectedWorkgroup, workgroups, setSelectedWorkgroup } = useWorkgroup();
 
   // State
-  const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
+  const [refreshTimestamp, setRefreshTimestamp] = useState(() => Date.now());
   const [refreshInterval, setRefreshInterval] = useState(5); // Default 5 min
   const [isRefreshing, setIsRefreshing] = useState(false);
 

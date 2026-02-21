@@ -5,7 +5,7 @@
  * Provides aggregated statistics and calendar views.
  */
 
-import type { Request, Response } from 'express';
+import type { Request, Response, RequestHandler } from 'express';
 import { CalendarService } from '../services/calendar.service';
 import { asyncHandler } from '../middleware/error.middleware';
 
@@ -14,7 +14,7 @@ import { asyncHandler } from '../middleware/error.middleware';
 // ============================================================================
 
 export interface CalendarController {
-  getSummary: Array<any>;
+  getSummary: Array<RequestHandler>;
 }
 
 // ============================================================================
