@@ -14,7 +14,7 @@ param appName string = 'shift-dashboard'
 param uniqueSuffix string = uniqueString(resourceGroup().id)
 
 // Computed values
-var registryName = '${appName}${uniqueSuffix}'
+var registryName = replace('${appName}${uniqueSuffix}', '-', '')
 var keyVaultName = '${appName}-kv-${uniqueSuffix}'
 
 // Container Registry
@@ -35,6 +35,16 @@ module containerAppsEnv './modules/container-apps-env.bicep' = {
     location: location
     environmentName: '${appName}-env-${environment}'
     logAnalyticsName: '${appName}-logs-${uniqueSuffix}'
+  }
+}
+
+// Application Insights (connected to Log Analytics)
+module appInsights './modules/app-insights.bicep' = {
+  name: 'app-insights-deployment'
+  params: {
+    location: location
+    appInsightsName: '${appName}-ai-${uniqueSuffix}'
+    logAnalyticsId: containerAppsEnv.outputs.logAnalyticsId
   }
 }
 
@@ -79,6 +89,10 @@ module backendApp './modules/container-app.bicep' = {
         name: 'KEY_VAULT_NAME'
         value: keyVaultName
       }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsights.outputs.connectionString
+      }
     ]
   }
 }
@@ -110,6 +124,8 @@ output environmentName string = containerAppsEnv.outputs.environmentName
 output backendUrl string = backendApp.outputs.appUrl
 output frontendUrl string = frontendApp.outputs.appUrl
 output backendFqdn string = backendApp.outputs.fqdn
+output appInsightsConnectionString string = appInsights.outputs.connectionString
+output appInsightsInstrumentationKey string = appInsights.outputs.instrumentationKey
 output frontendFqdn string = frontendApp.outputs.fqdn
 output keyVaultName string = keyVault.outputs.keyVaultName
 output backendAppName string = backendApp.outputs.appName

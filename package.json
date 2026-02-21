@@ -1,5 +1,5 @@
 {
-  "name": "shifts-dashboard",
+  "name": "shift-dashboard",
   "version": "1.0.0",
   "private": true,
   "description": "Shift management dashboard for Shiftboard with Azure Container Apps deployment",

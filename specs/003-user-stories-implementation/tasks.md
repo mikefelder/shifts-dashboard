@@ -11,6 +11,18 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
+## Task Completion Criteria
+
+✅ **A task is only considered complete when:**
+
+1. All code is written and functional
+2. **Code passes ESLint/Prettier linting** (`npm run lint` succeeds)
+3. Code follows TypeScript strict mode requirements
+4. No compilation errors exist
+5. Code adheres to project standards and conventions
+
+⚠️ **IMPORTANT**: Always run `npm run lint` after completing code changes to verify compliance before marking tasks as complete.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -42,17 +54,17 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 [P] Implement Shiftboard HMAC SHA-1 authentication utility in backend/src/utils/shiftboard-auth.ts
-- [ ] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts
-- [ ] T009 Implement Shiftboard service client (generic RPC, auth, pagination, errors) in backend/src/services/shiftboard.service.ts
-- [ ] T010 [P] Setup error middleware (convert to {error:string} format) in backend/src/middleware/error.middleware.ts
-- [ ] T011 [P] Setup validation middleware (Zod schemas) in backend/src/middleware/validation.middleware.ts
-- [ ] T012 [P] Configure CORS, Helmet security headers, Morgan logging in backend/src/index.ts
-- [ ] T013 Create IndexedDB service with 4 stores (shifts, accounts, workgroups, metadata) in frontend/src/services/db.service.ts
-- [ ] T014 Create API service with cache fallback logic in frontend/src/services/api.service.ts
-- [ ] T015 [P] Define MUI theme (navy primary) in frontend/src/theme/theme.ts
-- [ ] T016 [P] Create AppLayout with header, sidebar, outlet, refresh state in frontend/src/components/Layout/AppLayout.tsx
-- [ ] T017 [P] Create Workgroup Context (provider, selectedWorkgroup, workgroups) in frontend/src/contexts/WorkgroupContext.tsx
+- [x] T007 [P] Implement Shiftboard HMAC SHA-1 authentication utility in backend/src/utils/shiftboard-auth.ts
+- [x] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts
+- [x] T009 Implement Shiftboard service client (generic RPC, auth, pagination, errors) in backend/src/services/shiftboard.service.ts
+- [x] T010 [P] Setup error middleware (convert to {error:string} format) in backend/src/middleware/error.middleware.ts
+- [x] T011 [P] Setup validation middleware (Zod schemas) in backend/src/middleware/validation.middleware.ts
+- [x] T012 [P] Configure CORS, Helmet security headers, Morgan logging in backend/src/index.ts
+- [x] T013 Create IndexedDB service with 4 stores (shifts, accounts, workgroups, metadata) in frontend/src/services/db.service.ts
+- [x] T014 Create API service with cache fallback logic in frontend/src/services/api.service.ts
+- [x] T015 [P] Define MUI theme (navy primary) in frontend/src/theme/theme.ts
+- [x] T016 [P] Create AppLayout with header, sidebar, outlet, refresh state in frontend/src/components/Layout/AppLayout.tsx
+- [x] T017 [P] Create Workgroup Context (provider, selectedWorkgroup, workgroups) in frontend/src/contexts/WorkgroupContext.tsx
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -66,16 +78,16 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Implement shift grouping algorithm (group by name+time+workgroup) in backend/src/utils/shift.utils.ts
-- [ ] T019 [US1] Implement shift service business logic (shiftWhosOn, shiftList, metrics) in backend/src/services/shift.service.ts
-- [ ] T020 [US1] Create shift controller (listShifts, whosOn handlers) in backend/src/controllers/shift.controller.ts
-- [ ] T021 [US1] Define shift routes (GET /api/shifts/whos-on, GET /api/shifts/list) in backend/src/routes/shift.routes.ts
-- [ ] T022 [P] [US1] Create ActiveShiftsView component (timeline, dynamic window, overlap handling) in frontend/src/components/Calendar/ActiveShiftsView.tsx
-- [ ] T023 [P] [US1] Implement "too many shifts" guard (>25 threshold, show anyway option) in ActiveShiftsView.tsx
-- [ ] T024 [P] [US1] Add current time indicator line (updates every second) in ActiveShiftsView.tsx
-- [ ] T025 [US1] Create CalendarPage component (renders ActiveShiftsView + DayView) in frontend/src/pages/Calendar.tsx
-- [ ] T026 [US1] Setup router (/, /tabular-view routes) in frontend/src/App.tsx
-- [ ] T027 [US1] Wire up data fetching (useEffect on mount/refresh) in CalendarPage component
+- [x] T018 [P] [US1] Implement shift grouping algorithm (group by name+time+workgroup) in backend/src/utils/shift.utils.ts
+- [x] T019 [US1] Implement shift service business logic (shiftWhosOn, shiftList, metrics) in backend/src/services/shift.service.ts
+- [x] T020 [US1] Create shift controller (listShifts, whosOn handlers) in backend/src/controllers/shift.controller.ts
+- [x] T021 [US1] Define shift routes (GET /api/shifts/whos-on, GET /api/shifts/list) in backend/src/routes/shift.routes.ts
+- [x] T022 [P] [US1] Create ActiveShiftsView component (timeline, dynamic window, overlap handling) in frontend/src/components/Calendar/ActiveShiftsView.tsx
+- [x] T023 [P] [US1] Implement "too many shifts" guard (>25 threshold, show anyway option) in ActiveShiftsView.tsx
+- [x] T024 [P] [US1] Add current time indicator line (updates every second) in ActiveShiftsView.tsx
+- [x] T025 [US1] Create CalendarPage component (renders ActiveShiftsView + DayView) in frontend/src/pages/Calendar.tsx
+- [x] T026 [US1] Setup router (/, /tabular-view routes) in frontend/src/App.tsx
+- [x] T027 [US1] Wire up data fetching (useEffect on mount/refresh) in CalendarPage component
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - timeline displays active shifts with clock status
 
@@ -89,13 +101,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 2
 
-- [ ] T028 [P] [US2] Create TabularShiftView component (MUI Table, 8 columns) in frontend/src/components/Calendar/TabularShiftView.tsx
-- [ ] T029 [P] [US2] Implement column sorting (click header toggles asc/desc) in TabularShiftView.tsx
-- [ ] T030 [P] [US2] Create person chips (clickable, colored by clock status) in TabularShiftView.tsx
-- [ ] T031 [P] [US2] Create status chips (All Clocked In / Not Clocked In / X/Y) in TabularShiftView.tsx
-- [ ] T032 [US2] Add loading states (initial vs refresh spinner) in TabularShiftView.tsx
-- [ ] T033 [US2] Add Fade/Grow animations on data update in TabularShiftView.tsx
-- [ ] T034 [US2] Display last sync timestamp and success/failure indicators in TabularShiftView.tsx
+- [x] T028 [P] [US2] Create TabularShiftView component (MUI Table, 8 columns) in frontend/src/components/Calendar/TabularShiftView.tsx
+- [x] T029 [P] [US2] Implement column sorting (click header toggles asc/desc) in TabularShiftView.tsx
+- [x] T030 [P] [US2] Create person chips (clickable, colored by clock status) in TabularShiftView.tsx
+- [x] T031 [P] [US2] Create status chips (All Clocked In / Not Clocked In / X/Y) in TabularShiftView.tsx
+- [x] T032 [US2] Add loading states (initial vs refresh spinner) in TabularShiftView.tsx
+- [x] T033 [US2] Add Fade/Grow animations on data update in TabularShiftView.tsx
+- [x] T034 [US2] Display last sync timestamp and success/failure indicators in TabularShiftView.tsx
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - users can toggle between views
 
@@ -109,13 +121,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 3
 
-- [ ] T035 [P] [US3] Implement workgroup service (listWorkgroups, getRoles) in backend/src/services/workgroup.service.ts
-- [ ] T036 [P] [US3] Create workgroup controller (listWorkgroups, getRoles handlers) in backend/src/controllers/workgroup.controller.ts
-- [ ] T037 [P] [US3] Define workgroup routes (GET /api/workgroups/list, GET /api/workgroups/:id/roles) in backend/src/routes/workgroup.routes.ts
-- [ ] T038 [P] [US3] Create WorkgroupFilter component (dropdown with "All" + workgroup list) in frontend/src/components/Filters/WorkgroupFilter.tsx
-- [ ] T039 [US3] Integrate WorkgroupFilter into AppHeader in frontend/src/components/Layout/AppHeader.tsx
-- [ ] T040 [US3] Update API service to pass workgroup filter to backend in frontend/src/services/api.service.ts
-- [ ] T041 [US3] Update backend shift service to apply workgroup filter to Shiftboard calls in backend/src/services/shift.service.ts
+- [x] T035 [P] [US3] Implement workgroup service (listWorkgroups, getRoles) in backend/src/services/workgroup.service.ts
+- [x] T036 [P] [US3] Create workgroup controller (listWorkgroups, getRoles handlers) in backend/src/controllers/workgroup.controller.ts
+- [x] T037 [P] [US3] Define workgroup routes (GET /api/workgroups/list, GET /api/workgroups/:id/roles) in backend/src/routes/workgroup.routes.ts
+- [x] T038 [P] [US3] Create WorkgroupFilter component (dropdown with "All" + workgroup list) in frontend/src/components/Filters/WorkgroupFilter.tsx
+- [x] T039 [US3] Integrate WorkgroupFilter into AppHeader in frontend/src/components/Layout/AppHeader.tsx
+- [x] T040 [US3] Update API service to pass workgroup filter to backend in frontend/src/services/api.service.ts
+- [x] T041 [US3] Update backend shift service to apply workgroup filter to Shiftboard calls in backend/src/services/shift.service.ts
 
 **Checkpoint**: All three user stories (Timeline, Table, Workgroup Filter) should work together seamlessly
 
@@ -129,13 +141,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 4
 
-- [ ] T042 [P] [US4] Create ShiftDetailModal component (MUI Dialog, close handlers) in frontend/src/components/Calendar/ShiftDetailModal.tsx
-- [ ] T043 [P] [US4] Display shift header (name, time formatted as "MMM d, yyyy h:mm a") in ShiftDetailModal.tsx
-- [ ] T044 [P] [US4] Display shift details (subject, location) in ShiftDetailModal.tsx
-- [ ] T045 [P] [US4] List assigned people with green/red clock status badges in ShiftDetailModal.tsx
-- [ ] T046 [US4] Wire up modal trigger in ActiveShiftsView (onClick shift card) in frontend/src/components/Calendar/ActiveShiftsView.tsx
-- [ ] T047 [US4] Wire up modal trigger in TabularShiftView (onClick Info icon/row) in frontend/src/components/Calendar/TabularShiftView.tsx
-- [ ] T048 [US4] Add ESC key and click-outside-to-close handlers in ShiftDetailModal.tsx
+- [x] T042 [P] [US4] Create ShiftDetailModal component (MUI Dialog, close handlers) in frontend/src/components/Calendar/ShiftDetailModal.tsx
+- [x] T043 [P] [US4] Display shift header (name, time formatted as "MMM d, yyyy h:mm a") in ShiftDetailModal.tsx
+- [x] T044 [P] [US4] Display shift details (subject, location) in ShiftDetailModal.tsx
+- [x] T045 [P] [US4] List assigned people with green/red clock status badges in ShiftDetailModal.tsx
+- [x] T046 [US4] Wire up modal trigger in ActiveShiftsView (onClick shift card) in frontend/src/components/Calendar/ActiveShiftsView.tsx
+- [x] T047 [US4] Wire up modal trigger in TabularShiftView (onClick Info icon/row) in frontend/src/components/Calendar/TabularShiftView.tsx
+- [x] T048 [US4] Add ESC key and click-outside-to-close handlers in ShiftDetailModal.tsx
 
 **Checkpoint**: Users can now drill into any shift to see full details from both timeline and table views
 
@@ -149,14 +161,14 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 5
 
-- [ ] T049 [P] [US5] Implement account service (listAccounts, getSelf, getByWorkgroup, getById) in backend/src/services/account.service.ts
-- [ ] T050 [P] [US5] Create account controller (list, self, workgroup, byId handlers) in backend/src/controllers/account.controller.ts
-- [ ] T051 [P] [US5] Define account routes (GET /api/accounts/\*) in backend/src/routes/account.routes.ts
-- [ ] T052 [P] [US5] Create PersonDetailModal component (MUI Dialog, contact info) in frontend/src/components/Calendar/PersonDetailModal.tsx
-- [ ] T053 [P] [US5] Display person name (screen_name or first+last) and clock status badge in PersonDetailModal.tsx
-- [ ] T054 [P] [US5] Display formatted phone number with Call (tel:) and Text (sms:) buttons in PersonDetailModal.tsx
-- [ ] T055 [US5] Wire up person chip clicks in TabularShiftView to open PersonDetailModal in frontend/src/components/Calendar/TabularShiftView.tsx
-- [ ] T056 [US5] Wire up person name clicks in ShiftDetailModal to open PersonDetailModal in frontend/src/components/Calendar/ShiftDetailModal.tsx
+- [x] T049 [P] [US5] Implement account service (listAccounts, getSelf, getByWorkgroup, getById) in backend/src/services/account.service.ts
+- [x] T050 [P] [US5] Create account controller (list, self, workgroup, byId handlers) in backend/src/controllers/account.controller.ts
+- [x] T051 [P] [US5] Define account routes (GET /api/accounts/\*) in backend/src/routes/account.routes.ts
+- [x] T052 [P] [US5] Create PersonDetailModal component (MUI Dialog, contact info) in frontend/src/components/Calendar/PersonDetailModal.tsx
+- [x] T053 [P] [US5] Display person name (screen_name or first+last) and clock status badge in PersonDetailModal.tsx
+- [x] T054 [P] [US5] Display formatted phone number with Call (tel:) and Text (sms:) buttons in PersonDetailModal.tsx
+- [x] T055 [US5] Wire up person chip clicks in TabularShiftView to open PersonDetailModal in frontend/src/components/Calendar/TabularShiftView.tsx
+- [x] T056 [US5] Wire up person name clicks in ShiftDetailModal to open PersonDetailModal in frontend/src/components/Calendar/ShiftDetailModal.tsx
 
 **Checkpoint**: Users can now contact any team member directly from shift views
 
@@ -170,13 +182,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 6
 
-- [ ] T057 [P] [US6] Create Sidebar component with refresh controls in frontend/src/components/Layout/Sidebar.tsx
-- [ ] T058 [P] [US6] Implement "Refresh Now" button with loading spinner in Sidebar.tsx
-- [ ] T059 [P] [US6] Implement auto-refresh dropdown (Off / 5min / 10min / 15min) in Sidebar.tsx
-- [ ] T060 [P] [US6] Add setInterval logic in AppLayout for auto-refresh in frontend/src/components/Layout/AppLayout.tsx
-- [ ] T061 [US6] Pass refresh trigger via Outlet context to CalendarPage and TabularShiftView in AppLayout.tsx
-- [ ] T062 [US6] Update IndexedDB metadata with last sync timestamp after successful refresh in frontend/src/services/db.service.ts
-- [ ] T063 [US6] Display "Last refreshed: X minutes ago" or "Last API sync: timestamp" in Sidebar.tsx
+- [x] T057 [P] [US6] Create Sidebar component with refresh controls in frontend/src/components/Layout/Sidebar.tsx
+- [x] T058 [P] [US6] Implement "Refresh Now" button with loading spinner in Sidebar.tsx
+- [x] T059 [P] [US6] Implement auto-refresh dropdown (Off / 5min / 10min / 15min) in Sidebar.tsx
+- [x] T060 [P] [US6] Add setInterval logic in AppLayout for auto-refresh in frontend/src/components/Layout/AppLayout.tsx
+- [x] T061 [US6] Pass refresh trigger via Outlet context to CalendarPage and TabularShiftView in AppLayout.tsx
+- [x] T062 [US6] Update IndexedDB metadata with last sync timestamp after successful refresh in frontend/src/services/db.service.ts
+- [x] T063 [US6] Display "Last refreshed: X minutes ago" or "Last API sync: timestamp" in Sidebar.tsx
 
 **Checkpoint**: Users can manually refresh or configure automatic data updates
 
@@ -190,13 +202,13 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 ### Implementation for User Story 7
 
-- [ ] T064 [P] [US7] Implement cache-first logic in API service (check cache age, fallback on error) in frontend/src/services/api.service.ts
-- [ ] T065 [P] [US7] Add isFreshData flag to distinguish live vs cached responses in frontend/src/services/api.service.ts
-- [ ] T066 [P] [US7] Create ErrorBoundary component (catches render errors, displays MUI Alert) in frontend/src/components/ErrorBoundary.tsx
-- [ ] T067 [US7] Display stale data warning when isFreshData=false in TabularShiftView and ActiveShiftsView
-- [ ] T068 [US7] Show inline error message "Failed to load shifts" when cache empty and API fails in views
-- [ ] T069 [US7] Implement system controller (health, echo endpoints) in backend/src/controllers/system.controller.ts
-- [ ] T070 [US7] Define system routes (GET /api/system/health, POST /api/system/echo) in backend/src/routes/system.routes.ts
+- [x] T064 [P] [US7] Implement cache-first logic in API service (check cache age, fallback on error) in frontend/src/services/api.service.ts
+- [x] T065 [P] [US7] Add isFreshData flag to distinguish live vs cached responses in frontend/src/services/api.service.ts
+- [x] T066 [P] [US7] Create ErrorBoundary component (catches render errors, displays MUI Alert) in frontend/src/components/ErrorBoundary.tsx
+- [x] T067 [US7] Display stale data warning when isFreshData=false in TabularShiftView and ActiveShiftsView
+- [x] T068 [US7] Show inline error message "Failed to load shifts" when cache empty and API fails in views
+- [x] T069 [US7] Implement system controller (health, echo endpoints) in backend/src/controllers/system.controller.ts
+- [x] T070 [US7] Define system routes (GET /api/system/health, POST /api/system/echo) in backend/src/routes/system.routes.ts
 
 **Checkpoint**: App works with degraded functionality when offline - all cached data remains accessible
 
@@ -206,12 +218,12 @@ description: 'Task list for Shift Dashboard Rebuild'
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T071 [P] Add role service and controller (getRole, listRoles) in backend/src/services/role.service.ts and backend/src/controllers/role.controller.ts
-- [ ] T072 [P] Add calendar service and controller (getSummary stub) in backend/src/services/calendar.service.ts and backend/src/controllers/calendar.controller.ts
-- [ ] T073 [P] Create Bicep infrastructure templates (main.bicep, modules for ACR, Container Apps, Key Vault, App Insights) in infra/
-- [ ] T074 [P] Create deployment scripts (deploy.sh, destroy.sh, validate.sh) in infra/scripts/
-- [ ] T075 [P] Add Bicep parameter files (dev.json, staging.json, prod.json) in infra/params/
-- [ ] T076 [P] Document deployment process and seasonal operations in docs/deployment.md
+- [x] T071 [P] Add role service and controller (getRole, listRoles) in backend/src/services/role.service.ts and backend/src/controllers/role.controller.ts
+- [x] T072 [P] Add calendar service and controller (getSummary stub) in backend/src/services/calendar.service.ts and backend/src/controllers/calendar.controller.ts
+- [x] T073 [P] Create Bicep infrastructure templates (main.bicep, modules for ACR, Container Apps, Key Vault, App Insights) in infra/
+- [x] T074 [P] Create deployment scripts (deploy.sh, destroy.sh, validate.sh) in infra/scripts/
+- [x] T075 [P] Add Bicep parameter files (dev.json, staging.json, prod.json) in infra/params/
+- [x] T076 [P] Document deployment process and seasonal operations in docs/deployment.md
 - [ ] T077 Code cleanup and refactoring across all modules
 - [ ] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
 - [ ] T079 Security hardening (rate limiting, input sanitization, CSP headers)

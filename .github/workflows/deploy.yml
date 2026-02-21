@@ -21,8 +21,8 @@ on:
           - prod
 
 env:
-  BACKEND_IMAGE_NAME: shifts-dashboard-backend
-  FRONTEND_IMAGE_NAME: shifts-dashboard-frontend
+  BACKEND_IMAGE_NAME: shift-dashboard-backend
+  FRONTEND_IMAGE_NAME: shift-dashboard-frontend
 
 jobs:
   check-infrastructure:

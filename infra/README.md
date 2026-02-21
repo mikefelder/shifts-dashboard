@@ -8,7 +8,7 @@ The infrastructure deploys a complete Azure Container Apps environment with:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Resource Group (shifts-dashboard-rg)                        │
+│ Resource Group (shift-dashboard-rg)                         │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ Container Registry (ACR)                             │  │
@@ -77,7 +77,7 @@ az account set --subscription "<your-subscription-id>"
 ### 2. Set Environment Variables (Optional)
 
 ```bash
-export AZURE_RESOURCE_GROUP="shifts-dashboard-rg"
+export AZURE_RESOURCE_GROUP="shift-dashboard-rg"
 export AZURE_LOCATION="eastus"
 ```
 
@@ -91,20 +91,20 @@ Or manually:
 
 ```bash
 # Create resource group
-az group create --name shifts-dashboard-rg --location eastus
+az group create --name shift-dashboard-rg --location eastus
 
 # Validate Bicep
 az bicep build --file infra/main.bicep
 
 # Preview changes
 az deployment group what-if \
-  --resource-group shifts-dashboard-rg \
+  --resource-group shift-dashboard-rg \
   --template-file infra/main.bicep \
   --parameters environment=dev
 
 # Deploy
 az deployment group create \
-  --resource-group shifts-dashboard-rg \
+  --resource-group shift-dashboard-rg \
   --template-file infra/main.bicep \
   --parameters environment=dev
 ```
@@ -238,7 +238,7 @@ Steps:
 
 ```bash
 az deployment group create \
-  --resource-group shifts-dashboard-rg \
+  --resource-group shift-dashboard-rg \
   --template-file infra/modules/container-app.bicep \
   --parameters @params.json
 ```
@@ -247,7 +247,7 @@ az deployment group create \
 
 ```bash
 az deployment group list \
-  --resource-group shifts-dashboard-rg \
+  --resource-group shift-dashboard-rg \
   --output table
 ```
 
@@ -255,7 +255,7 @@ az deployment group list \
 
 ```bash
 az deployment group show \
-  --resource-group shifts-dashboard-rg \
+  --resource-group shift-dashboard-rg \
   --name <deployment-name> \
   --query properties.outputs
 ```
@@ -267,14 +267,14 @@ az deployment group show \
 ```bash
 # Backend logs
 az containerapp logs show \
-  --name shifts-dashboard-backend-dev \
-  --resource-group shifts-dashboard-rg \
+  --name shift-dashboard-backend-dev \
+  --resource-group shift-dashboard-rg \
   --follow
 
 # Frontend logs
 az containerapp logs show \
-  --name shifts-dashboard-frontend-dev \
-  --resource-group shifts-dashboard-rg \
+  --name shift-dashboard-frontend-dev \
+  --resource-group shift-dashboard-rg \
   --follow
 ```
 
@@ -283,8 +283,8 @@ az containerapp logs show \
 ```bash
 # Get workspace ID
 workspace=$(az monitor log-analytics workspace show \
-  --resource-group shifts-dashboard-rg \
-  --workspace-name shifts-dashboard-logs-<suffix> \
+  --resource-group shift-dashboard-rg \
+  --workspace-name shift-dashboard-logs-<suffix> \
   --query customerId -o tsv)
 
 # Query logs (requires Log Analytics Reader role)
@@ -297,8 +297,8 @@ az monitor log-analytics query \
 
 ```bash
 az containerapp show \
-  --name shifts-dashboard-backend-dev \
-  --resource-group shifts-dashboard-rg \
+  --name shift-dashboard-backend-dev \
+  --resource-group shift-dashboard-rg \
   --query "properties.{replicas:runningStatus, cpu:configuration.resources.cpu, memory:configuration.resources.memory}"
 ```
 
@@ -319,12 +319,12 @@ az bicep lint --file infra/main.bicep
 ```bash
 # Check deployment status
 az deployment group show \
-  --resource-group shifts-dashboard-rg \
+  --resource-group shift-dashboard-rg \
   --name <deployment-name>
 
 # View deployment operations
 az deployment operation group list \
-  --resource-group shifts-dashboard-rg \
+  --resource-group shift-dashboard-rg \
   --name <deployment-name>
 ```
 
@@ -333,15 +333,15 @@ az deployment operation group list \
 ```bash
 # Check app revision status
 az containerapp revision list \
-  --name shifts-dashboard-backend-dev \
-  --resource-group shifts-dashboard-rg \
+  --name shift-dashboard-backend-dev \
+  --resource-group shift-dashboard-rg \
   --output table
 
 # View specific revision
 az containerapp revision show \
   --name <revision-name> \
-  --app shifts-dashboard-backend-dev \
-  --resource-group shifts-dashboard-rg
+  --app shift-dashboard-backend-dev \
+  --resource-group shift-dashboard-rg
 ```
 
 ### Can't Pull from Registry

@@ -11,5 +11,13 @@
   "rules": {
     "prettier/prettier": "error"
   },
-  "ignorePatterns": ["dist", "coverage", "node_modules", "*.config.js"]
+  "ignorePatterns": ["dist", "coverage", "node_modules", "*.config.js"],
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*.ts", "**/*.test.ts", "**/*.spec.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
 }

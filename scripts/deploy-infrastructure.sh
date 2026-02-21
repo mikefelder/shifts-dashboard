@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 ENVIRONMENT=${1:-dev}
-RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shifts-dashboard-rg}
+RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shift-dashboard-rg}
 LOCATION=${AZURE_LOCATION:-eastus}
 TEMPLATE_FILE="infra/main.bicep"
 
@@ -82,7 +82,7 @@ fi
 
 # Deploy infrastructure
 echo -e "${GREEN}Deploying infrastructure...${NC}"
-DEPLOYMENT_NAME="shifts-dashboard-$(date +%Y%m%d-%H%M%S)"
+DEPLOYMENT_NAME="shift-dashboard-$(date +%Y%m%d-%H%M%S)"
 
 az deployment group create \
     --name $DEPLOYMENT_NAME \

@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
       target: production
-    container_name: shifts-backend
+    container_name: shift-backend
     ports:
       - '3000:3000'
     environment:
@@ -33,7 +33,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - shifts-network
+      - shift-network
     logging:
       driver: 'json-file'
       options:
@@ -51,7 +51,7 @@ services:
       args:
         VITE_API_BASE_URL: http://localhost:3000/api
         VITE_APP_NAME: Shift Dashboard
-    container_name: shifts-frontend
+    container_name: shift-frontend
     ports:
       - '8080:80'
     depends_on:
@@ -65,7 +65,7 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - shifts-network
+      - shift-network
     logging:
       driver: 'json-file'
       options:
@@ -80,7 +80,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
       target: build
-    container_name: shifts-backend-dev
+    container_name: shift-backend-dev
     ports:
       - '3000:3000'
     environment:
@@ -101,7 +101,7 @@ services:
     command: npm run dev
     restart: unless-stopped
     networks:
-      - shifts-network
+      - shift-network
     logging:
       driver: 'json-file'
       options:
@@ -116,7 +116,7 @@ services:
       context: .
       dockerfile: client/Dockerfile
       target: build
-    container_name: shifts-frontend-dev
+    container_name: shift-frontend-dev
     ports:
       - '5173:5173'
     environment:
@@ -133,7 +133,7 @@ services:
       - backend-dev
     restart: unless-stopped
     networks:
-      - shifts-network
+      - shift-network
     logging:
       driver: 'json-file'
       options:
@@ -143,9 +143,9 @@ services:
       - dev
 
 networks:
-  shifts-network:
+  shift-network:
     driver: bridge
-    name: shifts-network
+    name: shift-network
 
 # Volume definitions (for future Redis/persistent storage)
 volumes:
