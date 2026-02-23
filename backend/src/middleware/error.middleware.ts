@@ -13,6 +13,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import logger from '../config/logger';
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -34,7 +35,7 @@ export function errorHandler(
   _next: NextFunction
 ): void {
   // Log error for debugging
-  console.error('[Error]', {
+  logger.error('[Error]', {
     method: req.method,
     path: req.path,
     message: error.message,

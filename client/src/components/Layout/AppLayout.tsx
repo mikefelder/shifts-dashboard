@@ -17,6 +17,7 @@ import { Outlet } from 'react-router-dom';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
 import Sidebar from './Sidebar';
+import logger from '../../utils/logger';
 
 // ============================================================================
 // Constants
@@ -51,7 +52,7 @@ export default function AppLayout() {
 
   // Manual refresh trigger
   const triggerRefresh = useCallback(() => {
-    console.log('Manual refresh triggered at:', new Date().toISOString());
+    logger.debug('Manual refresh triggered at:', new Date().toISOString());
     setIsRefreshing(true);
     setRefreshTimestamp(Date.now());
     // isRefreshing is reset by child pages after data loads
@@ -63,14 +64,14 @@ export default function AppLayout() {
     if (refreshInterval === 0) return;
 
     const intervalMs = refreshInterval * 60 * 1000;
-    console.log(`Setting up auto-refresh interval: ${refreshInterval} minutes`);
+    logger.debug(`Setting up auto-refresh interval: ${refreshInterval} minutes`);
     const timer = setInterval(() => {
-      console.log('Auto-refresh triggered at:', new Date().toISOString());
+      logger.debug('Auto-refresh triggered at:', new Date().toISOString());
       setRefreshTimestamp(Date.now());
     }, intervalMs);
 
     return () => {
-      console.log('Clearing auto-refresh interval');
+      logger.debug('Clearing auto-refresh interval');
       clearInterval(timer);
     };
   }, [refreshInterval]);

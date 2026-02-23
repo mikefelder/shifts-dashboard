@@ -6,6 +6,7 @@
  */
 
 import { ShiftboardService, ShiftboardWorkgroup, ShiftboardRole } from './shiftboard.service';
+import logger from '../config/logger';
 
 // ============================================================================
 // Types
@@ -43,14 +44,14 @@ export class WorkgroupService {
    * console.log(`${result.total} workgroups available`);
    */
   async listWorkgroups(): Promise<WorkgroupResult> {
-    console.log('[workgroup.service] Fetching workgroup list');
+    logger.debug('[workgroup.service] Fetching workgroup list');
 
     const workgroups = await this.shiftboard.listWorkgroups();
 
     // Sort alphabetically by name for consistent UI display
     const sorted = [...workgroups].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    console.log(`[workgroup.service] Returning ${sorted.length} workgroups`);
+    logger.debug(`[workgroup.service] Returning ${sorted.length} workgroups`);
 
     return {
       workgroups: sorted,
@@ -69,7 +70,7 @@ export class WorkgroupService {
    * console.log(`${result.roles.length} roles in workgroup`);
    */
   async getRoles(workgroupId: string): Promise<RoleResult> {
-    console.log(`[workgroup.service] Fetching roles for workgroup ${workgroupId}`);
+    logger.debug(`[workgroup.service] Fetching roles for workgroup ${workgroupId}`);
 
     if (!workgroupId || workgroupId.trim() === '') {
       throw new Error('workgroupId is required');
@@ -80,7 +81,7 @@ export class WorkgroupService {
     // Sort alphabetically by name
     const sorted = [...roles].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    console.log(
+    logger.debug(
       `[workgroup.service] Returning ${sorted.length} roles for workgroup ${workgroupId}`
     );
 
@@ -97,7 +98,7 @@ export class WorkgroupService {
    * @returns All roles sorted alphabetically
    */
   async listAllRoles(): Promise<Pick<RoleResult, 'roles' | 'total'>> {
-    console.log('[workgroup.service] Fetching all roles');
+    logger.debug('[workgroup.service] Fetching all roles');
 
     const roles = await this.shiftboard.listRoles();
 

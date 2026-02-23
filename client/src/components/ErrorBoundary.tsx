@@ -13,6 +13,7 @@
 
 import React, { Component } from 'react';
 import { Alert, AlertTitle, Box, Button, Typography } from '@mui/material';
+import logger from '../utils/logger';
 
 // ============================================================================
 // Types
@@ -49,7 +50,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    console.error('[ErrorBoundary] Caught render error:', error, errorInfo);
+    logger.error('[ErrorBoundary] Caught render error:', error, errorInfo);
     this.setState({ errorInfo });
   }
 

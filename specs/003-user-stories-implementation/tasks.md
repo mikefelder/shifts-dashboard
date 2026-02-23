@@ -224,7 +224,7 @@ description: 'Task list for Shift Dashboard Rebuild'
 - [x] T074 [P] Create deployment scripts (deploy.sh, destroy.sh, validate.sh) in infra/scripts/
 - [x] T075 [P] Add Bicep parameter files (dev.json, staging.json, prod.json) in infra/params/
 - [x] T076 [P] Document deployment process and seasonal operations in docs/deployment.md
-- [ ] T077 Code cleanup and refactoring across all modules
+- [x] T077 Code cleanup and refactoring across all modules
 - [ ] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
 - [ ] T079 Security hardening (rate limiting, input sanitization, CSP headers)
 - [ ] T080 Accessibility audit (ARIA labels, keyboard navigation, screen reader support)

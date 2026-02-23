@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import type { ShiftController } from '../controllers/shift.controller';
+import logger from '../config/logger';
 
 // ============================================================================
 // Route Factory
@@ -34,7 +35,7 @@ export function createShiftRoutes(shiftController: ShiftController): Router {
   // Query: ?start=0&batch=100&workgroup=abc123
   router.get('/list', ...shiftController.listShifts);
 
-  console.log('[shift.routes] Registered shift routes: /whos-on, /list');
+  logger.debug('[shift.routes] Registered shift routes: /whos-on, /list');
 
   return router;
 }

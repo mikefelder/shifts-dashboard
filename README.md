@@ -1,7 +1,7 @@
 # Shift Dashboard
 
 [![Phase](https://img.shields.io/badge/Phase-10%3A%20Polish-blue)](specs/003-user-stories-implementation/tasks.md)
-[![Progress](https://img.shields.io/badge/Progress-76%2F80%20Tasks-brightgreen)](specs/003-user-stories-implementation/tasks.md)
+[![Progress](https://img.shields.io/badge/Progress-77%2F80%20Tasks-brightgreen)](specs/003-user-stories-implementation/tasks.md)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Real-time volunteer shift visibility dashboard with clock-in status tracking, powered by the Shiftboard API.
@@ -410,13 +410,12 @@ shifts-dashboard/
 
 - T064-T070: Cache-first logic, ErrorBoundary, stale data warnings
 
-**Phase 10: Polish & Infrastructure** (6/10 tasks) ✓
+**Phase 10: Polish & Infrastructure** (7/10 tasks) ✓
 
-- T071-T076: Role/calendar services, Bicep templates, deployment scripts, parameter files, deployment documentation
+- T071-T077: Role/calendar services, Bicep templates, deployment scripts, parameter files, deployment documentation, code cleanup
 
-### 🚧 Remaining Tasks (4/80)
+### 🚧 Remaining Tasks (3/80)
 
-- **T077**: Code cleanup and refactoring across all modules
 - **T078**: Performance optimization (shift grouping <50ms for 1000 shifts)
 - **T079**: Security hardening (rate limiting, input sanitization, CSP headers)
 - **T080**: Accessibility audit (ARIA labels, keyboard navigation, screen reader support)

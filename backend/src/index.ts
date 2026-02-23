@@ -22,6 +22,7 @@ import { createCalendarController } from './controllers/calendar.controller';
 import { createCalendarRoutes } from './routes/calendar.routes';
 import { createSystemController } from './controllers/system.controller';
 import { createSystemRoutes } from './routes/system.routes';
+import logger from './config/logger';
 
 // Load environment variables
 dotenv.config();
@@ -152,7 +153,7 @@ const systemController = createSystemController();
 const systemRoutes = createSystemRoutes(systemController);
 app.use('/api/system', systemRoutes);
 
-console.log(
+logger.info(
   '[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts, /api/roles, /api/calendar, /api/system'
 );
 
@@ -172,7 +173,7 @@ app.use(errorHandler);
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`
+    logger.info(`
 ╔════════════════════════════════════════╗
 ║   Shift Dashboard API Server          ║
 ╠════════════════════════════════════════╣
