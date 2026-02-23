@@ -3,6 +3,7 @@
  *
  * Business logic for shift operations.
  * Orchestrates Shiftboard API calls with shift grouping and metrics collection.
+ * Supports committee configuration for workgroup filtering.
  */
 
 import { ShiftboardService, ShiftListResponse } from './shiftboard.service';
@@ -14,6 +15,7 @@ import {
   countClockedIn,
   filterByWorkgroup,
 } from '../utils/shift.utils';
+import { committeeConfig } from '../config/committee.config';
 import logger from '../config/logger';
 
 // ============================================================================
@@ -79,14 +81,19 @@ export class ShiftService {
    * console.log(`${result.metrics.clocked_in_count} people clocked in`);
    */
   async shiftWhosOn(workgroupId?: string | null, batch: number = 100): Promise<WhosOnResult> {
-    logger.debug(`[shift.service] Fetching whos-on shifts (workgroup=${workgroupId || 'all'})`);
+    // Apply committee workgroup filter if configured and no explicit filter provided
+    const effectiveWorkgroup = workgroupId || committeeConfig.workgroupId;
+
+    logger.debug(
+      `[shift.service] Fetching whos-on shifts (workgroup=${effectiveWorkgroup || 'all'}${!committeeConfig.isGlobalMode ? ' [committee filter]' : ''})`
+    );
 
     const fetchStart = performance.now();
 
     // Call Shiftboard API with required parameters
     const params: { workgroup?: string; batch?: number } = { batch };
-    if (workgroupId) {
-      params.workgroup = workgroupId;
+    if (effectiveWorkgroup) {
+      params.workgroup = effectiveWorkgroup;
     }
 
     const response: ShiftListResponse = await this.shiftboard.getWhosOn(params);

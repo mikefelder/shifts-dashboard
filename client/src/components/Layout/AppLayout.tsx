@@ -6,9 +6,10 @@
  *
  * Features:
  * - Refresh state management (manual + auto-refresh)
- * - Workgroup filtering integration
+ * - Workgroup filtering integration (global or single committee mode)
  * - Permanent sidebar with navigation and controls (via Sidebar component)
  * - Outlet context for child routes
+ * - Committee configuration support
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -16,6 +17,7 @@ import { Box, AppBar, Toolbar, Typography, Drawer, useTheme } from '@mui/materia
 import { Outlet } from 'react-router-dom';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
+import { committeeConfig } from '../../config/committee.config';
 import Sidebar from './Sidebar';
 import logger from '../../utils/logger';
 
@@ -110,16 +112,19 @@ export default function AppLayout() {
           }}
         >
           <Typography variant="h6" noWrap component="div">
-            Shiftboard Reporting
+            {committeeConfig.name}
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <WorkgroupFilter
-              selectedWorkgroup={selectedWorkgroup || ''}
-              onWorkgroupChange={setSelectedWorkgroup}
-              workgroups={workgroups || []}
-            />
-          </Box>
+          {/* Only show workgroup filter in global mode */}
+          {committeeConfig.isGlobalMode && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <WorkgroupFilter
+                selectedWorkgroup={selectedWorkgroup || ''}
+                onWorkgroupChange={setSelectedWorkgroup}
+                workgroups={workgroups || []}
+              />
+            </Box>
+          )}
         </Toolbar>
       </AppBar>
 

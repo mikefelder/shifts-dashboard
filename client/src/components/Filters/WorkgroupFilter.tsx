@@ -65,7 +65,7 @@ export const WorkgroupFilter = ({
       <Select
         value={selectedWorkgroup}
         onChange={(e) => onWorkgroupChange(e.target.value || null)}
-        label="Workgroup"
+        label="Workgroup Filter"
         displayEmpty
         defaultValue=""
         renderValue={(value) => {

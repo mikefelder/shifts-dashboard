@@ -3,9 +3,11 @@
  *
  * Business logic for workgroup and role operations.
  * Provides sorted/filtered workgroup and role data from Shiftboard.
+ * Supports committee configuration for workgroup filtering.
  */
 
 import { ShiftboardService, ShiftboardWorkgroup, ShiftboardRole } from './shiftboard.service';
+import { committeeConfig } from '../config/committee.config';
 import logger from '../config/logger';
 
 // ============================================================================
@@ -44,12 +46,20 @@ export class WorkgroupService {
    * console.log(`${result.total} workgroups available`);
    */
   async listWorkgroups(): Promise<WorkgroupResult> {
-    logger.debug('[workgroup.service] Fetching workgroup list');
+    logger.debug(
+      '[workgroup.service] Fetching workgroup list',
+      !committeeConfig.isGlobalMode ? `[committee filter: ${committeeConfig.workgroupId}]` : ''
+    );
 
     const workgroups = await this.shiftboard.listWorkgroups();
 
+    // Filter to configured workgroup if in single committee mode
+    const filtered = committeeConfig.isGlobalMode
+      ? workgroups
+      : workgroups.filter((wg) => wg.id === committeeConfig.workgroupId);
+
     // Sort alphabetically by name for consistent UI display
-    const sorted = [...workgroups].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const sorted = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     logger.debug(`[workgroup.service] Returning ${sorted.length} workgroups`);
 

@@ -17,6 +17,7 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 - **Active Shifts Timeline**: Vertical hourly timeline with dynamic time window and overlap handling
 - **Tabular View**: Sortable data table with 8 columns (time, name, location, people, status)
 - **Workgroup Filtering**: Global dropdown selector to filter shifts by workgroup
+- **Committee Configuration**: Optional single-committee mode for white-label deployments
 - **Shift Details Modal**: Comprehensive shift information with assigned people and clock status
 - **Person Contact Modal**: Direct call/text actions with phone number access
 - **Manual & Auto Refresh**: Configurable refresh intervals (5/10/15 minutes) with manual refresh button
@@ -129,6 +130,9 @@ SHIFTBOARD_HOST=api.shiftboard.com
 SHIFTBOARD_PATH=/api/v1/
 ALLOWED_ORIGINS=http://localhost:5173
 LOG_LEVEL=debug
+
+# Optional: Committee Configuration (for single-committee deployments)
+# COMMITTEE_WORKGROUP=finance-committee-id
 ```
 
 **Frontend** (`client/.env`):
@@ -142,6 +146,65 @@ Edit `client/.env`:
 ```env
 VITE_API_BASE_URL=http://localhost:3000/api
 VITE_APP_NAME=Shift Dashboard
+
+# Optional: Committee Configuration (for single-committee deployments)
+# VITE_COMMITTEE_NAME=Finance Committee
+# VITE_COMMITTEE_WORKGROUP=finance-committee-id
+```
+
+### 3.1 Committee Configuration (Optional)
+
+The application supports **committee-specific deployment** for multi-tenant or white-label scenarios. This allows you to lock the dashboard to a specific committee/workgroup and customize the branding.
+
+#### Configuration Modes
+
+**Global Mode (Default)**: Shows all workgroups with dropdown filter enabled.
+
+```env
+# Frontend (.env)
+VITE_APP_NAME=Shift Dashboard
+# No committee-specific configuration
+
+# Backend (.env)
+# No COMMITTEE_WORKGROUP set
+```
+
+**Single Committee Mode**: Locks dashboard to one committee, hides workgroup filter.
+
+```env
+# Frontend (.env)
+VITE_APP_NAME=Shift Dashboard
+VITE_COMMITTEE_NAME=Finance Committee           # Display name in header
+VITE_COMMITTEE_WORKGROUP=finance-committee-id   # Shiftboard workgroup ID
+
+# Backend (.env)
+COMMITTEE_WORKGROUP=finance-committee-id        # Must match frontend
+```
+
+#### Behavior
+
+| Mode                 | Workgroup Filter    | Data Filtering                 | Use Case                             |
+| -------------------- | ------------------- | ------------------------------ | ------------------------------------ |
+| **Global**           | ✅ Visible dropdown | None (all workgroups)          | Single deployment for all committees |
+| **Single Committee** | ❌ Hidden           | Locked to configured workgroup | One deployment per committee         |
+
+#### Security
+
+- **Frontend**: Committee name displayed in header; workgroup filter auto-selected
+- **Backend**: API calls enforced with `committeeConfig.workgroupId` fallback
+- **Data Isolation**: Backend filters all shift, account, and workgroup queries
+
+#### Deployment Example
+
+```bash
+# Deploy multiple instances for different committees
+docker run -e COMMITTEE_WORKGROUP="finance-123" \
+           -e VITE_COMMITTEE_NAME="Finance Committee" \
+           shifts-dashboard
+
+docker run -e COMMITTEE_WORKGROUP="operations-456" \
+           -e VITE_COMMITTEE_NAME="Operations Committee" \
+           shifts-dashboard
 ```
 
 ### 4. Development

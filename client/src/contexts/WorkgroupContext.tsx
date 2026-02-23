@@ -9,12 +9,14 @@
  * - Persists selection during session (not across page reloads)
  * - Loads cached workgroups from IndexedDB on mount
  * - Triggers API refresh when selection changes
+ * - Supports committee configuration (single committee or global mode)
  */
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { getAllWorkgroups } from '../services/db.service';
 import type { Workgroup } from '../services/db.service';
+import { committeeConfig } from '../config/committee.config';
 import logger from '../utils/logger';
 
 // ============================================================================
@@ -44,7 +46,10 @@ interface WorkgroupProviderProps {
 }
 
 export function WorkgroupProvider({ children }: WorkgroupProviderProps) {
-  const [selectedWorkgroup, setSelectedWorkgroup] = useState<string | null>(null);
+  // Initialize with configured workgroup if in single committee mode
+  const [selectedWorkgroup, setSelectedWorkgroup] = useState<string | null>(
+    committeeConfig.workgroupId
+  );
   const [workgroups, setWorkgroups] = useState<Workgroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,8 +65,22 @@ export function WorkgroupProvider({ children }: WorkgroupProviderProps) {
           a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
         );
 
-        setWorkgroups(sorted);
-        logger.info(`[WorkgroupContext] Loaded ${sorted.length} workgroups from cache`);
+        // Filter to configured workgroup if in single committee mode
+        const filtered = committeeConfig.isGlobalMode
+          ? sorted
+          : sorted.filter((wg) => wg.id === committeeConfig.workgroupId);
+
+        setWorkgroups(filtered);
+
+        if (!committeeConfig.isGlobalMode) {
+          logger.info(
+            `[WorkgroupContext] Single committee mode: ${committeeConfig.name} (${committeeConfig.workgroupId})`
+          );
+        } else {
+          logger.info(
+            `[WorkgroupContext] Global mode: Loaded ${sorted.length} workgroups from cache`
+          );
+        }
       } catch (error) {
         logger.error('[WorkgroupContext] Failed to load cached workgroups:', error);
         setWorkgroups([]);

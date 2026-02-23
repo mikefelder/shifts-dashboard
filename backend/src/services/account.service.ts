@@ -3,9 +3,11 @@
  *
  * Business logic for account (person) operations.
  * Provides sorted/filtered account data from Shiftboard.
+ * Supports committee configuration for workgroup filtering.
  */
 
 import { ShiftboardService, ShiftboardAccount } from './shiftboard.service';
+import { committeeConfig } from '../config/committee.config';
 import logger from '../config/logger';
 
 // ============================================================================
@@ -50,9 +52,17 @@ export class AccountService {
    * @returns Sorted account list with total count
    */
   async listAccounts(params?: { workgroup?: string }): Promise<AccountResult> {
-    logger.debug('[account.service] Fetching account list', params || {});
+    // Apply committee workgroup filter if configured and no explicit filter provided
+    const effectiveWorkgroup = params?.workgroup || committeeConfig.workgroupId;
+    const effectiveParams = effectiveWorkgroup ? { workgroup: effectiveWorkgroup } : undefined;
 
-    const accounts = await this.shiftboard.listAccounts(params);
+    logger.debug(
+      '[account.service] Fetching account list',
+      effectiveParams || {},
+      !committeeConfig.isGlobalMode ? '[committee filter]' : ''
+    );
+
+    const accounts = await this.shiftboard.listAccounts(effectiveParams);
     const sorted = this.sortAccounts(accounts);
 
     logger.debug(`[account.service] Returning ${sorted.length} accounts`);
