@@ -6,6 +6,8 @@
  * Performance Target: <50ms for 1000 shifts
  */
 
+import logger from '../config/logger';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -114,7 +116,7 @@ export function groupShiftsByAttributes(
   for (const shift of shifts) {
     // Validate required fields
     if (!shift.id || !shift.name) {
-      console.warn('[shift.utils] Skipping invalid shift:', shift);
+      logger.warn('[shift.utils] Skipping invalid shift:', shift);
       continue;
     }
 
@@ -160,7 +162,7 @@ export function groupShiftsByAttributes(
   const grouped = Array.from(shiftGroups.values());
 
   const duration = performance.now() - startTime;
-  console.log(
+  logger.debug(
     `[shift.utils] Grouped ${shifts.length} shifts → ${grouped.length} groups in ${duration.toFixed(2)}ms`
   );
 

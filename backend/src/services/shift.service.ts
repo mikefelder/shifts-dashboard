@@ -14,6 +14,7 @@ import {
   countClockedIn,
   filterByWorkgroup,
 } from '../utils/shift.utils';
+import logger from '../config/logger';
 
 // ============================================================================
 // Types
@@ -78,7 +79,7 @@ export class ShiftService {
    * console.log(`${result.metrics.clocked_in_count} people clocked in`);
    */
   async shiftWhosOn(workgroupId?: string | null, batch: number = 100): Promise<WhosOnResult> {
-    console.log(`[shift.service] Fetching whos-on shifts (workgroup=${workgroupId || 'all'})`);
+    logger.debug(`[shift.service] Fetching whos-on shifts (workgroup=${workgroupId || 'all'})`);
 
     const fetchStart = performance.now();
 
@@ -97,7 +98,7 @@ export class ShiftService {
     const accounts = response.referenced_objects?.account || [];
     const workgroups = response.referenced_objects?.workgroup || [];
 
-    console.log(
+    logger.debug(
       `[shift.service] Received ${rawShifts.length} raw shifts from Shiftboard in ${fetchDuration.toFixed(2)}ms`
     );
 
@@ -119,7 +120,7 @@ export class ShiftService {
       grouping_duration_ms: Math.round(groupingDuration),
     };
 
-    console.log(
+    logger.debug(
       `[shift.service] Grouped ${metrics.original_shift_count} → ${metrics.grouped_shift_count} shifts, ${clockedInCount} clocked in`
     );
 
@@ -153,7 +154,7 @@ export class ShiftService {
     batch?: number;
     workgroup?: string;
   }): Promise<ShiftListResult> {
-    console.log('[shift.service] Fetching shift list (no grouping)');
+    logger.debug('[shift.service] Fetching shift list (no grouping)');
 
     const response: ShiftListResponse = await this.shiftboard.listShifts(params);
 

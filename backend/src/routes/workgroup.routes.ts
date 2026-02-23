@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import type { WorkgroupController } from '../controllers/workgroup.controller';
+import logger from '../config/logger';
 
 // ============================================================================
 // Route Factory
@@ -32,7 +33,7 @@ export function createWorkgroupRoutes(workgroupController: WorkgroupController):
   // Returns roles for a specific workgroup
   router.get('/:workgroupId/roles', ...workgroupController.getRoles);
 
-  console.log('[workgroup.routes] Registered routes: /list, /:workgroupId/roles');
+  logger.debug('[workgroup.routes] Registered routes: /list, /:workgroupId/roles');
 
   return router;
 }

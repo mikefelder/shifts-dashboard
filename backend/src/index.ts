@@ -152,10 +152,6 @@ const systemController = createSystemController();
 const systemRoutes = createSystemRoutes(systemController);
 app.use('/api/system', systemRoutes);
 
-console.log(
-  '[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts, /api/roles, /api/calendar, /api/system'
-);
-
 // ============================================================================
 // Error Handling
 // ============================================================================

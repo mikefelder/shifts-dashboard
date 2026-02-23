@@ -6,37 +6,7 @@
  */
 
 import { createSystemController } from '../system.controller';
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-function makeReq(overrides: Partial<{ body: Record<string, unknown> }> = {}) {
-  return {
-    params: {},
-    query: {},
-    body: {},
-    headers: {},
-    ...overrides,
-  } as import('express').Request;
-}
-
-function makeRes() {
-  const res = {
-    status: jest.fn().mockReturnThis(),
-    json: jest.fn().mockReturnThis(),
-  };
-  return res as unknown as import('express').Response;
-}
-
-function runHandler(
-  handler: (...args: any[]) => void,
-  req: import('express').Request,
-  res: import('express').Response,
-  next = jest.fn()
-) {
-  handler(req, res, next);
-}
+import { makeReq, makeRes, runHandler } from './test-helpers';
 
 // ============================================================================
 // Tests
