@@ -6,12 +6,171 @@
 
 ## Executive Summary
 
-The Shift Dashboard is a full-stack web application that provides real-time visibility into volunteer shift assignments and clock-in status sourced from the Shiftboard API. The application consists of:
+The Shift Dashboard is a **large-screen display application** designed for shared room monitoring of volunteer shift staffing. It provides real-time visibility into shift assignments and clock-in status, enabling operations teams to quickly assess staffing levels and respond to changes.
+
+**Primary Use Case**: Large screen display (TV/monitor) in operations room or command center
+
+- At-a-glance visibility of who's currently on shift
+- Visual indication of whether personnel have arrived (clocked in)
+- Upcoming shift visibility to anticipate staffing needs
+- Quick identification of staffing gaps or no-shows
+- Committee decision support for reacting to staffing changes
+
+**Technical Components**:
 
 - **Backend**: Node.js/Express API proxy that authenticates to Shiftboard, normalizes responses, and groups shift data
-- **Frontend**: React/TypeScript SPA with Material-UI providing calendar and tabular views
+- **Frontend**: React/TypeScript SPA with Material-UI optimized for large-screen passive viewing
 - **Storage**: IndexedDB browser cache for offline resilience
 - **Deployment**: Azure App Service compatible with static client serving in production
+
+**Display Characteristics**:
+
+- Large text and high-contrast colors for distance viewing
+- Automatic refresh to ensure data currency without interaction
+- Minimal user interaction required (primarily passive viewing)
+- Dashboard-focused layout optimized for quick scanning
+
+## Large-Screen Display Design Guidelines
+
+### Viewing Context
+
+**Distance**: 5-15 feet from screen  
+**Environment**: Operations room or command center with multiple viewers  
+**Lighting**: Variable (may include overhead lighting and window glare)  
+**Interaction Model**: Primarily passive viewing; minimal touch/mouse interaction
+
+### Typography Requirements
+
+**Minimum Sizes** (for readability at 10+ feet):
+
+- **Body Text**: 18px minimum (1.125rem), 20-22px recommended
+- **Headers/Labels**: 24px minimum (1.5rem), 28-32px recommended
+- **Critical Info** (shift names, times): 28px+ (1.75rem+)
+- **Status Indicators**: 16px minimum with icon reinforcement
+
+**Font Choices**:
+
+- Use sans-serif only (Material-UI default: Roboto is acceptable)
+- Avoid thin weights (prefer Regular/Medium/Bold)
+- Increase letter-spacing slightly for distance reading (+0.01em to +0.02em)
+
+**Line Height**: 1.6-1.8 for optimal readability at distance
+
+### Color & Contrast
+
+**Minimum Contrast Ratios**:
+
+- Text vs. Background: 7:1 (AAA standard for large text)
+- Status Indicators: 4.5:1 minimum, 7:1 recommended
+- Interactive Elements: 3:1 border/background contrast
+
+**Color Coding for Status** (current implementation):
+
+- **Clocked In (Arrived)**: Green (#4caf50 or Material-UI `success`)
+- **Not Clocked In**: Red (#f44336 or Material-UI `error`)
+- **Partial Clock-In**: Orange/Amber (#ff9800 or Material-UI `warning`)
+- **Neutral/Info**: Blue (#2196f3 or Material-UI `primary`/`info`)
+
+**Background Considerations**:
+
+- Use light backgrounds (#ffffff or #f5f5f5) for energy efficiency on LCD/LED
+- High contrast with text (dark gray #212121 or black #000000)
+- Avoid pure white text on dark backgrounds (causes halation at distance)
+
+### Layout & Information Density
+
+**Card/Component Spacing**:
+
+- Minimum 16px (1rem) between cards for visual separation
+- 24-32px recommended for large-screen viewing
+- Use whitespace generously to reduce visual clutter
+
+**Visual Hierarchy**:
+
+1. **Primary**: Current time indicator, shift timing
+2. **Secondary**: Shift names, assigned people
+3. **Tertiary**: Additional details (subject, location)
+
+**Information Density**:
+
+- Show 5-10 shifts visible without scrolling (current: depends on window size)
+- Avoid overwhelming display with >25 shifts (current implementation has guard)
+- Use scrolling indicators (shadows/gradients) if content extends beyond viewport
+
+### Auto-Refresh Configuration
+
+**Current Implementation** (`AppLayout.tsx`):
+
+- **Default Interval**: 5 minutes (configurable to 10 or 15)
+- **Manual Refresh**: Available via button in header
+- **Refresh Indicator**: Loading spinner in header, timestamp display
+- **Failure Handling**: Falls back to cached data, shows error indicator
+
+**Recommended for Unattended Display**:
+
+- 5-minute interval for active monitoring (current recommendation)
+- 10-minute interval for passive awareness
+- Display "Last updated: X minutes ago" prominently
+- Flash or animate updates briefly to draw attention to changes
+
+### Responsive Behavior
+
+**Minimum Display Resolution**: 1920x1080 (Full HD)  
+**Optimal Resolution**: 2560x1440 (QHD) or 3840x2160 (4K)
+
+**Viewport Handling**:
+
+- Design for 16:9 aspect ratio (most common for large displays)
+- Support portrait orientation (9:16) for vertical-mounted displays
+- Avoid horizontal scrolling entirely
+- Vertical scrolling acceptable but minimize with smart filtering
+
+### Accessibility for Distance Viewing
+
+**Icon Usage**:
+
+- Always pair icons with text labels (not icon-only)
+- Use filled icons (not outlined) for better visibility
+- Minimum icon size: 24px (current: Material-UI default often 20px - may need override)
+
+**Motion & Animation**:
+
+- Keep animations subtle (fade/grow acceptable)
+- Avoid rapid flashing (seizure risk + distraction)
+- Use animation to draw attention to updates (brief highlight on data change)
+- Provide option to disable animations if performance issues
+
+**Status Indicators**:
+
+- Use both color AND shape/icon (not color alone for colorblind accessibility)
+- Current implementation uses color + chip shape - consider adding status icons
+
+### Performance Considerations
+
+**Large-Screen Specific**:
+
+- High-resolution displays (4K) require 4x pixel rendering
+- Avoid complex CSS effects (shadows, gradients, blurs) on large areas
+- Use GPU-accelerated transforms for animations
+- Monitor memory usage during long-running display sessions (24+ hours)
+
+**Current Performance Profile**:
+
+- Handles 25+ grouped shifts before showing guard warning
+- Auto-refresh every 5 minutes = 288 refreshes per 24 hours
+- IndexedDB cache prevents repeated API failures from impacting display
+
+### Fullscreen/Kiosk Mode
+
+**Not Yet Implemented** (potential future enhancement):
+
+- F11 fullscreen or dedicated kiosk mode button
+- Hide browser chrome (address bar, bookmarks)
+- Disable right-click context menu
+- Auto-enter fullscreen on launch
+- Exit fullscreen only with specific key combination
+
+**Current State**: Application runs in standard browser window; manual F11 required
 
 ## Current Technology Stack
 

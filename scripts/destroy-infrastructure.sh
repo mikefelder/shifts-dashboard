@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shifts-dashboard-rg}
+RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shift-dashboard-rg}
 
 echo -e "${RED}WARNING: DESTRUCTIVE OPERATION${NC}"
 echo "======================================================"

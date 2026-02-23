@@ -13,7 +13,7 @@ This directory contains scripts for managing Azure infrastructure for the Shift 
 Set these before running scripts (optional, defaults provided):
 
 ```bash
-export AZURE_RESOURCE_GROUP="shifts-dashboard-rg"
+export AZURE_RESOURCE_GROUP="shift-dashboard-rg"
 export AZURE_LOCATION="eastus"
 ```
 
