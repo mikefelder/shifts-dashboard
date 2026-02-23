@@ -142,7 +142,18 @@ export default function ActiveShiftsView({
       </Box>
 
       {/* Shifts Grid */}
-      <Box display="flex" flexDirection="column" gap={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr', // 1 column on mobile
+            md: 'repeat(2, 1fr)', // 2 columns on tablets
+            lg: 'repeat(2, 1fr)', // 2 columns on laptops
+            xl: 'repeat(3, 1fr)', // 3 columns on large screens
+          },
+          gap: 3,
+        }}
+      >
         {shouldDisplay &&
           activeShifts.map((shift, index) => (
             <Fade key={shift.id} in timeout={300 + index * 50}>

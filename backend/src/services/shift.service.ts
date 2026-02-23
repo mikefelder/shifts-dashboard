@@ -4,6 +4,7 @@
  * Business logic for shift operations.
  * Orchestrates Shiftboard API calls with shift grouping and metrics collection.
  * Supports committee configuration for workgroup filtering.
+ * Supports mock data mode via ENABLE_MOCK_DATA environment variable.
  */
 
 import { ShiftboardService, ShiftListResponse } from './shiftboard.service';
@@ -16,6 +17,12 @@ import {
   filterByWorkgroup,
 } from '../utils/shift.utils';
 import { committeeConfig } from '../config/committee.config';
+import {
+  isMockEnabled,
+  getMockShifts,
+  getMockAccounts,
+  getMockWorkgroups,
+} from './mock-data.service';
 import logger from '../config/logger';
 
 // ============================================================================
@@ -85,8 +92,89 @@ export class ShiftService {
     const effectiveWorkgroup = workgroupId || committeeConfig.workgroupId;
 
     logger.debug(
-      `[shift.service] Fetching whos-on shifts (workgroup=${effectiveWorkgroup || 'all'}${!committeeConfig.isGlobalMode ? ' [committee filter]' : ''})`
+      `[shift.service] Fetching whos-on shifts (workgroup=${effectiveWorkgroup || 'all'}${!committeeConfig.isGlobalMode ? ' [committee filter]' : ''}${isMockEnabled() ? ' [MOCK MODE]' : ''})`
     );
+
+    // ========================================================================
+    // Mock Data Mode (Development/Testing)
+    // ========================================================================
+
+    if (isMockEnabled()) {
+      logger.info('[shift.service] 🎭 Mock data mode enabled - returning generated mock shifts');
+
+      const fetchStart = performance.now();
+
+      // Generate mock data
+      const rawShifts = getMockShifts();
+      const accounts = getMockAccounts();
+      const workgroups = getMockWorkgroups();
+
+      // Filter by workgroup if specified
+      const filteredShifts = effectiveWorkgroup
+        ? rawShifts.filter((shift) => shift.workgroup === effectiveWorkgroup)
+        : rawShifts;
+
+      const fetchDuration = performance.now() - fetchStart;
+
+      logger.debug(
+        `[shift.service] Generated ${filteredShifts.length} mock shifts in ${fetchDuration.toFixed(2)}ms`
+      );
+
+      // Apply shift grouping algorithm
+      const groupingStart = performance.now();
+
+      // Convert ShiftboardShift to RawShift format
+      const rawShiftsFormatted: RawShift[] = filteredShifts.map((shift) => ({
+        id: shift.id,
+        name: shift.name,
+        subject: shift.subject,
+        location: shift.location,
+        workgroup: shift.workgroup,
+        local_start_date: shift.local_start_date,
+        local_end_date: shift.local_end_date,
+        covering_member: shift.members?.[0]?.member,
+        clocked_in: shift.members?.[0]?.clocked_in || false,
+      }));
+
+      const groupedShifts = groupShiftsByAttributes(rawShiftsFormatted, accounts as Account[]);
+
+      const groupingDuration = performance.now() - groupingStart;
+
+      // Collect metrics
+      const clockedInCount = countClockedIn(groupedShifts);
+
+      const metrics: ShiftServiceMetrics = {
+        original_shift_count: filteredShifts.length,
+        grouped_shift_count: groupedShifts.length,
+        clocked_in_count: clockedInCount,
+        fetch_duration_ms: Math.round(fetchDuration),
+        grouping_duration_ms: Math.round(groupingDuration),
+      };
+
+      logger.debug(
+        `[shift.service] Grouped ${metrics.original_shift_count} → ${metrics.grouped_shift_count} mock shifts, ${clockedInCount} clocked in`
+      );
+
+      // Construct result
+      return {
+        shifts: groupedShifts,
+        referenced_objects: {
+          accounts: accounts as Account[],
+          workgroups: workgroups || [],
+        },
+        metrics,
+        page: {
+          start: 0,
+          batch: filteredShifts.length,
+          total: filteredShifts.length,
+          next: null,
+        },
+      };
+    }
+
+    // ========================================================================
+    // Production Mode (Real Shiftboard API)
+    // ========================================================================
 
     const fetchStart = performance.now();
 

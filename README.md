@@ -227,6 +227,33 @@ npm run dev
 # Vite dev server starts at http://localhost:5173
 ```
 
+#### 4.1 Mock Data Mode (Development Only)
+
+For UI development and testing when there are no active shifts, you can enable mock data generation:
+
+**Backend** (`backend/.env`):
+
+```env
+ENABLE_MOCK_DATA=true
+```
+
+**Features**:
+
+- Generates realistic shift data based on current time
+- Includes morning (6am-12pm), afternoon (12pm-6pm), and evening (6pm-10pm) shifts
+- Mix of clocked in/out statuses for testing different UI states
+- Multiple workgroups, locations, and roles
+- Includes overlapping shifts to test grouping algorithm
+
+**When to use**:
+
+- UI development when real Shiftboard API has no active shifts
+- Testing edge cases (empty shifts, all clocked in, mixed statuses)
+- Developing without access to Shiftboard credentials
+- Playwright/integration tests
+
+**Note**: Mock mode is only active when `ENABLE_MOCK_DATA=true`. The app automatically falls back to the real Shiftboard API when disabled.
+
 **Or use Docker Compose**:
 
 ```bash
