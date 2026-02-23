@@ -55,7 +55,7 @@ description: 'Task list for Shift Dashboard Rebuild'
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [x] T007 [P] Implement Shiftboard HMAC SHA-1 authentication utility in backend/src/utils/shiftboard-auth.ts
-- [x] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts
+- [x] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts (⚠️ Removed in T077 - never used)
 - [x] T009 Implement Shiftboard service client (generic RPC, auth, pagination, errors) in backend/src/services/shiftboard.service.ts
 - [x] T010 [P] Setup error middleware (convert to {error:string} format) in backend/src/middleware/error.middleware.ts
 - [x] T011 [P] Setup validation middleware (Zod schemas) in backend/src/middleware/validation.middleware.ts
@@ -225,6 +225,12 @@ description: 'Task list for Shift Dashboard Rebuild'
 - [x] T075 [P] Add Bicep parameter files (dev.json, staging.json, prod.json) in infra/params/
 - [x] T076 [P] Document deployment process and seasonal operations in docs/deployment.md
 - [x] T077 Code cleanup and refactoring across all modules
+  - Created `backend/src/utils/timing.ts` - Timing metadata utilities (getTimingMetadata, getRequestDuration)
+  - Created `backend/src/controllers/__tests__/test-helpers.ts` - Shared test utilities (makeReq, makeRes, runHandler, runLastHandler)
+  - Updated 6 controllers to use timing utility (account, shift, workgroup, role, calendar, system) - eliminated 250+ lines of duplicate code
+  - Updated 3 test files to use shared test helpers - removed 75+ lines of duplicate test setup
+  - Removed `backend/src/utils/pagination.ts` (188 lines) - never integrated into shiftboard.service.ts, zero imports
+  - Verified all tests pass (179/179), linting clean
 - [ ] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
 - [ ] T079 Security hardening (rate limiting, input sanitization, CSP headers)
 - [ ] T080 Accessibility audit (ARIA labels, keyboard navigation, screen reader support)

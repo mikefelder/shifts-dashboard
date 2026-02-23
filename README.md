@@ -251,13 +251,15 @@ shifts-dashboard/
 │   │   │   ├── shiftboard.service.ts
 │   │   │   └── workgroup.service.ts
 │   │   ├── utils/           # Utilities ✅
-│   │   │   ├── pagination.ts
-│   │   │   ├── shift.utils.ts
-│   │   │   └── shiftboard-auth.ts
+│   │   │   ├── shift.utils.ts      # Shift grouping & clock status
+│   │   │   ├── shiftboard-auth.ts  # HMAC authentication
+│   │   │   └── timing.ts           # Request timing metadata
 │   │   ├── types/           # TypeScript types ✅
 │   │   ├── validators/      # Zod schemas ✅
 │   │   └── index.ts         # Express app entry point ✅
 │   ├── tests/               # Jest tests ✅
+│   │   └── __tests__/
+│   │       └── test-helpers.ts # Shared test utilities (makeReq, makeRes, runHandler)
 │   ├── dist/                # Compiled JavaScript ✅
 │   ├── package.json         # ✅ Backend dependencies
 │   ├── tsconfig.json        # ✅ TypeScript config
@@ -380,7 +382,7 @@ shifts-dashboard/
 
 **Phase 2: Foundational** (11/11 tasks) ✓
 
-- T007-T017: Shiftboard authentication, pagination, services, middleware, IndexedDB, MUI theme, app layout
+- T007-T017: Shiftboard authentication, services, middleware, IndexedDB, MUI theme, app layout
 
 **Phase 3: User Story 1 - Active Shifts Timeline** (10/10 tasks) ✓ 🎯 **MVP**
 
@@ -413,6 +415,7 @@ shifts-dashboard/
 **Phase 10: Polish & Infrastructure** (7/10 tasks) ✓
 
 - T071-T077: Role/calendar services, Bicep templates, deployment scripts, parameter files, deployment documentation, code cleanup
+  - **T077 Cleanup**: Created `timing.ts` utility (reduced 250+ lines), consolidated test helpers, removed unused code
 
 ### 🚧 Remaining Tasks (3/80)
 
