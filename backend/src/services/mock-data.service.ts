@@ -163,7 +163,6 @@ export const MOCK_WORKGROUPS: ShiftboardWorkgroup[] = [
  */
 export function generateMockShifts(): ShiftboardShift[] {
   const now = new Date();
-  const currentHour = now.getHours();
 
   // Helper to create ISO datetime
   const makeDateTime = (hour: number, minute: number = 0): string => {

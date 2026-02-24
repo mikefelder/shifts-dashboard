@@ -193,7 +193,16 @@ export default function ShiftDetail() {
       </Box>
 
       {/* Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: largeScreenMode ? 3 : 2 }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: 'auto',
+          p: largeScreenMode ? 4 : 2,
+          maxWidth: largeScreenMode ? '100%' : '1400px',
+          mx: 'auto',
+          width: '100%',
+        }}
+      >
         {largeScreenMode ? (
           <LargeScreenView shift={shift} upcomingShift={upcomingShift} currentTime={currentTime} />
         ) : (
@@ -215,88 +224,125 @@ interface ViewProps {
 }
 
 function ResponsiveView({ shift, upcomingShift, currentTime }: ViewProps) {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const clockedInCount = countClockedIn(shift.clockStatuses);
   const totalCount = shift.assignedPeople.length;
   const clockedInPercentage = totalCount > 0 ? Math.round((clockedInCount / totalCount) * 100) : 0;
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: '1400px', mx: 'auto' }}>
       {/* Current Time */}
       <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-        <Typography variant="h6" fontWeight={600}>
+        <Typography variant="h5" fontWeight={600}>
           {format(currentTime, 'h:mm:ss a')}
         </Typography>
-        <Typography variant="body2">{format(currentTime, 'EEEE, MMMM d, yyyy')}</Typography>
+        <Typography variant="body1">{format(currentTime, 'EEEE, MMMM d, yyyy')}</Typography>
       </Paper>
 
-      {/* Shift Info */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            {shift.name}
-          </Typography>
+      {/* Desktop Grid Layout */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: isDesktop ? '2fr 1fr' : '1fr',
+          gap: 3,
+          mb: 3,
+        }}
+      >
+        {/* Main Shift Info Card */}
+        <Card>
+          <CardContent>
+            <Badge
+              badgeContent="ACTIVE"
+              color="success"
+              sx={{
+                mb: 2,
+                '& .MuiBadge-badge': {
+                  fontSize: '0.75rem',
+                  height: '24px',
+                  minWidth: '60px',
+                  right: -12,
+                },
+              }}
+            >
+              <Typography variant="h4" fontWeight={700}>
+                {shift.name}
+              </Typography>
+            </Badge>
 
-          <Box display="flex" alignItems="center" gap={1.5} mb={2}>
-            <AccessTime color="action" />
-            <Typography variant="h6">{shift.display_time || formatShiftTime(shift)}</Typography>
-          </Box>
-
-          {shift.location && (
             <Box display="flex" alignItems="center" gap={1.5} mb={2}>
-              <LocationOn color="action" />
-              <Typography variant="h6">{shift.location}</Typography>
+              <AccessTime color="action" />
+              <Typography variant="h6">{shift.display_time || formatShiftTime(shift)}</Typography>
             </Box>
-          )}
 
-          {shift.subject && (
-            <Typography variant="body1" color="text.secondary" mb={2}>
-              {shift.subject}
-            </Typography>
-          )}
+            {shift.location && (
+              <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                <LocationOn color="action" />
+                <Typography variant="h6">{shift.location}</Typography>
+              </Box>
+            )}
 
-          <Divider sx={{ my: 2 }} />
+            {shift.subject && (
+              <Typography variant="body1" color="text.secondary" mb={2}>
+                {shift.subject}
+              </Typography>
+            )}
 
-          {/* Clock Status Summary */}
-          <Box
+            <Divider sx={{ my: 2 }} />
+
+            {/* Team Members */}
+            <Box>
+              <Box display="flex" alignItems="center" gap={1} mb={1.5}>
+                <Group color="action" />
+                <Typography variant="h6" fontWeight={600}>
+                  Team Members
+                </Typography>
+              </Box>
+              <Box display="flex" flexWrap="wrap" gap={1.5}>
+                {shift.assignedPersonNames.map((name, idx) => (
+                  <Chip
+                    key={`${shift.id}-${idx}`}
+                    label={name}
+                    size="medium"
+                    color={shift.clockStatuses[idx] ? 'success' : 'error'}
+                    variant="filled"
+                    icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Clock Status Card - Sidebar on Desktop */}
+        <Card
+          sx={{
+            bgcolor: clockedInPercentage === 100 ? 'success.main' : 'error.main',
+            color: 'white',
+            height: 'fit-content',
+          }}
+        >
+          <CardContent
             sx={{
-              bgcolor: clockedInPercentage === 100 ? 'success.main' : 'error.main',
-              color: 'white',
-              px: 2,
-              py: 1.5,
-              borderRadius: 2,
-              mb: 2,
               textAlign: 'center',
+              py: 4,
             }}
           >
-            <Typography variant="h4" fontWeight={700}>
+            <Typography variant="h6" fontWeight={600} mb={2} sx={{ opacity: 0.9 }}>
+              Clock Status
+            </Typography>
+            <Typography variant="h2" fontWeight={700} mb={1}>
               {clockedInCount} / {totalCount}
             </Typography>
-            <Typography variant="body1" fontWeight={600}>
-              Clocked In ({clockedInPercentage}%)
+            <Typography variant="h6" fontWeight={500}>
+              Clocked In
             </Typography>
-          </Box>
-
-          {/* Assigned People */}
-          <Box display="flex" alignItems="center" gap={1} mb={1.5}>
-            <Group color="action" />
-            <Typography variant="h6" fontWeight={600}>
-              Team Members
+            <Typography variant="h4" fontWeight={700} mt={1}>
+              {clockedInPercentage}%
             </Typography>
-          </Box>
-          <Box display="flex" flexWrap="wrap" gap={1.5}>
-            {shift.assignedPersonNames.map((name, idx) => (
-              <Chip
-                key={`${shift.id}-${idx}`}
-                label={name}
-                size="medium"
-                color={shift.clockStatuses[idx] ? 'success' : 'error'}
-                variant="filled"
-                icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
-              />
-            ))}
-          </Box>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Upcoming Shift Preview */}
       {upcomingShift && (
@@ -338,125 +384,174 @@ function LargeScreenView({ shift, upcomingShift, currentTime }: ViewProps) {
   const clockedInPercentage = totalCount > 0 ? Math.round((clockedInCount / totalCount) * 100) : 0;
 
   return (
-    <Box>
-      {/* Current Time - Extra Large */}
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Current Time - Large and Prominent */}
       <Box
         sx={{
           bgcolor: 'primary.main',
           color: 'primary.contrastText',
-          py: 3,
-          px: 4,
+          py: 4,
+          px: 5,
           mb: 4,
           borderRadius: 3,
           boxShadow: 4,
         }}
       >
-        <Typography variant="h2" fontWeight={700} fontSize="3.5rem">
+        <Typography variant="h1" fontWeight={700} fontSize="4rem">
           {format(currentTime, 'h:mm:ss a')}
         </Typography>
-        <Typography variant="h5" sx={{ opacity: 0.9, mt: 1 }}>
+        <Typography variant="h4" sx={{ opacity: 0.9, mt: 1 }}>
           {format(currentTime, 'EEEE, MMMM d, yyyy')}
         </Typography>
       </Box>
 
-      {/* Current Shift - Large */}
-      <Card elevation={6} sx={{ mb: 4, border: 3, borderColor: 'success.main' }}>
-        <CardContent sx={{ p: 4 }}>
-          <Badge
-            badgeContent="ACTIVE"
-            color="success"
-            sx={{
-              mb: 2,
-              '& .MuiBadge-badge': {
-                fontSize: '1.2rem',
-                height: '32px',
-                minWidth: '80px',
-                right: -20,
-              },
-            }}
-          >
-            <Typography variant="h2" fontWeight={700} fontSize="3rem">
-              {shift.name}
-            </Typography>
-          </Badge>
+      {/* Two Column Layout for Current Shift */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gap: 4,
+          mb: 4,
+          flexGrow: 1,
+        }}
+      >
+        {/* Main Shift Info and Team Members */}
+        <Card
+          elevation={6}
+          sx={{ border: 3, borderColor: 'success.main', display: 'flex', flexDirection: 'column' }}
+        >
+          <CardContent sx={{ p: 4, flexGrow: 1 }}>
+            <Badge
+              badgeContent="ACTIVE"
+              color="success"
+              sx={{
+                mb: 3,
+                '& .MuiBadge-badge': {
+                  fontSize: '1.2rem',
+                  height: '36px',
+                  minWidth: '90px',
+                  right: -20,
+                },
+              }}
+            >
+              <Typography variant="h2" fontWeight={700} fontSize="3rem">
+                {shift.name}
+              </Typography>
+            </Badge>
 
-          <Box display="flex" alignItems="center" gap={2} mb={3}>
-            <AccessTime sx={{ fontSize: '2.5rem', color: 'action.active' }} />
-            <Typography variant="h4" fontSize="2rem" fontWeight={500}>
-              {shift.display_time || formatShiftTime(shift)}
-            </Typography>
-          </Box>
-
-          {shift.location && (
             <Box display="flex" alignItems="center" gap={2} mb={3}>
-              <LocationOn sx={{ fontSize: '2.5rem', color: 'action.active' }} />
+              <AccessTime sx={{ fontSize: '2.5rem', color: 'action.active' }} />
               <Typography variant="h4" fontSize="2rem" fontWeight={500}>
-                {shift.location}
+                {shift.display_time || formatShiftTime(shift)}
               </Typography>
             </Box>
-          )}
 
-          <Divider sx={{ my: 3, borderWidth: 2 }} />
+            {shift.location && (
+              <Box display="flex" alignItems="center" gap={2} mb={3}>
+                <LocationOn sx={{ fontSize: '2.5rem', color: 'action.active' }} />
+                <Typography variant="h4" fontSize="2rem" fontWeight={500}>
+                  {shift.location}
+                </Typography>
+              </Box>
+            )}
 
-          {/* Clock Status Summary - PROMINENT */}
-          <Box
+            <Divider sx={{ my: 4, borderWidth: 2 }} />
+
+            {/* Team Members - Large Display */}
+            <Box>
+              <Box display="flex" alignItems="center" gap={2} mb={3}>
+                <Group sx={{ fontSize: '3rem', color: 'action.active' }} />
+                <Typography variant="h3" fontWeight={700} fontSize="2.5rem">
+                  Team Members
+                </Typography>
+              </Box>
+              <Box display="flex" flexWrap="wrap" gap={3}>
+                {shift.assignedPersonNames.map((name, idx) => (
+                  <Chip
+                    key={`${shift.id}-${idx}`}
+                    label={name}
+                    size="medium"
+                    color={shift.clockStatuses[idx] ? 'success' : 'error'}
+                    variant="filled"
+                    icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
+                    sx={{
+                      fontSize: '1.8rem',
+                      height: '70px',
+                      px: 3,
+                      fontWeight: 600,
+                      '& .MuiChip-icon': { fontSize: '2.5rem' },
+                      '& .MuiChip-label': { px: 2 },
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Clock Status - Large Sidebar */}
+        <Card
+          elevation={6}
+          sx={{
+            bgcolor: clockedInPercentage === 100 ? 'success.main' : 'error.main',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <CardContent
             sx={{
-              bgcolor: clockedInPercentage === 100 ? 'success.main' : 'error.main',
-              color: 'white',
-              px: 3,
-              py: 3,
-              borderRadius: 2,
-              mb: 3,
               textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexGrow: 1,
+              p: 5,
             }}
           >
-            <Typography variant="h2" fontWeight={700} fontSize="4rem">
-              {clockedInCount} / {totalCount}
+            <Typography variant="h4" fontWeight={600} mb={3} sx={{ opacity: 0.9 }}>
+              Clock Status
             </Typography>
-            <Typography variant="h4" fontSize="2rem" fontWeight={600}>
-              Clocked In ({clockedInPercentage}%)
+            <Typography variant="h1" fontWeight={700} fontSize="6rem" mb={2}>
+              {clockedInCount}
             </Typography>
-          </Box>
+            <Divider sx={{ width: '80%', bgcolor: 'white', opacity: 0.5, my: 2 }} />
+            <Typography variant="h1" fontWeight={700} fontSize="6rem" mb={3}>
+              {totalCount}
+            </Typography>
+            <Typography variant="h3" fontWeight={600} mb={2}>
+              Clocked In
+            </Typography>
+            <Box
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.2)',
+                px: 4,
+                py: 3,
+                borderRadius: 3,
+                mt: 2,
+              }}
+            >
+              <Typography variant="h2" fontWeight={700} fontSize="4rem">
+                {clockedInPercentage}%
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
 
-          {/* Assigned People - Large Chips */}
-          <Typography variant="h4" fontWeight={700} mb={2} fontSize="1.8rem">
-            Team Members
-          </Typography>
-          <Box display="flex" flexWrap="wrap" gap={2}>
-            {shift.assignedPersonNames.map((name, idx) => (
-              <Chip
-                key={`${shift.id}-${idx}`}
-                label={name}
-                size="medium"
-                color={shift.clockStatuses[idx] ? 'success' : 'error'}
-                variant="filled"
-                icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
-                sx={{
-                  fontSize: '1.5rem',
-                  height: '60px',
-                  px: 2,
-                  fontWeight: 600,
-                  '& .MuiChip-icon': { fontSize: '2rem' },
-                  '& .MuiChip-label': { px: 2 },
-                }}
-              />
-            ))}
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Upcoming Shift - Large */}
+      {/* Upcoming Shift - Full Width Banner */}
       {upcomingShift && (
-        <Card elevation={6} sx={{ border: 3, borderColor: 'warning.main' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box display="flex" alignItems="center" gap={2} mb={3}>
-              <Schedule sx={{ fontSize: '3rem', color: 'warning.main' }} />
-              <Typography variant="h2" fontWeight={700} fontSize="2.5rem" color="warning.main">
-                STARTING SOON
+        <Card elevation={6} sx={{ border: 4, borderColor: 'warning.main' }}>
+          <CardContent sx={{ p: 5 }}>
+            <Box display="flex" alignItems="center" gap={3} mb={3}>
+              <Schedule sx={{ fontSize: '4rem', color: 'warning.main' }} />
+              <Typography variant="h2" fontWeight={700} fontSize="3rem" color="warning.main">
+                NEXT SHIFT STARTING SOON
               </Typography>
             </Box>
 
-            <Typography variant="h3" fontWeight={600} gutterBottom fontSize="2rem">
+            <Typography variant="h3" fontWeight={600} gutterBottom fontSize="2.5rem" mb={3}>
               {upcomingShift.name}
             </Typography>
 
@@ -464,20 +559,20 @@ function LargeScreenView({ shift, upcomingShift, currentTime }: ViewProps) {
               sx={{
                 bgcolor: 'warning.main',
                 color: 'warning.contrastText',
-                px: 3,
-                py: 2,
-                borderRadius: 2,
-                mb: 2,
+                px: 5,
+                py: 3,
+                borderRadius: 3,
+                mb: 3,
                 display: 'inline-block',
               }}
             >
-              <Typography variant="h4" fontWeight={700} fontSize="1.8rem">
-                Starts in{' '}
-                {differenceInMinutes(parseISO(upcomingShift.local_start_date), currentTime)} minutes
+              <Typography variant="h3" fontWeight={700} fontSize="2.5rem">
+                STARTS IN{' '}
+                {differenceInMinutes(parseISO(upcomingShift.local_start_date), currentTime)} MINUTES
               </Typography>
             </Box>
 
-            <Typography variant="h5" color="text.secondary" fontSize="1.5rem">
+            <Typography variant="h4" color="text.secondary" fontSize="1.8rem">
               {upcomingShift.assignedPeople.length} team members assigned
             </Typography>
           </CardContent>
