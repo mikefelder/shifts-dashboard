@@ -13,9 +13,20 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Box, AppBar, Toolbar, Typography, Drawer, useTheme } from '@mui/material';
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Drawer,
+  useTheme,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { Outlet } from 'react-router-dom';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
+import { useTheme as useAppTheme } from '../../contexts/ThemeContext';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
 import { committeeConfig } from '../../config/committee.config';
 import Sidebar from './Sidebar';
@@ -45,6 +56,7 @@ export interface RefreshContext {
 
 export default function AppLayout() {
   const theme = useTheme();
+  const { mode, toggleTheme } = useAppTheme();
   const { selectedWorkgroup, workgroups, setSelectedWorkgroup } = useWorkgroup();
 
   // State
@@ -117,12 +129,27 @@ export default function AppLayout() {
 
           {/* Only show workgroup filter in global mode */}
           {committeeConfig.isGlobalMode && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <WorkgroupFilter
                 selectedWorkgroup={selectedWorkgroup || ''}
                 onWorkgroupChange={setSelectedWorkgroup}
                 workgroups={workgroups || []}
               />
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <IconButton onClick={toggleTheme} color="inherit" size="large">
+                  {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
+          {/* Show dark mode toggle even in single-committee mode */}
+          {!committeeConfig.isGlobalMode && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <IconButton onClick={toggleTheme} color="inherit" size="large">
+                  {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+                </IconButton>
+              </Tooltip>
             </Box>
           )}
         </Toolbar>

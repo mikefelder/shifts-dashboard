@@ -11,15 +11,17 @@
  * - Custom component overrides optimized for display viewing
  * - Responsive breakpoints
  * - WCAG AAA compliant color contrasts (7:1 for text)
+ * - Dark mode support
  */
 
 import { createTheme } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 
 // ============================================================================
-// Color Palette
+// Color Palette - Light Mode
 // ============================================================================
 
-const palette = {
+const lightPalette = {
   primary: {
     main: '#003d5b', // Navy blue
     light: '#005580',
@@ -62,6 +64,55 @@ const palette = {
     disabled: 'rgba(0, 0, 0, 0.45)', // Increased from 0.38
   },
   divider: 'rgba(0, 0, 0, 0.15)', // Slightly increased for visibility
+};
+
+// ============================================================================
+// Color Palette - Dark Mode
+// ============================================================================
+
+const darkPalette = {
+  primary: {
+    main: '#1976d2', // Lighter blue for dark mode
+    light: '#42a5f5',
+    dark: '#1565c0',
+    contrastText: '#ffffff',
+  },
+  secondary: {
+    main: '#00a0dc',
+    light: '#33b3e5',
+    dark: '#0073a7',
+    contrastText: '#ffffff',
+  },
+  error: {
+    main: '#f44336',
+    light: '#e57373',
+    dark: '#d32f2f',
+  },
+  warning: {
+    main: '#ffa726',
+    light: '#ffb74d',
+    dark: '#f57c00',
+  },
+  info: {
+    main: '#29b6f6',
+    light: '#4fc3f7',
+    dark: '#0288d1',
+  },
+  success: {
+    main: '#66bb6a',
+    light: '#81c784',
+    dark: '#388e3c',
+  },
+  background: {
+    default: '#121212',
+    paper: '#1e1e1e',
+  },
+  text: {
+    primary: 'rgba(255, 255, 255, 0.95)',
+    secondary: 'rgba(255, 255, 255, 0.75)',
+    disabled: 'rgba(255, 255, 255, 0.45)',
+  },
+  divider: 'rgba(255, 255, 255, 0.15)',
 };
 
 // ============================================================================
@@ -360,17 +411,29 @@ const components = {
 // Theme Creation
 // ============================================================================
 
-const theme = createTheme({
-  palette,
-  typography,
-  spacing,
-  breakpoints,
-  components,
-  shape: {
-    borderRadius: 4,
-  },
-});
+/**
+ * Creates a theme based on the specified mode (light or dark)
+ */
+export function createAppTheme(mode: 'light' | 'dark'): Theme {
+  const palette = mode === 'light' ? lightPalette : darkPalette;
 
+  return createTheme({
+    palette: {
+      mode,
+      ...palette,
+    },
+    typography,
+    spacing,
+    breakpoints,
+    components,
+    shape: {
+      borderRadius: 4,
+    },
+  });
+}
+
+// Default theme export (light mode for backward compatibility)
+const theme = createAppTheme('light');
 export default theme;
 
 // ============================================================================
