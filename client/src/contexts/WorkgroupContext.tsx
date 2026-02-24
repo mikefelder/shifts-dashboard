@@ -16,6 +16,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { getAllWorkgroups } from '../services/db.service';
 import type { Workgroup } from '../services/db.service';
+import { getWorkgroups } from '../services/api.service';
 import { committeeConfig } from '../config/committee.config';
 import logger from '../utils/logger';
 
@@ -48,48 +49,93 @@ interface WorkgroupProviderProps {
 export function WorkgroupProvider({ children }: WorkgroupProviderProps) {
   // Initialize with configured workgroup if in single committee mode
   const [selectedWorkgroup, setSelectedWorkgroup] = useState<string | null>(
-    committeeConfig.workgroupId
+    committeeConfig.filterMode === 'single' ? committeeConfig.workgroupIds[0] : null
   );
   const [workgroups, setWorkgroups] = useState<Workgroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load cached workgroups on mount
+  // Helper function to filter workgroups based on committee config
+  const filterWorkgroups = (wgs: Workgroup[]): Workgroup[] => {
+    // Sort workgroups alphabetically by name
+    const sorted = wgs.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    );
+
+    switch (committeeConfig.filterMode) {
+      case 'ids': {
+        const idSet = new Set(committeeConfig.workgroupIds);
+        return sorted.filter((wg) => idSet.has(wg.id));
+      }
+      case 'codes': {
+        const codeSet = new Set(committeeConfig.workgroupCodes);
+        return sorted.filter((wg) => wg.code && codeSet.has(wg.code));
+      }
+      case 'single': {
+        return sorted.filter((wg) => wg.id === committeeConfig.workgroupIds[0]);
+      }
+      case 'global':
+      default: {
+        return sorted;
+      }
+    }
+  };
+
+  // Load and sync workgroups on mount
   useEffect(() => {
-    async function loadCachedWorkgroups() {
+    async function loadAndSyncWorkgroups() {
       try {
         setIsLoading(true);
+
+        // 1. Load from cache first for instant display
         const cached = await getAllWorkgroups();
 
-        // Sort workgroups alphabetically by name
-        const sorted = cached.sort((a, b) =>
-          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
-        );
+        const cachedFiltered = filterWorkgroups(cached);
+        setWorkgroups(cachedFiltered);
 
-        // Filter to configured workgroup if in single committee mode
-        const filtered = committeeConfig.isGlobalMode
-          ? sorted
-          : sorted.filter((wg) => wg.id === committeeConfig.workgroupId);
-
-        setWorkgroups(filtered);
-
-        if (!committeeConfig.isGlobalMode) {
+        if (cached.length > 0) {
           logger.info(
-            `[WorkgroupContext] Single committee mode: ${committeeConfig.name} (${committeeConfig.workgroupId})`
-          );
-        } else {
-          logger.info(
-            `[WorkgroupContext] Global mode: Loaded ${sorted.length} workgroups from cache`
+            `[WorkgroupContext] Loaded ${cachedFiltered.length} workgroups from cache (${committeeConfig.filterMode} mode)`
           );
         }
+
+        // 2. Sync from backend to get fresh data
+        const { data: fresh, isFreshData } = await getWorkgroups(true);
+
+        if (isFreshData) {
+          const freshFiltered = filterWorkgroups(fresh);
+          setWorkgroups(freshFiltered);
+
+          switch (committeeConfig.filterMode) {
+            case 'ids':
+              logger.info(
+                `[WorkgroupContext] Synced ${freshFiltered.length} of ${fresh.length} workgroups (IDs: ${committeeConfig.workgroupIds.join(', ')})`
+              );
+              break;
+            case 'codes':
+              logger.info(
+                `[WorkgroupContext] Synced ${freshFiltered.length} of ${fresh.length} workgroups (Codes: ${committeeConfig.workgroupCodes.join(', ')})`
+              );
+              break;
+            case 'single':
+              logger.info(
+                `[WorkgroupContext] Synced single committee: ${committeeConfig.name} (${committeeConfig.workgroupIds[0]})`
+              );
+              break;
+            case 'global':
+            default:
+              logger.info(`[WorkgroupContext] Synced ${fresh.length} workgroups (global mode)`);
+              break;
+          }
+        }
       } catch (error) {
-        logger.error('[WorkgroupContext] Failed to load cached workgroups:', error);
+        logger.error('[WorkgroupContext] Failed to load and sync workgroups:', error);
         setWorkgroups([]);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadCachedWorkgroups();
+    loadAndSyncWorkgroups();
   }, []);
 
   const value: WorkgroupContextValue = {

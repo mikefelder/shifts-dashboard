@@ -53,10 +53,18 @@ function getConfig(): ShiftboardConfig {
 // ============================================================================
 
 export interface ShiftboardPage {
-  start: number;
-  batch: number;
-  total: number;
-  next: number | null;
+  this: {
+    start: number;
+    batch: number;
+  };
+  next?: {
+    start: number;
+    batch: number;
+  };
+  prev?: {
+    start: number;
+    batch: number;
+  };
 }
 
 export interface ShiftboardError {
@@ -127,6 +135,7 @@ export interface ShiftboardAccount {
 export interface ShiftboardWorkgroup {
   id: string;
   name: string;
+  code?: string;
   description?: string;
   parent?: string;
   members?: string[];
@@ -394,14 +403,36 @@ export class ShiftboardService {
   // ==========================================================================
 
   /**
-   * List all workgroups
+   * List all workgroups with automatic pagination
+   * Fetches all pages until no more results are available
    */
   async listWorkgroups(): Promise<ShiftboardWorkgroup[]> {
-    const response = await this.call<WorkgroupListResponse>('workgroup.list', {
-      extended: true,
-    });
+    const allWorkgroups: ShiftboardWorkgroup[] = [];
+    let start = 1;
+    const batch = 100; // Fetch 100 per page for efficiency
+    let hasMore = true;
 
-    return response.workgroups || [];
+    while (hasMore) {
+      const response = await this.call<WorkgroupListResponse>('workgroup.list', {
+        extended: true,
+        page: { start, batch },
+      });
+
+      const workgroups = response.workgroups || [];
+      allWorkgroups.push(...workgroups);
+
+      // Check if there are more pages
+      // If page.next exists, there are more results
+      if (response.page?.next) {
+        start = response.page.next.start;
+        logger.debug(`[Shiftboard] Fetched ${allWorkgroups.length} workgroups, fetching more...`);
+      } else {
+        hasMore = false;
+        logger.debug(`[Shiftboard] Fetched all ${allWorkgroups.length} workgroups`);
+      }
+    }
+
+    return allWorkgroups;
   }
 
   /**

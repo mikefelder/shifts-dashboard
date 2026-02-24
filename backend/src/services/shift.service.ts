@@ -102,11 +102,31 @@ export class ShiftService {
    * console.log(`${result.metrics.clocked_in_count} people clocked in`);
    */
   async shiftWhosOn(workgroupId?: string | null, batch: number = 100): Promise<WhosOnResult> {
-    // Apply committee workgroup filter if configured and no explicit filter provided
-    const effectiveWorkgroup = workgroupId || committeeConfig.workgroupId;
+    // Determine workgroup filtering strategy based on parameters and committee config
+    let effectiveWorkgroup: string | undefined;
+    let filterWorkgroupIds: Set<string> | undefined;
+
+    if (workgroupId) {
+      // Frontend specified a workgroup (user selected from dropdown)
+      effectiveWorkgroup = workgroupId;
+    } else if (committeeConfig.filterMode === 'single') {
+      // Single workgroup mode - use configured workgroup
+      effectiveWorkgroup = committeeConfig.workgroupIds[0];
+    } else if (committeeConfig.filterMode === 'ids' || committeeConfig.filterMode === 'codes') {
+      // Multi-workgroup mode - fetch all shifts, filter afterward
+      // We'll need to get workgroup IDs to filter by
+      filterWorkgroupIds = new Set(committeeConfig.workgroupIds);
+    }
+    // Global mode: no filtering, fetch all shifts
+
+    const filterDescription = effectiveWorkgroup
+      ? `workgroup=${effectiveWorkgroup}`
+      : filterWorkgroupIds
+        ? `${committeeConfig.filterMode}=[${committeeConfig.filterMode === 'codes' ? committeeConfig.workgroupCodes : committeeConfig.workgroupIds}]`
+        : 'all';
 
     logger.debug(
-      `[shift.service] Fetching whos-on shifts (workgroup=${effectiveWorkgroup || 'all'}${!committeeConfig.isGlobalMode ? ' [committee filter]' : ''}${isMockEnabled() ? ' [MOCK MODE]' : ''})`
+      `[shift.service] Fetching whos-on shifts (${filterDescription}${isMockEnabled() ? ' [MOCK MODE]' : ''})`
     );
 
     // ========================================================================
@@ -203,13 +223,46 @@ export class ShiftService {
     const fetchDuration = performance.now() - fetchStart;
 
     // Extract data from Shiftboard response
-    const rawShifts = response.shifts || [];
+    let rawShifts = response.shifts || [];
     const accounts = response.referenced_objects?.account || [];
     const workgroups = response.referenced_objects?.workgroup || [];
 
     logger.debug(
       `[shift.service] Received ${rawShifts.length} raw shifts from Shiftboard in ${fetchDuration.toFixed(2)}ms`
     );
+
+    // Apply multi-workgroup filtering if needed
+    if (filterWorkgroupIds) {
+      // For 'ids' mode, workgroupIds contains the IDs directly
+      // For 'codes' mode, we need to resolve codes to IDs from the workgroups response
+      let allowedWorkgroupIds: Set<string>;
+
+      if (committeeConfig.filterMode === 'codes') {
+        // Build a map of code -> ID from the workgroups
+        const codeSet = new Set(committeeConfig.workgroupCodes);
+        allowedWorkgroupIds = new Set(
+          workgroups
+            .filter((wg: { code?: string }) => wg.code && codeSet.has(wg.code))
+            .map((wg: { id: string }) => wg.id)
+        );
+        logger.debug(
+          `[shift.service] Resolved ${committeeConfig.workgroupCodes.length} codes to ${allowedWorkgroupIds.size} workgroup IDs for filtering`
+        );
+      } else {
+        // For 'ids' mode, use the configured IDs directly
+        allowedWorkgroupIds = new Set(committeeConfig.workgroupIds);
+      }
+
+      // Filter shifts to only include those from allowed workgroups
+      const originalCount = rawShifts.length;
+      rawShifts = rawShifts.filter(
+        (shift: { workgroup?: string }) =>
+          shift.workgroup && allowedWorkgroupIds.has(shift.workgroup)
+      );
+      logger.debug(
+        `[shift.service] Filtered shifts: ${originalCount} → ${rawShifts.length} (${committeeConfig.filterMode} mode)`
+      );
+    }
 
     // Apply shift grouping algorithm
     const groupingStart = performance.now();

@@ -57,6 +57,7 @@ interface Account {
 interface Workgroup {
   id: string;
   name: string;
+  code?: string;
   description?: string;
   parent?: string;
   members?: string[];

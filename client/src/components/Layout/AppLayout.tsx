@@ -127,8 +127,8 @@ export default function AppLayout() {
             {committeeConfig.name}
           </Typography>
 
-          {/* Only show workgroup filter in global mode */}
-          {committeeConfig.isGlobalMode && (
+          {/* Show workgroup filter for global mode or multi-workgroup modes */}
+          {committeeConfig.shouldShowWorkgroupFilter && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <WorkgroupFilter
                 selectedWorkgroup={selectedWorkgroup || ''}
