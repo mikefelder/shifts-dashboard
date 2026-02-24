@@ -310,8 +310,40 @@ export class ShiftboardService {
     start?: number;
     batch?: number;
     workgroup?: string;
+    start_date?: string;
+    end_date?: string;
+    [key: string]: unknown; // Allow any additional Shiftboard parameters
   }): Promise<ShiftListResponse> {
     return await this.call<ShiftListResponse>('shift.list', params);
+  }
+
+  /**
+   * Get upcoming shifts within a time window
+   * Uses shift.list with date range to fetch future shifts
+   *
+   * @param startDate - Start date in RFC 3339 format (YYYY-MM-DD)
+   * @param endDate - End date in RFC 3339 format (YYYY-MM-DD)
+   * @param params - Additional parameters (workgroup, batch, etc.)
+   */
+  async getUpcomingShifts(params: {
+    start_date: string;
+    end_date: string;
+    workgroup?: string;
+    batch?: number;
+    [key: string]: unknown;
+  }): Promise<ShiftListResponse> {
+    return await this.call<ShiftListResponse>('shift.list', {
+      timeclock_status: true,
+      extended: true,
+      ...params,
+      select: {
+        start_date: params.start_date,
+        end_date: params.end_date,
+        workgroup: params.workgroup,
+        published: true,
+        covered: true,
+      },
+    });
   }
 
   // ==========================================================================

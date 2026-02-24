@@ -62,6 +62,20 @@ export interface ShiftListResult {
   };
 }
 
+export interface UpcomingShiftsResult {
+  shifts: GroupedShift[];
+  referenced_objects: {
+    account: Account[];
+    workgroup: { id: string; name: string }[];
+  };
+  page: {
+    start: number;
+    batch: number;
+    total: number;
+    next: number | null;
+  };
+}
+
 // ============================================================================
 // Shift Service
 // ============================================================================
@@ -159,8 +173,8 @@ export class ShiftService {
       return {
         shifts: groupedShifts,
         referenced_objects: {
-          accounts: accounts as Account[],
-          workgroups: workgroups || [],
+          account: accounts as Account[],
+          workgroup: workgroups || [],
         },
         metrics,
         page: {
@@ -232,6 +246,101 @@ export class ShiftService {
         batch: response.page?.batch || batch,
         total: response.page?.total || rawShifts.length,
         next: response.page?.next || null,
+      },
+    };
+  }
+
+  /**
+   * Get upcoming shifts within a time window.
+   * Queries future shifts and groups them by attributes.
+   *
+   * @param minutesAhead - How many minutes into the future to look (default: 30)
+   * @param workgroupId - Optional workgroup filter
+   * @param batch - Page size (default: 100)
+   * @returns Grouped upcoming shifts
+   */
+  async getUpcomingShifts(
+    minutesAhead: number = 30,
+    workgroupId?: string | null,
+    batch: number = 100
+  ): Promise<UpcomingShiftsResult> {
+    const effectiveWorkgroup = workgroupId || committeeConfig.workgroupId;
+
+    logger.debug(
+      `[shift.service] Fetching upcoming shifts (${minutesAhead}min window, workgroup=${effectiveWorkgroup || 'all'}${isMockEnabled() ? ' [MOCK MODE]' : ''})`
+    );
+
+    // In mock mode, return empty result for now
+    // Could enhance mock service to generate future shifts if needed
+    if (isMockEnabled()) {
+      logger.info('[shift.service] Mock mode: returning empty upcoming shifts');
+      return {
+        shifts: [],
+        referenced_objects: {
+          account: [],
+          workgroup: [],
+        },
+        page: { start: 0, batch, total: 0, next: null },
+      };
+    }
+
+    // Calculate date range
+    const now = new Date();
+    const futureDate = new Date(now.getTime() + minutesAhead * 60 * 1000);
+
+    const startDate = now.toISOString().split('T')[0]!; // YYYY-MM-DD (always defined)
+    const endDate = futureDate.toISOString().split('T')[0]!; // YYYY-MM-DD (always defined)
+
+    const fetchStart = Date.now();
+
+    // Fetch upcoming shifts from Shiftboard
+    const response = await this.shiftboard.getUpcomingShifts({
+      start_date: startDate,
+      end_date: endDate,
+      workgroup: effectiveWorkgroup || undefined,
+      batch,
+    });
+
+    const fetchDuration = Date.now() - fetchStart;
+    const rawShifts = response.shifts || [];
+
+    logger.debug(
+      `[shift.service] Fetched ${rawShifts.length} upcoming shifts in ${fetchDuration}ms`
+    );
+
+    // Filter shifts that start within the time window
+    const nowTime = now.getTime();
+    const futureTime = futureDate.getTime();
+
+    const filteredShifts = rawShifts.filter((shift: RawShift) => {
+      try {
+        const startTime = new Date(shift.local_start_date).getTime();
+        return startTime >= nowTime && startTime <= futureTime;
+      } catch {
+        return false;
+      }
+    });
+
+    // Group shifts by attributes
+    const groupStart = Date.now();
+    const groupedShifts = groupShiftsByAttributes(filteredShifts);
+    const groupDuration = Date.now() - groupStart;
+
+    logger.info(
+      `[shift.service] Found ${groupedShifts.length} upcoming shifts (grouped from ${filteredShifts.length}, grouping took ${groupDuration}ms)`
+    );
+
+    return {
+      shifts: groupedShifts,
+      referenced_objects: {
+        account: (response.referenced_objects?.account || []) as Account[],
+        workgroup: response.referenced_objects?.workgroup || [],
+      },
+      page: {
+        start: 0,
+        batch,
+        total: groupedShifts.length,
+        next: null,
       },
     };
   }

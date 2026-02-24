@@ -23,7 +23,7 @@ import { getTimingMetadata } from '../utils/timing';
  * @param shiftService - Shift service instance
  * @returns Object with route handler functions
  */
-export function createShiftController(shiftService: ShiftService) {
+export function createShiftController(shiftService: ShiftService): ShiftController {
   return {
     /**
      * GET /api/shifts/whos-on
@@ -71,6 +71,58 @@ export function createShiftController(shiftService: ShiftService) {
         const duration = Date.now() - requestStart;
         logger.info(
           `[shift.controller] Returned ${result.shifts.length} grouped shifts (${result.metrics.original_shift_count} original) in ${duration}ms`
+        );
+      }),
+    ],
+
+    /**
+     * GET /api/shifts/upcoming
+     *
+     * Returns upcoming shifts within a future time window.
+     * Useful for showing preview of next shifts starting soon.
+     *
+     * Query params:
+     * - minutes (optional): Minutes into future to look (default: 30)
+     * - workgroup (optional): Filter by workgroup ID
+     * - batch (optional): Page size (default: 100)
+     *
+     * Response:
+     * - 200: Grouped upcoming shifts
+     * - 400: Invalid parameters
+     * - 500: Shiftboard API error
+     */
+    upcomingShifts: [
+      asyncHandler(async (req: Request, res: Response) => {
+        const requestStart = Date.now();
+
+        const { minutes, workgroup, batch } = req.query;
+        const minutesAhead = minutes ? parseInt(minutes as string, 10) : 30;
+        const batchSize = batch ? parseInt(batch as string, 10) : 100;
+
+        logger.debug(
+          `[shift.controller] GET /api/shifts/upcoming (minutes=${minutesAhead}, workgroup=${workgroup || 'all'}, batch=${batchSize})`
+        );
+
+        // Call service
+        const result = await shiftService.getUpcomingShifts(
+          minutesAhead,
+          workgroup as string | undefined,
+          batchSize
+        );
+
+        // Format response with timing metadata
+        res.status(200).json({
+          result: {
+            shifts: result.shifts,
+            referenced_objects: result.referenced_objects,
+            page: result.page,
+          },
+          timing: getTimingMetadata(requestStart),
+        });
+
+        const duration = Date.now() - requestStart;
+        logger.info(
+          `[shift.controller] Returned ${result.shifts.length} upcoming shifts in ${duration}ms`
         );
       }),
     ],
@@ -137,5 +189,6 @@ export function createShiftController(shiftService: ShiftService) {
  */
 export interface ShiftController {
   whosOn: Array<RequestHandler>; // Array includes middleware + handler
+  upcomingShifts: Array<RequestHandler>;
   listShifts: Array<RequestHandler>;
 }

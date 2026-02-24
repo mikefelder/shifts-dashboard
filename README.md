@@ -16,6 +16,10 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 
 - **Active Shifts Timeline**: Vertical hourly timeline with dynamic time window and overlap handling
 - **Tabular View**: Sortable data table with 8 columns (time, name, location, people, status)
+- **Shift Detail Page**: Dedicated view for individual shifts with two display modes:
+  - **Responsive Mode**: Mobile and desktop-friendly layout
+  - **Large Screen Mode**: Optimized for 50"+ displays in operations rooms
+  - **Upcoming Shift Preview**: Shows next shifts starting within configurable time window
 - **Workgroup Filtering**: Global dropdown selector to filter shifts by workgroup
 - **Committee Configuration**: Optional single-committee mode for white-label deployments
 - **Shift Details Modal**: Comprehensive shift information with assigned people and clock status
@@ -146,6 +150,9 @@ Edit `client/.env`:
 ```env
 VITE_API_BASE_URL=http://localhost:3000/api
 VITE_APP_NAME=Shift Dashboard
+
+# Optional: Upcoming shift preview window in minutes (default: 30)
+VITE_UPCOMING_SHIFT_PREVIEW_MINUTES=30
 
 # Optional: Committee Configuration (for single-committee deployments)
 # VITE_COMMITTEE_NAME=Finance Committee
@@ -374,7 +381,8 @@ shifts-dashboard/
 │   │   │   └── WorkgroupContext.tsx
 │   │   ├── pages/           # Route pages ✅
 │   │   │   ├── Calendar.tsx
-│   │   │   └── Table.tsx
+│   │   │   ├── Table.tsx
+│   │   │   └── ShiftDetail.tsx
 │   │   ├── services/        # API & IndexedDB ✅
 │   │   │   ├── api.service.ts
 │   │   │   └── db.service.ts
@@ -433,6 +441,9 @@ shifts-dashboard/
 - **GET** `/api/shifts/whos-on` - Get active shifts with clock-in status (grouped)
   - Query: `?workgroup={id}` (optional)
   - Response: Grouped shifts with `assignedPeople`, `clockStatuses`, metrics
+- **GET** `/api/shifts/upcoming` - Get upcoming shifts within a future time window
+  - Query: `?minutes={n}&workgroup={id}&batch={size}` (all optional)
+  - Response: Grouped shifts starting within specified time window
 - **GET** `/api/shifts/list` - Get all shifts (raw from Shiftboard)
 
 ### Accounts

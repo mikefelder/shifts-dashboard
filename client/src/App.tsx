@@ -11,6 +11,7 @@ import { WorkgroupProvider } from './contexts/WorkgroupContext';
 import AppLayout from './components/Layout/AppLayout';
 import Calendar from './pages/Calendar';
 import Table from './pages/Table';
+import ShiftDetail from './pages/ShiftDetail';
 import theme from './theme/theme';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
               <Route index element={<Calendar />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="table" element={<Table />} />
+              <Route path="shift/:shiftId" element={<ShiftDetail />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
