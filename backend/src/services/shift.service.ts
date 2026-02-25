@@ -295,10 +295,10 @@ export class ShiftService {
       },
       metrics,
       page: {
-        start: response.page?.start || 0,
-        batch: response.page?.batch || batch,
-        total: response.page?.total || rawShifts.length,
-        next: response.page?.next || null,
+        start: response.page?.this?.start || 0,
+        batch: response.page?.this?.batch || batch,
+        total: rawShifts.length,
+        next: response.page?.next?.start || null,
       },
     };
   }
@@ -317,7 +317,7 @@ export class ShiftService {
     workgroupId?: string | null,
     batch: number = 100
   ): Promise<UpcomingShiftsResult> {
-    const effectiveWorkgroup = workgroupId || committeeConfig.workgroupId;
+    const effectiveWorkgroup = workgroupId || committeeConfig.workgroupIds[0];
 
     logger.debug(
       `[shift.service] Fetching upcoming shifts (${minutesAhead}min window, workgroup=${effectiveWorkgroup || 'all'}${isMockEnabled() ? ' [MOCK MODE]' : ''})`
@@ -418,10 +418,10 @@ export class ShiftService {
     return {
       shifts: (response.shifts || []) as RawShift[],
       page: {
-        start: response.page?.start || 0,
-        batch: response.page?.batch || 100,
-        total: response.page?.total || response.shifts?.length || 0,
-        next: response.page?.next || null,
+        start: response.page?.this?.start || 0,
+        batch: response.page?.this?.batch || 100,
+        total: response.shifts?.length || 0,
+        next: response.page?.next?.start || null,
       },
     };
   }

@@ -111,7 +111,7 @@ const lastNames = [
 ];
 
 export const MOCK_ACCOUNTS: ShiftboardAccount[] = firstNames.map((firstName, idx) => {
-  const lastName = lastNames[idx];
+  const lastName = lastNames[idx % lastNames.length]!; // Use modulo to cycle through last names
   const id = `acc-${String(idx + 1).padStart(3, '0')}`;
   const lastInitial = lastName.charAt(0);
   return {

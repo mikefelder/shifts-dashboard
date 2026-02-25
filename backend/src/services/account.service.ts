@@ -53,7 +53,7 @@ export class AccountService {
    */
   async listAccounts(params?: { workgroup?: string }): Promise<AccountResult> {
     // Apply committee workgroup filter if configured and no explicit filter provided
-    const effectiveWorkgroup = params?.workgroup || committeeConfig.workgroupId;
+    const effectiveWorkgroup = params?.workgroup || committeeConfig.workgroupIds[0];
     const effectiveParams = effectiveWorkgroup ? { workgroup: effectiveWorkgroup } : undefined;
 
     logger.debug(
