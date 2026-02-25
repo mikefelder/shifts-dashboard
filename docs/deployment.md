@@ -1,7 +1,7 @@
 # Deployment Guide: Shift Dashboard
 
 **Version**: 1.0.0  
-**Last Updated**: February 21, 2026  
+**Last Updated**: February 25, 2026  
 **Target Platform**: Azure Container Apps
 
 ---

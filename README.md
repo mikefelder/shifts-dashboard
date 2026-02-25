@@ -161,7 +161,7 @@ VITE_UPCOMING_SHIFT_PREVIEW_MINUTES=30
 
 ### 3.1 Committee Configuration (Optional)
 
-The application supports **committee-specific deployment** for multi-tenant or white-label scenarios. This allows you to lock the dashboard to a specific committee/workgroup and customize the branding.
+The application supports **multi-committee deployment** for multi-tenant or white-label scenarios. This allows you to filter the dashboard to specific committees/workgroups and customize the branding.
 
 #### Configuration Modes
 
@@ -173,10 +173,24 @@ VITE_APP_NAME=Shift Dashboard
 # No committee-specific configuration
 
 # Backend (.env)
-# No COMMITTEE_WORKGROUP set
+# No COMMITTEE_IDS, COMMITTEE_CODES, or COMMITTEE_WORKGROUP set
 ```
 
-**Single Committee Mode**: Locks dashboard to one committee, hides workgroup filter.
+**Multi-Committee Mode (by IDs)**: Filter to specific workgroups by ID.
+
+```env
+# Backend (.env)
+COMMITTEE_IDS=5676546,5676571,198353    # Comma-separated workgroup IDs
+```
+
+**Multi-Committee Mode (by Codes)**: Filter to specific workgroups by code.
+
+```env
+# Backend (.env)
+COMMITTEE_CODES=ITCS,ITC365,ITC         # Comma-separated workgroup codes
+```
+
+**Single Committee Mode (Legacy)**: Locks dashboard to one committee.
 
 ```env
 # Frontend (.env)
@@ -188,29 +202,37 @@ VITE_COMMITTEE_WORKGROUP=finance-committee-id   # Shiftboard workgroup ID
 COMMITTEE_WORKGROUP=finance-committee-id        # Must match frontend
 ```
 
+**Priority Order**: `COMMITTEE_IDS` > `COMMITTEE_CODES` > `COMMITTEE_WORKGROUP`
+
 #### Behavior
 
-| Mode                 | Workgroup Filter    | Data Filtering                 | Use Case                             |
-| -------------------- | ------------------- | ------------------------------ | ------------------------------------ |
-| **Global**           | ✅ Visible dropdown | None (all workgroups)          | Single deployment for all committees |
-| **Single Committee** | ❌ Hidden           | Locked to configured workgroup | One deployment per committee         |
+| Mode                        | Workgroup Filter    | Data Filtering                        | Use Case                             |
+| --------------------------- | ------------------- | ------------------------------------- | ------------------------------------ |
+| **Global**                  | ✅ Visible dropdown | None (all workgroups)                 | Single deployment for all committees |
+| **Multi-Committee (IDs)**   | ✅ Visible dropdown | Filtered to specified workgroup IDs   | Department-specific view             |
+| **Multi-Committee (Codes)** | ✅ Visible dropdown | Filtered to specified workgroup codes | Role-based filtering                 |
+| **Single Committee**        | ❌ Hidden           | Locked to configured workgroup        | One deployment per committee         |
 
 #### Security
 
 - **Frontend**: Committee name displayed in header; workgroup filter auto-selected
-- **Backend**: API calls enforced with `committeeConfig.workgroupId` fallback
+- **Backend**: API calls enforced with `committeeConfig.workgroupIds` fallback (supports single or multiple workgroups)
 - **Data Isolation**: Backend filters all shift, account, and workgroup queries
 
-#### Deployment Example
+#### Deployment Examples
 
 ```bash
-# Deploy multiple instances for different committees
-docker run -e COMMITTEE_WORKGROUP="finance-123" \
-           -e VITE_COMMITTEE_NAME="Finance Committee" \
+# Multi-committee deployment (by IDs)
+docker run -e COMMITTEE_IDS="5676546,5676571,198353" \
            shifts-dashboard
 
-docker run -e COMMITTEE_WORKGROUP="operations-456" \
-           -e VITE_COMMITTEE_NAME="Operations Committee" \
+# Multi-committee deployment (by codes)
+docker run -e COMMITTEE_CODES="ITCS,ITC365,ITC" \
+           shifts-dashboard
+
+# Single committee deployment (legacy)
+docker run -e COMMITTEE_WORKGROUP="finance-123" \
+           -e VITE_COMMITTEE_NAME="Finance Committee" \
            shifts-dashboard
 ```
 
@@ -475,7 +497,7 @@ shifts-dashboard/
 
 ## Development Status
 
-### ✅ Completed (76/80 tasks)
+### ✅ Completed (77/80 tasks)
 
 **Phase 1: Setup** (6/6 tasks) ✓
 
@@ -644,7 +666,7 @@ Push to `main` branch triggers:
 - **[Feature Specification](specs/003-user-stories-implementation/spec.md)**: Complete feature specification
 - **[API Contracts](specs/003-user-stories-implementation/contracts/api-contracts.md)**: Endpoint contracts & schemas
 - **[Implementation Plan](specs/003-user-stories-implementation/plan.md)**: Technical implementation plan
-- **[Tasks Breakdown](specs/003-user-stories-implementation/tasks.md)**: Tasks organized by user story (76/80 complete)
+- **[Tasks Breakdown](specs/003-user-stories-implementation/tasks.md)**: Tasks organized by user story (77/80 complete)
 - **[Data Model](specs/003-user-stories-implementation/data-model.md)**: Data structures & schemas
 
 ## Contributing
