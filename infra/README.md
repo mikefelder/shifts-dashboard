@@ -146,7 +146,7 @@ Main orchestration template that combines all modules:
 
 Azure Container Registry for storing Docker images:
 
-- **SKU**: Basic (cost-effective for all environments)
+- **SKU**: Environment-specific — Basic (dev), Standard (staging/prod)
 - **Admin credentials**: Disabled (managed identity authentication only)
 - **Network**: Public access (configurable parameter)
 - **Security**: Image pull via AcrPull RBAC role
