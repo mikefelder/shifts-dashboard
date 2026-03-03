@@ -26,10 +26,6 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy custom nginx configuration for SPA routing
 COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy entrypoint script for runtime configuration
-COPY client/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Fix permissions for nginx user (already exists in base image)
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/cache/nginx && \
@@ -44,5 +40,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
-# Use entrypoint script to generate runtime config
-ENTRYPOINT ["/entrypoint.sh"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

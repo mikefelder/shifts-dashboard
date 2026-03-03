@@ -6,7 +6,6 @@
 
 import { Router } from 'express';
 import type { AccountController } from '../controllers/account.controller';
-import logger from '../config/logger';
 
 // ============================================================================
 // Route Factory
@@ -46,7 +45,7 @@ export function createAccountRoutes(accountController: AccountController): Route
   // Returns a single account by ID (must come last to avoid swallowing /list, /self)
   router.get('/:accountId', ...accountController.byId);
 
-  logger.debug(
+  console.log(
     '[account.routes] Registered routes: /list, /self, /workgroup/:workgroupId, /:accountId'
   );
 

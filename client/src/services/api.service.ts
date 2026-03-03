@@ -31,14 +31,12 @@ import {
 } from './db.service';
 import type { Account, Workgroup } from './db.service';
 import type { GroupedShift } from '../types/shift.types';
-import logger from '../utils/logger';
-import { getApiBaseUrl } from '../config/runtime';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const API_TIMEOUT = 60000; // 60 seconds
 
 // ============================================================================
@@ -57,11 +55,11 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor for logging
 apiClient.interceptors.request.use(
   (config) => {
-    logger.debug(`[API] → ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(`[API] → ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    logger.error('[API] Request error:', error);
+    console.error('[API] Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -69,16 +67,16 @@ apiClient.interceptors.request.use(
 // Response interceptor for logging
 apiClient.interceptors.response.use(
   (response) => {
-    logger.debug(`[API] ✓ ${response.status} ${response.config.url}`);
+    console.log(`[API] ✓ ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
     if (error.response) {
-      logger.error(`[API] ✗ ${error.response.status} ${error.config?.url}`, error.response.data);
+      console.error(`[API] ✗ ${error.response.status} ${error.config?.url}`, error.response.data);
     } else if (error.request) {
-      logger.error('[API] ✗ No response received:', error.message);
+      console.error('[API] ✗ No response received:', error.message);
     } else {
-      logger.error('[API] ✗ Request error:', error.message);
+      console.error('[API] ✗ Request error:', error.message);
     }
     return Promise.reject(error);
   }
@@ -229,7 +227,7 @@ export async function getShifts(options?: {
 
       const lastSync = await getLastSync();
 
-      logger.info(`[API] Fetched ${shifts.length} shifts from API (fresh data)`);
+      console.log(`[API] Fetched ${shifts.length} shifts from API (fresh data)`);
 
       return {
         data: shifts,
@@ -237,7 +235,7 @@ export async function getShifts(options?: {
         lastSync,
       };
     } catch (error) {
-      logger.warn('[API] Fetch failed, falling back to cache:', getErrorMessage(error));
+      console.warn('[API] Fetch failed, falling back to cache:', getErrorMessage(error));
 
       // Only fall back to cache on network errors
       if (isNetworkError(error)) {
@@ -262,7 +260,7 @@ async function getShiftsFromCache(
   const shifts = await getShiftsByWorkgroup(workgroupId);
   const lastSync = await getLastSync();
 
-  logger.info(`[API] Loaded ${shifts.length} shifts from cache (stale data)`);
+  console.log(`[API] Loaded ${shifts.length} shifts from cache (stale data)`);
 
   return {
     data: shifts as GroupedShift[],
@@ -296,7 +294,7 @@ export async function getAccounts(
 
       const lastSync = await getLastSync();
 
-      logger.info(`[API] Fetched ${accounts.length} accounts from API`);
+      console.log(`[API] Fetched ${accounts.length} accounts from API`);
 
       return {
         data: accounts,
@@ -304,7 +302,7 @@ export async function getAccounts(
         lastSync,
       };
     } catch (error) {
-      logger.warn('[API] Accounts fetch failed, falling back to cache:', getErrorMessage(error));
+      console.warn('[API] Accounts fetch failed, falling back to cache:', getErrorMessage(error));
 
       if (isNetworkError(error)) {
         return await getAccountsFromCache();
@@ -324,7 +322,7 @@ async function getAccountsFromCache(): Promise<DataWithFreshness<Account[]>> {
   const accounts = await getAllAccounts();
   const lastSync = await getLastSync();
 
-  logger.info(`[API] Loaded ${accounts.length} accounts from cache`);
+  console.log(`[API] Loaded ${accounts.length} accounts from cache`);
 
   return {
     data: accounts,
@@ -371,7 +369,7 @@ export async function getWorkgroups(
 
       const lastSync = await getLastSync();
 
-      logger.info(`[API] Fetched ${workgroups.length} workgroups from API`);
+      console.log(`[API] Fetched ${workgroups.length} workgroups from API`);
 
       return {
         data: workgroups,
@@ -379,7 +377,7 @@ export async function getWorkgroups(
         lastSync,
       };
     } catch (error) {
-      logger.warn('[API] Workgroups fetch failed, falling back to cache:', getErrorMessage(error));
+      console.warn('[API] Workgroups fetch failed, falling back to cache:', getErrorMessage(error));
 
       if (isNetworkError(error)) {
         return await getWorkgroupsFromCache();
@@ -399,7 +397,7 @@ async function getWorkgroupsFromCache(): Promise<DataWithFreshness<Workgroup[]>>
   const workgroups = await getAllWorkgroups();
   const lastSync = await getLastSync();
 
-  logger.info(`[API] Loaded ${workgroups.length} workgroups from cache`);
+  console.log(`[API] Loaded ${workgroups.length} workgroups from cache`);
 
   return {
     data: workgroups,

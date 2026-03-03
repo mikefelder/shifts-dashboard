@@ -8,7 +8,48 @@
 import { createAccountController } from '../account.controller';
 import type { AccountResult, SingleAccountResult } from '../../services/account.service';
 import type { ShiftboardAccount } from '../../services/shiftboard.service';
-import { makeReq, makeRes, runLastHandler } from './test-helpers';
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function makeReq(
+  overrides: Partial<{
+    params: Record<string, string>;
+    query: Record<string, string>;
+    body: unknown;
+  }> = {}
+) {
+  return {
+    params: {},
+    query: {},
+    body: {},
+    headers: {},
+    ...overrides,
+  } as Partial<import('express').Request> as import('express').Request;
+}
+
+function makeRes() {
+  const res = {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+  };
+  return res as unknown as import('express').Response;
+}
+
+/**
+ * Run the LAST handler in the array (the asyncHandler-wrapped business logic).
+ * Middleware validators are the earlier entries.
+ */
+function runLastHandler(
+  handlers: Array<any>,
+  req: import('express').Request,
+  res: import('express').Response,
+  next = jest.fn()
+) {
+  const handler = handlers.at(-1)!;
+  handler(req, res, next);
+}
 
 // ============================================================================
 // Fixtures

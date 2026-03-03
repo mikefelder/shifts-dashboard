@@ -2,10 +2,7 @@ name: Infrastructure Deployment
 
 on:
   push:
-    branches:
-      - main
-      - develop
-      - 'releases/**'
+    branches: [main]
     paths:
       - 'infra/**'
       - '.github/workflows/infrastructure.yml'
@@ -59,22 +56,10 @@ jobs:
 
       - name: What-If Deployment
         run: |
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
-          PARAM_FILE="infra/params/${ENV}.parameters.json"
-
-          if [ -f "$PARAM_FILE" ]; then
-            echo "Using parameter file: $PARAM_FILE"
-            az deployment group what-if \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE"
-          else
-            echo "Parameter file not found, using inline parameters"
-            az deployment group what-if \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --template-file infra/main.bicep \
-              --parameters environment="$ENV"
-          fi
+          az deployment group what-if \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --template-file infra/main.bicep \
+            --parameters environment=${{ github.event.inputs.environment || 'dev' }}
 
   deploy:
     name: Deploy Infrastructure
@@ -100,46 +85,23 @@ jobs:
         run: |
           echo "Deploying infrastructure..."
 
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
-          PARAM_FILE="infra/params/${ENV}.parameters.json"
-
-          # Use parameter file if it exists, otherwise use inline parameters
-          if [ -f "$PARAM_FILE" ]; then
-            echo "Using parameter file: $PARAM_FILE"
-            output=$(az deployment group create \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE" \
-              --query 'properties.outputs' \
-              --output json)
-          else
-            echo "Parameter file not found, using inline parameters"
-            output=$(az deployment group create \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --template-file infra/main.bicep \
-              --parameters environment="$ENV" \
-              --query 'properties.outputs' \
-              --output json)
-          fi
+          output=$(az deployment group create \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --template-file infra/main.bicep \
+            --parameters environment=${{ github.event.inputs.environment || 'dev' }} \
+            --query 'properties.outputs' \
+            --output json)
 
           echo "Deployment output: $output"
 
-          # Extract outputs with error handling
-          registryName=$(echo $output | jq -r '.containerRegistryName.value // "N/A"')
-          registryLoginServer=$(echo $output | jq -r '.containerRegistryLoginServer.value // "N/A"')
-          backendUrl=$(echo $output | jq -r '.backendUrl.value // "N/A"')
-          frontendUrl=$(echo $output | jq -r '.frontendUrl.value // "N/A"')
-          keyVaultName=$(echo $output | jq -r '.keyVaultName.value // "N/A"')
-          backendAppName=$(echo $output | jq -r '.backendAppName.value // "N/A"')
-          frontendAppName=$(echo $output | jq -r '.frontendAppName.value // "N/A"')
-          backendPrincipalId=$(echo $output | jq -r '.backendPrincipalId.value // "N/A"')
-
-          # Validate outputs
-          if [ "$registryLoginServer" = "N/A" ] || [ "$backendUrl" = "N/A" ]; then
-            echo "ERROR: Failed to extract deployment outputs"
-            echo "Output: $output"
-            exit 1
-          fi
+          # Extract outputs
+          registryName=$(echo $output | jq -r '.containerRegistryName.value')
+          registryLoginServer=$(echo $output | jq -r '.containerRegistryLoginServer.value')
+          backendUrl=$(echo $output | jq -r '.backendUrl.value')
+          frontendUrl=$(echo $output | jq -r '.frontendUrl.value')
+          keyVaultName=$(echo $output | jq -r '.keyVaultName.value')
+          backendAppName=$(echo $output | jq -r '.backendAppName.value')
+          frontendAppName=$(echo $output | jq -r '.frontendAppName.value')
 
           echo "registryName=$registryName" >> $GITHUB_OUTPUT
           echo "registryLoginServer=$registryLoginServer" >> $GITHUB_OUTPUT
@@ -148,7 +110,6 @@ jobs:
           echo "keyVaultName=$keyVaultName" >> $GITHUB_OUTPUT
           echo "backendAppName=$backendAppName" >> $GITHUB_OUTPUT
           echo "frontendAppName=$frontendAppName" >> $GITHUB_OUTPUT
-          echo "backendPrincipalId=$backendPrincipalId" >> $GITHUB_OUTPUT
 
           echo "Infrastructure deployment complete"
           echo ""

@@ -150,30 +150,12 @@ export default function ActiveShiftsView({
                 <Card
                   elevation={2}
                   onClick={onShiftClick ? () => onShiftClick(shift) : undefined}
-                  tabIndex={onShiftClick ? 0 : undefined}
-                  role={onShiftClick ? 'button' : undefined}
-                  aria-label={onShiftClick ? `View details for ${shift.name}` : undefined}
-                  onKeyDown={
-                    onShiftClick
-                      ? (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onShiftClick(shift);
-                          }
-                        }
-                      : undefined
-                  }
                   sx={{
                     transition: 'all 0.3s ease',
                     cursor: onShiftClick ? 'pointer' : 'default',
                     '&:hover': {
                       elevation: 4,
                       transform: onShiftClick ? 'translateY(-2px)' : 'none',
-                    },
-                    '&:focus': {
-                      outline: '2px solid',
-                      outlineColor: 'primary.main',
-                      outlineOffset: '2px',
                     },
                   }}
                 >
@@ -219,7 +201,6 @@ export default function ActiveShiftsView({
                           color={shift.clockStatuses[idx] ? 'success' : 'error'}
                           variant="outlined"
                           icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
-                          aria-label={`${name} – ${shift.clockStatuses[idx] ? 'clocked in' : 'not clocked in'}`}
                         />
                       ))}
                     </Box>

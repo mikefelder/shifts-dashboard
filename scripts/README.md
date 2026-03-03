@@ -26,53 +26,32 @@ Deploys or updates Azure infrastructure using Bicep templates.
 **Usage:**
 
 ```bash
-./scripts/deploy-infrastructure.sh [environment] [options]
+./scripts/deploy-infrastructure.sh [environment]
 ```
-
-**Arguments:**
-
-- `[environment]`: Environment name - dev, staging, or prod (default: dev)
-
-**Options:**
-
-- `--yes` or `-y`: Auto-approve deployment without confirmation (non-interactive mode for CI/CD)
-- `--skip-preview`: Skip the what-if analysis to speed up deployment (use with caution)
-- `--parameters <file>`: Use custom parameter file (default: infra/params/{env}.parameters.json)
 
 **Examples:**
 
 ```bash
-# Deploy to dev environment (default) with confirmation
+# Deploy to dev environment (default)
 ./scripts/deploy-infrastructure.sh dev
 
-# Deploy to staging with prompt
+# Deploy to staging
 ./scripts/deploy-infrastructure.sh staging
 
-# Deploy to production with auto-approval (CI/CD pipeline)
-./scripts/deploy-infrastructure.sh prod --yes
-
-# Fast deployment to dev (skip what-if preview)
-./scripts/deploy-infrastructure.sh dev --skip-preview
-
-# Deploy with custom parameters
-./scripts/deploy-infrastructure.sh staging --parameters custom.parameters.json
-
-# Combine options for CI/CD
-./scripts/deploy-infrastructure.sh prod --yes --skip-preview
+# Deploy to production
+./scripts/deploy-infrastructure.sh prod
 ```
 
 **What it does:**
 
 1. Validates Azure CLI installation and authentication
-2. Validates jq (JSON processor) installation
-3. Creates resource group if needed
-4. Validates Bicep templates syntax
-5. Shows preview of changes (what-if) unless --skip-preview is used
-6. Prompts for confirmation unless --yes is used
-7. Deploys infrastructure with environment-specific parameters
-8. Validates deployment outputs
-9. Displays deployment results (registry, URLs, Key Vault name)
-10. Saves outputs to `.env.infrastructure` (gitignored)
+2. Creates resource group if needed
+3. Validates Bicep templates
+4. Shows preview of changes (what-if)
+5. Prompts for confirmation
+6. Deploys infrastructure
+7. Outputs deployment results (registry, URLs)
+8. Saves outputs to `.env.infrastructure`
 
 ### `destroy-infrastructure.sh`
 
@@ -105,62 +84,39 @@ The scripts deploy the following Azure resources:
 
 ### Container Registry
 
-- **SKU**: Basic (cost-effective for all environments)
+- **SKU**: Basic (suitable for development)
 - **Purpose**: Store Docker images for backend and frontend
-- **Authentication**: Managed identity (admin credentials disabled)
-- **Security**: AcrPull RBAC role for container apps
+- **Admin enabled**: Yes (for simplified deployment)
 
 ### Log Analytics Workspace
 
-- **Retention**: Environment-specific (30/60/90 days for dev/staging/prod)
+- **Retention**: 30 days
 - **Purpose**: Centralized logging for Container Apps
-- **Pricing Tier**: PerGB2018
 
 ### Container Apps Environment
 
-- **Zone redundancy**: Environment-specific (prod enabled)
+- **Zone redundancy**: None (dev environment)
 - **Logs**: Integrated with Log Analytics
-- **Apps**: Backend (Node.js) and Frontend (Nginx/React)
-
-### Key Vault
-
-- **Access Model**: RBAC-based (no access policies)
-- **Secrets**: Shiftboard API credentials
-- **Backend Access**: Key Vault Secrets User role via managed identity
-- **Soft Delete**: 90-day retention
-
-### Application Insights
-
-- **Retention**: Environment-specific (30/60/90 days)
-- **Purpose**: Application performance monitoring and telemetry
-- **Integration**: Connected to Log Analytics Workspace
 
 ### Container Apps (2)
 
 - **Backend**: Node.js API (port 3000)
-  - System-assigned managed identity
-  - Health probes (liveness, readiness, startup)
-  - Autoscaling: HTTP (10 concurrent), CPU (70%), Memory (80%)
-  - Environment-specific: 0.25-1.0 CPU, 0.5-2Gi memory, 0-10 replicas
-  - RBAC: Key Vault Secrets User, AcrPull
+  - CPU: 0.5 cores
+  - Memory: 1Gi
+  - Scale: 0-3 replicas (scale-to-zero enabled)
 - **Frontend**: Nginx-served React app (port 80)
-  - System-assigned managed identity
-  - Health probes (liveness, readiness, startup)
-  - Autoscaling: HTTP (10 concurrent), CPU (70%), Memory (80%)
-  - Environment-specific: 0.25-0.5 CPU, 0.5-1Gi memory, 0-5 replicas
-  - RBAC: AcrPull
-  - Runtime configuration: Backend URL injected at container start
+  - CPU: 0.25 cores
+  - Memory: 0.5Gi
+  - Scale: 0-3 replicas (scale-to-zero enabled)
 
 ## Cost Optimization
 
-**Scale-to-Zero**: Dev environment apps scale down to 0 replicas when not in use, minimizing costs during inactive periods. Staging and production maintain minimum replicas for availability.
+**Scale-to-Zero**: Both apps scale down to 0 replicas when not in use, minimizing costs during inactive periods.
 
 **Estimated Costs**:
 
-- **Development**: ~$34-39/month (with scale-to-zero)
-- **Staging**: ~$61-71/month (minimal replicas)
-- **Production (active)**: ~$109-149/month (high availability, zone redundancy)
-- **Production (off-season)**: ~$31/month (scale-to-zero)
+- Active usage (24/7): ~$156/year
+- With scale-to-zero during off-season: ~$48/year
 
 ## Workflow Integration
 

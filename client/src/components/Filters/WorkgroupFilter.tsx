@@ -24,7 +24,6 @@ export const WorkgroupFilter = ({
     <FormControl
       variant="outlined"
       size="small"
-      aria-label="Filter shifts by workgroup"
       sx={{
         minWidth: 200,
         '& .MuiInputLabel-root': {
@@ -69,10 +68,6 @@ export const WorkgroupFilter = ({
         label="Workgroup"
         displayEmpty
         defaultValue=""
-        inputProps={{
-          'aria-label': 'Select workgroup filter',
-          'aria-describedby': 'workgroup-filter-description',
-        }}
         renderValue={(value) => {
           if (!value) return '';
           const selected = allWorkgroups.find((wg) => wg.id === value);

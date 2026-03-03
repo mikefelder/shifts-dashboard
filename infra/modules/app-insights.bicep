@@ -7,21 +7,14 @@ param appInsightsName string
 @description('Log Analytics Workspace ID')
 param logAnalyticsId string
 
-@description('Retention in days')
-param retentionInDays int = 30
-
-@description('Resource tags')
-param tags object = {}
-
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
   location: location
-  tags: tags
   kind: 'web'
   properties: {
     Application_Type: 'web'
     WorkspaceResourceId: logAnalyticsId
-    RetentionInDays: retentionInDays
+    RetentionInDays: 30
     IngestionMode: 'LogAnalytics'
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'

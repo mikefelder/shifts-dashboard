@@ -6,7 +6,6 @@
 
 import { Router } from 'express';
 import type { RoleController } from '../controllers/role.controller';
-import logger from '../config/logger';
 
 // ============================================================================
 // Route Factory
@@ -33,7 +32,7 @@ export function createRoleRoutes(roleController: RoleController): Router {
   // Returns a single role by ID
   router.get('/:roleId', ...roleController.getRole);
 
-  logger.debug('[role.routes] Registered routes: /list, /:roleId');
+  console.log('[role.routes] Registered routes: /list, /:roleId');
 
   return router;
 }

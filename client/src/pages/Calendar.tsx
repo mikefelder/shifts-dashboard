@@ -14,7 +14,6 @@ import PersonDetailModal from '../components/Calendar/PersonDetailModal';
 import { getShifts } from '../services/api.service';
 import type { GroupedShift } from '../types/shift.types';
 import { useWorkgroup } from '../contexts/WorkgroupContext';
-import logger from '../utils/logger';
 
 interface RefreshContext {
   refreshTimestamp: number;
@@ -69,7 +68,7 @@ export default function Calendar() {
         setLoading(true);
         setError(null);
 
-        logger.debug('[Calendar] Fetching shifts...', {
+        console.log('[Calendar] Fetching shifts...', {
           workgroup: selectedWorkgroup || 'all',
           forceSync: true,
         });
@@ -86,7 +85,7 @@ export default function Calendar() {
         setLastFetched(new Date());
         setLoading(false);
 
-        logger.info('[Calendar] Loaded shifts:', {
+        console.log('[Calendar] Loaded shifts:', {
           count: result.data.length,
           fresh: result.isFreshData,
           lastSync: result.lastSync,
@@ -94,7 +93,7 @@ export default function Calendar() {
       } catch (err) {
         if (!mounted) return;
 
-        logger.error('[Calendar] Failed to load shifts:', err);
+        console.error('[Calendar] Failed to load shifts:', err);
         setError(err instanceof Error ? err.message : 'Failed to load shifts');
         setLoading(false);
       }

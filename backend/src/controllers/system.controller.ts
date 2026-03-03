@@ -7,7 +7,6 @@
 
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/error.middleware';
-import { getTimingMetadata } from '../utils/timing';
 
 // ============================================================================
 // Types
@@ -48,9 +47,15 @@ export function createSystemController(): SystemController {
         environment: process.env.NODE_ENV || 'development',
       };
 
+      const requestEnd = Date.now();
+
       res.status(200).json({
         result: healthData,
-        timing: getTimingMetadata(requestStart),
+        timing: {
+          start: new Date(requestStart).toISOString(),
+          end: new Date(requestEnd).toISOString(),
+          duration_ms: requestEnd - requestStart,
+        },
       });
     }),
 
@@ -71,11 +76,17 @@ export function createSystemController(): SystemController {
 
       const { message = 'ping' } = req.body as { message?: string };
 
+      const requestEnd = Date.now();
+
       res.status(200).json({
         result: {
           echo: String(message),
         },
-        timing: getTimingMetadata(requestStart),
+        timing: {
+          start: new Date(requestStart).toISOString(),
+          end: new Date(requestEnd).toISOString(),
+          duration_ms: requestEnd - requestStart,
+        },
       });
     }),
   };

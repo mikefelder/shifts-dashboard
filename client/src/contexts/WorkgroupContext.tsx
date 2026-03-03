@@ -15,7 +15,6 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { getAllWorkgroups } from '../services/db.service';
 import type { Workgroup } from '../services/db.service';
-import logger from '../utils/logger';
 
 // ============================================================================
 // Context Types
@@ -61,9 +60,9 @@ export function WorkgroupProvider({ children }: WorkgroupProviderProps) {
         );
 
         setWorkgroups(sorted);
-        logger.info(`[WorkgroupContext] Loaded ${sorted.length} workgroups from cache`);
+        console.log(`[WorkgroupContext] Loaded ${sorted.length} workgroups from cache`);
       } catch (error) {
-        logger.error('[WorkgroupContext] Failed to load cached workgroups:', error);
+        console.error('[WorkgroupContext] Failed to load cached workgroups:', error);
         setWorkgroups([]);
       } finally {
         setIsLoading(false);

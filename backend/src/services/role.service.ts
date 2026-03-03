@@ -6,7 +6,6 @@
  */
 
 import { ShiftboardService, ShiftboardRole } from './shiftboard.service';
-import logger from '../config/logger';
 
 // ============================================================================
 // Types
@@ -43,7 +42,7 @@ export class RoleService {
    * console.log(`Role: ${result.role.name}`);
    */
   async getRole(roleId: string): Promise<RoleResult> {
-    logger.debug(`[role.service] Fetching role ${roleId}`);
+    console.log(`[role.service] Fetching role ${roleId}`);
 
     if (!roleId || roleId.trim() === '') {
       throw new Error('roleId is required');
@@ -51,7 +50,7 @@ export class RoleService {
 
     const role = await this.shiftboard.getRole(roleId);
 
-    logger.debug(`[role.service] Returning role: ${role.name || role.id}`);
+    console.log(`[role.service] Returning role: ${role.name || role.id}`);
 
     return {
       role,
@@ -68,14 +67,14 @@ export class RoleService {
    * console.log(`${result.total} roles available`);
    */
   async listRoles(): Promise<RolesListResult> {
-    logger.debug('[role.service] Fetching role list');
+    console.log('[role.service] Fetching role list');
 
     const roles = await this.shiftboard.listRoles();
 
     // Sort alphabetically by name for consistent UI display
     const sorted = [...roles].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    logger.debug(`[role.service] Returning ${sorted.length} roles`);
+    console.log(`[role.service] Returning ${sorted.length} roles`);
 
     return {
       roles: sorted,

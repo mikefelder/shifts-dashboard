@@ -55,7 +55,7 @@ description: 'Task list for Shift Dashboard Rebuild'
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [x] T007 [P] Implement Shiftboard HMAC SHA-1 authentication utility in backend/src/utils/shiftboard-auth.ts
-- [x] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts (⚠️ Removed in T077 - never used)
+- [x] T008 [P] Implement pagination utility (multi-page fetching, 100-page limit) in backend/src/utils/pagination.ts
 - [x] T009 Implement Shiftboard service client (generic RPC, auth, pagination, errors) in backend/src/services/shiftboard.service.ts
 - [x] T010 [P] Setup error middleware (convert to {error:string} format) in backend/src/middleware/error.middleware.ts
 - [x] T011 [P] Setup validation middleware (Zod schemas) in backend/src/middleware/validation.middleware.ts
@@ -224,44 +224,10 @@ description: 'Task list for Shift Dashboard Rebuild'
 - [x] T074 [P] Create deployment scripts (deploy.sh, destroy.sh, validate.sh) in infra/scripts/
 - [x] T075 [P] Add Bicep parameter files (dev.json, staging.json, prod.json) in infra/params/
 - [x] T076 [P] Document deployment process and seasonal operations in docs/deployment.md
-- [x] T077 Code cleanup and refactoring across all modules
-  - Created `backend/src/utils/timing.ts` - Timing metadata utilities (getTimingMetadata, getRequestDuration)
-  - Created `backend/src/controllers/__tests__/test-helpers.ts` - Shared test utilities (makeReq, makeRes, runHandler, runLastHandler)
-  - Updated 6 controllers to use timing utility (account, shift, workgroup, role, calendar, system) - eliminated 250+ lines of duplicate code
-  - Updated 3 test files to use shared test helpers - removed 75+ lines of duplicate test setup
-  - Removed `backend/src/utils/pagination.ts` (188 lines) - never integrated into shiftboard.service.ts, zero imports
-  - Verified all tests pass (179/179), linting clean
-- [x] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
-  - Replaced O(n) Array.includes() with O(1) Set.has() for duplicate detection
-  - Added groupMemberSets Map to track Set objects for each shift group
-  - Performance verified: 1000 shifts grouped in 0.64ms (78x faster than 50ms target)
-  - All 38 tests pass
-- [x] T079 Security hardening (rate limiting, input sanitization, CSP headers)
-  - Installed express-rate-limit package
-  - Created backend/src/middleware/rate-limit.middleware.ts with 3 rate limiters:
-    - apiLimiter: 100 req/15min for general API
-    - authLimiter: 5 req/15min for auth endpoints
-    - dataLimiter: 200 req/15min for data fetching
-  - Created backend/src/middleware/sanitize.middleware.ts for XSS protection
-  - Enhanced CSP headers in index.ts (stricter directives, frame protection)
-  - Integrated rate limiting and sanitization into main app
-  - All 124 tests pass, code compiles clean
-- [x] T080 Accessibility audit (ARIA labels, keyboard navigation, screen reader support)
-  - Added ARIA labels and roles to all dialogs (ShiftDetailModal, PersonDetailModal)
-  - Enhanced TabularShiftView with:
-    - Table caption for screen readers
-    - ARIA labels on all sort controls with current direction
-    - ARIA labels on action buttons
-  - Enhanced ActiveShiftsView with:
-    - Keyboard navigation support (Tab, Enter, Space) for shift cards
-    - Focus visible outline styles
-    - ARIA labels on clickable elements
-  - Enhanced Sidebar with:
-    - ARIA labels on navigation buttons
-    - aria-current for active page
-    - ARIA labels on refresh controls with live region for status
-  - All interactive elements now keyboard accessible
-  - Client linting passes
+- [ ] T077 Code cleanup and refactoring across all modules
+- [ ] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
+- [ ] T079 Security hardening (rate limiting, input sanitization, CSP headers)
+- [ ] T080 Accessibility audit (ARIA labels, keyboard navigation, screen reader support)
 
 ---
 
