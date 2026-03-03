@@ -31,6 +31,7 @@ var environmentConfig = {
     frontendMaxReplicas: 2
     zoneRedundant: false
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: false
   }
   staging: {
     logRetentionDays: 60
@@ -44,6 +45,7 @@ var environmentConfig = {
     frontendMaxReplicas: 5
     zoneRedundant: false
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: false
   }
   prod: {
     logRetentionDays: 90
@@ -57,6 +59,7 @@ var environmentConfig = {
     frontendMaxReplicas: 10
     zoneRedundant: true
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: true
   }
 }
 
@@ -121,6 +124,7 @@ module keyVault './modules/key-vault.bicep' = {
     keyVaultName: keyVaultName
     enableRbacAuthorization: true
     networkDefaultAction: config.networkDefaultAction
+    enablePurgeProtection: config.enablePurgeProtection
     tags: commonTags
   }
 }
