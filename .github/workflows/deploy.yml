@@ -24,7 +24,7 @@ on:
         type: choice
         options:
           - dev
-          - staging
+          - uat
           - prod
       committeeCodes:
         description: 'Committee codes included in resource names (e.g. "ITC", "ITC,FINANCE"). Must match the codes used during infrastructure deployment.'
@@ -53,7 +53,7 @@ env:
   DEPLOY_ENVIRONMENT: >
     ${{ github.event.inputs.environment
       || (github.event.workflow_run.head_branch == 'main' && 'dev')
-      || (github.event.workflow_run.head_branch == 'staging' && 'staging')
+      || (github.event.workflow_run.head_branch == 'uat' && 'uat')
       || (github.event.workflow_run.head_branch == 'prod' && 'prod')
       || 'dev' }}
 

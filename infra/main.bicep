@@ -3,8 +3,8 @@ targetScope = 'resourceGroup'
 @description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Environment name (dev, staging, prod)')
-@allowed(['dev', 'staging', 'prod'])
+@description('Environment name (dev, uat, prod)')
+@allowed(['dev', 'uat', 'prod'])
 param environment string = 'dev'
 
 @description('Application name')
@@ -36,7 +36,7 @@ var environmentConfig = {
     networkDefaultAction: 'Allow'
     enablePurgeProtection: false
   }
-  staging: {
+  uat: {
     logRetentionDays: 60
     backendCpu: '0.5'
     backendMemory: '1Gi'
@@ -89,7 +89,7 @@ var registryName = take(replace('${appName}-${nameInfix}-${uniqueSuffix}', '-', 
 
 // Key Vault: 3-24 chars max, globally unique
 // Format: sd-{env}-[{first-code}-]kv-{suffix}
-// e.g. sd-dev-kv-qu7yv (16) | sd-dev-itc-kv-qu7yv (20) | sd-staging-itc-kv-qu7yv (23)
+// e.g. sd-dev-kv-qu7yv (16) | sd-dev-itc-kv-qu7yv (20) | sd-uat-itc-kv-qu7yv (22)
 var kvEnvSegment = take(environment, 7)
 var kvCodeSegment = empty(firstCode) ? '' : '-${take(firstCode, 3)}'
 var keyVaultName = 'sd-${kvEnvSegment}${kvCodeSegment}-kv-${take(uniqueSuffix, 5)}'

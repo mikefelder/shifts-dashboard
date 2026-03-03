@@ -18,7 +18,7 @@ on:
         type: choice
         options:
           - dev
-          - staging
+          - uat
           - prod
       committeeCodes:
         description: 'Comma-separated committee codes to scope this deployment (e.g. "ITC", "ITC,FINANCE"). Pass "ALL" or leave blank to disable filtering.'
@@ -36,13 +36,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Azure CLI
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Validate Bicep
         run: |
