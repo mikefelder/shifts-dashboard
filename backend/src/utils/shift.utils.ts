@@ -112,6 +112,8 @@ export function groupShiftsByAttributes(
 
   // Group shifts by composite key
   const shiftGroups = new Map<string, GroupedShift>();
+  // Track assigned people per group for O(1) duplicate detection
+  const groupMemberSets = new Map<string, Set<string>>();
 
   for (const shift of shifts) {
     // Validate required fields
@@ -137,6 +139,11 @@ export function groupShiftsByAttributes(
     if (!shiftGroups.has(shiftKey)) {
       // First shift with this key - create new group
       const resolvedName = resolveName(coveringMember, accountMap);
+      const memberSet = new Set<string>();
+
+      if (coveringMember) {
+        memberSet.add(coveringMember);
+      }
 
       shiftGroups.set(shiftKey, {
         ...shift,
@@ -144,14 +151,17 @@ export function groupShiftsByAttributes(
         assignedPersonNames: coveringMember ? [resolvedName] : [],
         clockStatuses: coveringMember ? [clockedIn] : [],
       });
+      groupMemberSets.set(shiftKey, memberSet);
     } else {
       // Shift with this key already exists - add person to group
       const group = shiftGroups.get(shiftKey)!;
+      const memberSet = groupMemberSets.get(shiftKey)!;
 
-      // Prevent duplicate member IDs in same group
-      if (coveringMember && !group.assignedPeople.includes(coveringMember)) {
+      // Prevent duplicate member IDs in same group (O(1) Set lookup)
+      if (coveringMember && !memberSet.has(coveringMember)) {
         const resolvedName = resolveName(coveringMember, accountMap);
 
+        memberSet.add(coveringMember);
         group.assignedPeople.push(coveringMember);
         group.assignedPersonNames.push(resolvedName);
         group.clockStatuses.push(clockedIn);

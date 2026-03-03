@@ -53,18 +53,10 @@ function getConfig(): ShiftboardConfig {
 // ============================================================================
 
 export interface ShiftboardPage {
-  this: {
-    start: number;
-    batch: number;
-  };
-  next?: {
-    start: number;
-    batch: number;
-  };
-  prev?: {
-    start: number;
-    batch: number;
-  };
+  start: number;
+  batch: number;
+  total: number;
+  next: number | null;
 }
 
 export interface ShiftboardError {
@@ -135,7 +127,6 @@ export interface ShiftboardAccount {
 export interface ShiftboardWorkgroup {
   id: string;
   name: string;
-  code?: string;
   description?: string;
   parent?: string;
   members?: string[];
@@ -319,40 +310,8 @@ export class ShiftboardService {
     start?: number;
     batch?: number;
     workgroup?: string;
-    start_date?: string;
-    end_date?: string;
-    [key: string]: unknown; // Allow any additional Shiftboard parameters
   }): Promise<ShiftListResponse> {
     return await this.call<ShiftListResponse>('shift.list', params);
-  }
-
-  /**
-   * Get upcoming shifts within a time window
-   * Uses shift.list with date range to fetch future shifts
-   *
-   * @param startDate - Start date in RFC 3339 format (YYYY-MM-DD)
-   * @param endDate - End date in RFC 3339 format (YYYY-MM-DD)
-   * @param params - Additional parameters (workgroup, batch, etc.)
-   */
-  async getUpcomingShifts(params: {
-    start_date: string;
-    end_date: string;
-    workgroup?: string;
-    batch?: number;
-    [key: string]: unknown;
-  }): Promise<ShiftListResponse> {
-    return await this.call<ShiftListResponse>('shift.list', {
-      timeclock_status: true,
-      extended: true,
-      ...params,
-      select: {
-        start_date: params.start_date,
-        end_date: params.end_date,
-        workgroup: params.workgroup,
-        published: true,
-        covered: true,
-      },
-    });
   }
 
   // ==========================================================================
@@ -403,36 +362,14 @@ export class ShiftboardService {
   // ==========================================================================
 
   /**
-   * List all workgroups with automatic pagination
-   * Fetches all pages until no more results are available
+   * List all workgroups
    */
   async listWorkgroups(): Promise<ShiftboardWorkgroup[]> {
-    const allWorkgroups: ShiftboardWorkgroup[] = [];
-    let start = 1;
-    const batch = 100; // Fetch 100 per page for efficiency
-    let hasMore = true;
+    const response = await this.call<WorkgroupListResponse>('workgroup.list', {
+      extended: true,
+    });
 
-    while (hasMore) {
-      const response = await this.call<WorkgroupListResponse>('workgroup.list', {
-        extended: true,
-        page: { start, batch },
-      });
-
-      const workgroups = response.workgroups || [];
-      allWorkgroups.push(...workgroups);
-
-      // Check if there are more pages
-      // If page.next exists, there are more results
-      if (response.page?.next) {
-        start = response.page.next.start;
-        logger.debug(`[Shiftboard] Fetched ${allWorkgroups.length} workgroups, fetching more...`);
-      } else {
-        hasMore = false;
-        logger.debug(`[Shiftboard] Fetched all ${allWorkgroups.length} workgroups`);
-      }
-    }
-
-    return allWorkgroups;
+    return response.workgroups || [];
   }
 
   /**

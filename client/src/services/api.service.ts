@@ -32,12 +32,13 @@ import {
 import type { Account, Workgroup } from './db.service';
 import type { GroupedShift } from '../types/shift.types';
 import logger from '../utils/logger';
+import { getApiBaseUrl } from '../config/runtime';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = getApiBaseUrl();
 const API_TIMEOUT = 60000; // 60 seconds
 
 // ============================================================================
@@ -268,60 +269,6 @@ async function getShiftsFromCache(
     isFreshData: false,
     lastSync,
   };
-}
-
-/**
- * Get upcoming shifts within a future time window.
- * Does not use cache fallback - returns empty array on error.
- *
- * @param options - Query options
- * @param options.minutes - Minutes into future to look (default: 30)
- * @param options.workgroupId - Filter by workgroup ID
- * @param options.batch - Page size
- * @returns Promise resolving to upcoming shifts
- */
-export async function getUpcomingShifts(options?: {
-  minutes?: number;
-  workgroupId?: string | null;
-  batch?: number;
-}): Promise<DataWithFreshness<GroupedShift[]>> {
-  const { minutes = 30, workgroupId = null, batch = 100 } = options || {};
-
-  try {
-    const params: Record<string, string> = {
-      minutes: minutes.toString(),
-      batch: batch.toString(),
-    };
-
-    if (workgroupId) {
-      params.workgroup = workgroupId;
-    }
-
-    const response = await apiClient.get<ApiResponse<ShiftsResponse>>('/api/shifts/upcoming', {
-      params,
-    });
-
-    const shifts = response.data.result.shifts || [];
-    const lastSync = await getLastSync();
-
-    logger.info(`[API] Fetched ${shifts.length} upcoming shifts from API`);
-
-    return {
-      data: shifts,
-      isFreshData: true,
-      lastSync,
-    };
-  } catch (error) {
-    logger.warn('[API] Failed to fetch upcoming shifts:', getErrorMessage(error));
-
-    // Return empty result on error (no cache fallback for upcoming shifts)
-    const lastSync = await getLastSync();
-    return {
-      data: [],
-      isFreshData: false,
-      lastSync,
-    };
-  }
 }
 
 // ============================================================================

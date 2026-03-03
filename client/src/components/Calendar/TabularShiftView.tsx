@@ -204,7 +204,22 @@ export default function TabularShiftView({
       {/* Table */}
       <Fade in timeout={300}>
         <TableContainer component={Paper} elevation={2}>
-          <Table>
+          <Table aria-label="Shifts table" aria-describedby="shifts-table-description">
+            <caption
+              id="shifts-table-description"
+              style={{
+                clip: 'rect(0 0 0 0)',
+                clipPath: 'inset(50%)',
+                height: '1px',
+                overflow: 'hidden',
+                position: 'absolute',
+                whiteSpace: 'nowrap',
+                width: '1px',
+              }}
+            >
+              Sortable table of all shifts showing start time, end time, shift name, subject,
+              location, assigned people, clock-in status, and actions. Click column headers to sort.
+            </caption>
             <TableHead>
               <TableRow>
                 {/* Start Time */}
@@ -213,6 +228,7 @@ export default function TabularShiftView({
                     active={sortColumn === 'start'}
                     direction={sortColumn === 'start' ? sortDirection : 'asc'}
                     onClick={() => handleSortChange('start')}
+                    aria-label={`Sort by start time ${sortColumn === 'start' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
                   >
                     <Typography variant="subtitle1" fontWeight={600}>
                       Start Time
@@ -226,6 +242,7 @@ export default function TabularShiftView({
                     active={sortColumn === 'end'}
                     direction={sortColumn === 'end' ? sortDirection : 'asc'}
                     onClick={() => handleSortChange('end')}
+                    aria-label={`Sort by end time ${sortColumn === 'end' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
                   >
                     <Typography variant="subtitle1" fontWeight={600}>
                       End Time
@@ -239,6 +256,7 @@ export default function TabularShiftView({
                     active={sortColumn === 'name'}
                     direction={sortColumn === 'name' ? sortDirection : 'asc'}
                     onClick={() => handleSortChange('name')}
+                    aria-label={`Sort by shift name ${sortColumn === 'name' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
                   >
                     <Typography variant="subtitle1" fontWeight={600}>
                       Shift Name
@@ -252,6 +270,7 @@ export default function TabularShiftView({
                     active={sortColumn === 'subject'}
                     direction={sortColumn === 'subject' ? sortDirection : 'asc'}
                     onClick={() => handleSortChange('subject')}
+                    aria-label={`Sort by subject ${sortColumn === 'subject' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
                   >
                     <Typography variant="subtitle1" fontWeight={600}>
                       Subject
@@ -265,6 +284,7 @@ export default function TabularShiftView({
                     active={sortColumn === 'location'}
                     direction={sortColumn === 'location' ? sortDirection : 'asc'}
                     onClick={() => handleSortChange('location')}
+                    aria-label={`Sort by location ${sortColumn === 'location' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
                   >
                     <Typography variant="subtitle1" fontWeight={600}>
                       Location
@@ -278,6 +298,7 @@ export default function TabularShiftView({
                     active={sortColumn === 'people'}
                     direction={sortColumn === 'people' ? sortDirection : 'asc'}
                     onClick={() => handleSortChange('people')}
+                    aria-label={`Sort by number of assigned people ${sortColumn === 'people' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
                   >
                     <Typography variant="subtitle1" fontWeight={600}>
                       Assigned People
@@ -291,6 +312,7 @@ export default function TabularShiftView({
                     active={sortColumn === 'status'}
                     direction={sortColumn === 'status' ? sortDirection : 'asc'}
                     onClick={() => handleSortChange('status')}
+                    aria-label={`Sort by clock-in status ${sortColumn === 'status' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
                   >
                     <Typography variant="subtitle1" fontWeight={600}>
                       Status

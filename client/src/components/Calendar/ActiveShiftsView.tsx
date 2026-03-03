@@ -2,13 +2,15 @@
  * ActiveShiftsView Component
  *
  * Timeline view of active shifts with clock-in status.
- * Optimized for readability with responsive grid layout.
+ * Optimized for large-screen display (5-15 feet viewing distance).
  *
  * Features:
- * - Current time indicator
- * - Active shifts display
- * - Click to view shift details
- * - Person chips with clock-in status
+ * - Dynamic time window (current hour ±1 hour)
+ * - Current time indicator (updates every second)
+ * - Too many shifts guard (>25 threshold)
+ * - Person chips with clock-in status colors AND icons
+ * - Large typography for distance readability (18px+ body text)
+ * - High contrast colors (WCAG AAA compliant)
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -56,7 +58,7 @@ export default function ActiveShiftsView({
     return () => clearInterval(timer);
   }, []);
 
-  // Filter active shifts
+  // Filter active shifts (within time window)
   const activeShifts = useMemo(() => {
     const now = new Date();
     return shifts.filter((shift) => {
@@ -140,18 +142,7 @@ export default function ActiveShiftsView({
       </Box>
 
       {/* Shifts Grid */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            md: 'repeat(2, 1fr)',
-            lg: 'repeat(2, 1fr)',
-            xl: 'repeat(3, 1fr)',
-          },
-          gap: 3,
-        }}
-      >
+      <Box display="flex" flexDirection="column" gap={3}>
         {shouldDisplay &&
           activeShifts.map((shift, index) => (
             <Fade key={shift.id} in timeout={300 + index * 50}>
@@ -159,12 +150,30 @@ export default function ActiveShiftsView({
                 <Card
                   elevation={2}
                   onClick={onShiftClick ? () => onShiftClick(shift) : undefined}
+                  tabIndex={onShiftClick ? 0 : undefined}
+                  role={onShiftClick ? 'button' : undefined}
+                  aria-label={onShiftClick ? `View details for ${shift.name}` : undefined}
+                  onKeyDown={
+                    onShiftClick
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onShiftClick(shift);
+                          }
+                        }
+                      : undefined
+                  }
                   sx={{
                     transition: 'all 0.3s ease',
                     cursor: onShiftClick ? 'pointer' : 'default',
                     '&:hover': {
                       elevation: 4,
                       transform: onShiftClick ? 'translateY(-2px)' : 'none',
+                    },
+                    '&:focus': {
+                      outline: '2px solid',
+                      outlineColor: 'primary.main',
+                      outlineOffset: '2px',
                     },
                   }}
                 >
@@ -210,6 +219,7 @@ export default function ActiveShiftsView({
                           color={shift.clockStatuses[idx] ? 'success' : 'error'}
                           variant="outlined"
                           icon={shift.clockStatuses[idx] ? <CheckCircle /> : <Cancel />}
+                          aria-label={`${name} – ${shift.clockStatuses[idx] ? 'clocked in' : 'not clocked in'}`}
                         />
                       ))}
                     </Box>
