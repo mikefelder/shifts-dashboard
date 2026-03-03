@@ -13,16 +13,13 @@ param containerImage string
 @description('Container Registry login server')
 param registryServer string
 
-@description('Container Registry username (optional if using managed identity)')
+@description('Container Registry username')
 @secure()
-param registryUsername string = ''
+param registryUsername string
 
-@description('Container Registry password (optional if using managed identity)')
+@description('Container Registry password')
 @secure()
-param registryPassword string = ''
-
-@description('Use managed identity for registry authentication')
-param useManagedIdentityForRegistry bool = false
+param registryPassword string
 
 @description('Environment variables')
 param environmentVariables array = []
@@ -48,16 +45,9 @@ param external bool = true
 @description('Enable managed identity')
 param enableManagedIdentity bool = false
 
-@description('Health probe path')
-param healthProbePath string = '/health'
-
-@description('Resource tags')
-param tags object = {}
-
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: appName
   location: location
-  tags: tags
   identity: enableManagedIdentity ? {
     type: 'SystemAssigned'
   } : null
@@ -75,19 +65,14 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           }
         ]
       }
-      registries: useManagedIdentityForRegistry ? [
-        {
-          server: registryServer
-          identity: 'system'
-        }
-      ] : [
+      registries: [
         {
           server: registryServer
           username: registryUsername
           passwordSecretRef: 'registry-password'
         }
       ]
-      secrets: useManagedIdentityForRegistry ? [] : [
+      secrets: [
         {
           name: 'registry-password'
           value: registryPassword
@@ -104,44 +89,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
             memory: memory
           }
           env: environmentVariables
-          probes: [
-            {
-              type: 'Liveness'
-              httpGet: {
-                path: healthProbePath
-                port: targetPort
-                scheme: 'HTTP'
-              }
-              initialDelaySeconds: 10
-              periodSeconds: 10
-              failureThreshold: 3
-              timeoutSeconds: 3
-            }
-            {
-              type: 'Readiness'
-              httpGet: {
-                path: healthProbePath
-                port: targetPort
-                scheme: 'HTTP'
-              }
-              initialDelaySeconds: 5
-              periodSeconds: 5
-              failureThreshold: 3
-              timeoutSeconds: 3
-            }
-            {
-              type: 'Startup'
-              httpGet: {
-                path: healthProbePath
-                port: targetPort
-                scheme: 'HTTP'
-              }
-              initialDelaySeconds: 0
-              periodSeconds: 3
-              failureThreshold: 30
-              timeoutSeconds: 3
-            }
-          ]
         }
       ]
       scale: {
@@ -153,26 +100,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
             http: {
               metadata: {
                 concurrentRequests: '10'
-              }
-            }
-          }
-          {
-            name: 'cpu-rule'
-            custom: {
-              type: 'cpu'
-              metadata: {
-                type: 'Utilization'
-                value: '70'
-              }
-            }
-          }
-          {
-            name: 'memory-rule'
-            custom: {
-              type: 'memory'
-              metadata: {
-                type: 'Utilization'
-                value: '80'
               }
             }
           }

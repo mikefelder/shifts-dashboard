@@ -6,7 +6,6 @@
 
 import { Router } from 'express';
 import type { CalendarController } from '../controllers/calendar.controller';
-import logger from '../config/logger';
 
 // ============================================================================
 // Route Factory
@@ -28,7 +27,7 @@ export function createCalendarRoutes(calendarController: CalendarController): Ro
   // Returns aggregated statistics about shifts and coverage
   router.get('/summary', ...calendarController.getSummary);
 
-  logger.debug('[calendar.routes] Registered routes: /summary');
+  console.log('[calendar.routes] Registered routes: /summary');
 
   return router;
 }

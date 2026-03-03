@@ -388,7 +388,8 @@ backend/
 │   ├── utils/
 │   │   ├── shift.utils.ts         # Grouping algorithm
 │   │   ├── shiftboard-auth.ts     # HMAC signature
-│   │   └── timing.ts              # Request timing metadata (T077)
+│   │   ├── pagination.ts          # Multi-page fetching
+│   │   └── metrics.ts             # Performance tracking
 │   ├── routes/
 │   │   ├── index.ts               # Route aggregator
 │   │   ├── account.routes.ts
