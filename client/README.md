@@ -227,7 +227,7 @@ Expected output:
 
 ```json
 {
-  "VITE_API_URL": "https://backend.example.com"
+  "apiUrl": "https://backend.example.com"
 }
 ```
 
