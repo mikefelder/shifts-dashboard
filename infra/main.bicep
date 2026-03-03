@@ -17,6 +17,10 @@ param uniqueSuffix string = uniqueString(resourceGroup().id)
 @allowed(['Basic', 'Standard', 'Premium'])
 param containerRegistrySku string = 'Basic'
 
+@description('Optional committee code to include in resource names (e.g. "itc"). Leave empty if not applicable.')
+@maxLength(12)
+param committeeCode string = ''
+
 // Environment-specific configurations
 var environmentConfig = {
   dev: {
@@ -65,15 +69,29 @@ var environmentConfig = {
 
 var config = environmentConfig[environment]
 
+// Name infix: environment + optional committee code
+// e.g. 'dev', 'dev-itc', 'prod-finance'
+var committeeSegment = empty(committeeCode) ? '' : '-${committeeCode}'
+var nameInfix = '${environment}${committeeSegment}'
+
 // Resource naming
-var registryName = replace('${appName}${uniqueSuffix}', '-', '')
-var keyVaultName = '${appName}-kv-${uniqueSuffix}'
-var backendAppName = '${appName}-backend-${environment}'
-var frontendAppName = '${appName}-frontend-${environment}'
+// Container Registry: alphanumeric only, 5-50 chars
+var registryName = take(replace('${appName}-${nameInfix}-${uniqueSuffix}', '-', ''), 50)
+
+// Key Vault: 3-24 chars max, globally unique
+// Format: sd-{env}-[{code}-]kv-{suffix}
+// e.g. sd-dev-kv-qu7yv (16) | sd-dev-itc-kv-qu7yv (20) | sd-staging-itc-kv-qu7yv (23)
+var kvEnvSegment = take(environment, 7)
+var kvCodeSegment = empty(committeeCode) ? '' : '-${take(committeeCode, 3)}'
+var keyVaultName = 'sd-${kvEnvSegment}${kvCodeSegment}-kv-${take(uniqueSuffix, 5)}'
+
+var backendAppName = '${appName}-${nameInfix}-backend'
+var frontendAppName = '${appName}-${nameInfix}-frontend'
 
 // Common tags
 var commonTags = {
   Environment: environment
+  CommitteeCode: committeeCode
   Application: appName
   ManagedBy: 'Bicep'
 }
@@ -96,8 +114,8 @@ module containerAppsEnv './modules/container-apps-env.bicep' = {
   name: 'container-apps-env-deployment'
   params: {
     location: location
-    environmentName: '${appName}-env-${environment}'
-    logAnalyticsName: '${appName}-logs-${uniqueSuffix}'
+    environmentName: '${appName}-${nameInfix}-env'
+    logAnalyticsName: '${appName}-${nameInfix}-logs-${uniqueSuffix}'
     logRetentionInDays: config.logRetentionDays
     zoneRedundant: config.zoneRedundant
     tags: commonTags
@@ -109,7 +127,7 @@ module appInsights './modules/app-insights.bicep' = {
   name: 'app-insights-deployment'
   params: {
     location: location
-    appInsightsName: '${appName}-ai-${uniqueSuffix}'
+    appInsightsName: '${appName}-${nameInfix}-ai-${uniqueSuffix}'
     logAnalyticsId: containerAppsEnv.outputs.logAnalyticsId
     retentionInDays: config.logRetentionDays
     tags: commonTags
@@ -242,7 +260,8 @@ output appInsightsConnectionString string = appInsights.outputs.connectionString
 output appInsightsInstrumentationKey string = appInsights.outputs.instrumentationKey
 output keyVaultName string = keyVault.outputs.keyVaultName
 output keyVaultUri string = keyVault.outputs.keyVaultUri
-output backendAppName string = backendApp.outputs.appName
-output frontendAppName string = frontendApp.outputs.appName
+output backendAppName string = backendAppName
+output frontendAppName string = frontendAppName
+output nameInfix string = nameInfix
 output backendPrincipalId string = backendApp.outputs.principalId
 output frontendPrincipalId string = frontendApp.outputs.principalId

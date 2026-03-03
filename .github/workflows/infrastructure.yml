@@ -20,6 +20,10 @@ on:
           - dev
           - staging
           - prod
+      committeeCode:
+        description: 'Committee code to include in resource names (e.g. "itc"). Leave blank if not applicable.'
+        required: false
+        default: ''
 
 permissions:
   id-token: write
@@ -57,6 +61,24 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Resolve deployment target
+        id: target
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          COMMITTEE_CODE="${{ github.event.inputs.committeeCode || secrets.COMMITTEE_CODE }}"
+
+          APP_NAME=$(jq -r '.parameters.appName.value // "shift-dashboard"' "$PARAM_FILE" 2>/dev/null || echo 'shift-dashboard')
+          COMMITTEE_SUFFIX="${COMMITTEE_CODE:+-${COMMITTEE_CODE}}"
+          RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
+
+          echo "Environment:    $ENV"
+          echo "Committee code: ${COMMITTEE_CODE:-'(none)'}"
+          echo "Resource group: $RESOURCE_GROUP"
+
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+          echo "COMMITTEE_CODE=$COMMITTEE_CODE" >> $GITHUB_ENV
+
       - name: What-If Deployment
         run: |
           ENV="${{ github.event.inputs.environment || 'dev' }}"
@@ -65,15 +87,15 @@ jobs:
           if [ -f "$PARAM_FILE" ]; then
             echo "Using parameter file: $PARAM_FILE"
             az deployment group what-if \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE"
+              --parameters @"$PARAM_FILE" committeeCode="$COMMITTEE_CODE"
           else
             echo "Parameter file not found, using inline parameters"
             az deployment group what-if \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters environment="$ENV"
+              --parameters environment="$ENV" committeeCode="$COMMITTEE_CODE"
           fi
 
   deploy:
@@ -95,11 +117,41 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Resolve deployment target
+        id: target
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          COMMITTEE_CODE="${{ github.event.inputs.committeeCode || secrets.COMMITTEE_CODE }}"
+
+          APP_NAME=$(jq -r '.parameters.appName.value // "shift-dashboard"' "$PARAM_FILE" 2>/dev/null || echo 'shift-dashboard')
+          COMMITTEE_SUFFIX="${COMMITTEE_CODE:+-${COMMITTEE_CODE}}"
+          RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
+
+          echo "Environment:    $ENV"
+          echo "Committee code: ${COMMITTEE_CODE:-'(none)'}"
+          echo "Resource group: $RESOURCE_GROUP"
+
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+          echo "COMMITTEE_CODE=$COMMITTEE_CODE" >> $GITHUB_ENV
+
+      - name: Ensure resource group exists
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE" 2>/dev/null || echo 'eastus')
+
+          if ! az group show --name "$RESOURCE_GROUP" &> /dev/null; then
+            echo "Creating resource group: $RESOURCE_GROUP in $LOCATION"
+            az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
+          else
+            echo "Resource group $RESOURCE_GROUP already exists"
+          fi
+
       - name: Check Resource Location Conflicts
         run: |
           ENV="${{ github.event.inputs.environment || 'dev' }}"
           PARAM_FILE="infra/params/${ENV}.parameters.json"
-          RESOURCE_GROUP="${{ secrets.AZURE_RESOURCE_GROUP }}"
 
           # Read target location from parameter file, fallback to eastus
           if [ -f "$PARAM_FILE" ]; then
@@ -141,17 +193,17 @@ jobs:
           if [ -f "$PARAM_FILE" ]; then
             echo "Using parameter file: $PARAM_FILE"
             output=$(az deployment group create \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE" \
+              --parameters @"$PARAM_FILE" committeeCode="$COMMITTEE_CODE" \
               --query 'properties.outputs' \
               --output json)
           else
             echo "Parameter file not found, using inline parameters"
             output=$(az deployment group create \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters environment="$ENV" \
+              --parameters environment="$ENV" committeeCode="$COMMITTEE_CODE" \
               --query 'properties.outputs' \
               --output json)
           fi
@@ -183,6 +235,8 @@ jobs:
           echo "backendAppName=$backendAppName" >> $GITHUB_OUTPUT
           echo "frontendAppName=$frontendAppName" >> $GITHUB_OUTPUT
           echo "backendPrincipalId=$backendPrincipalId" >> $GITHUB_OUTPUT
+          echo "resourceGroup=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
+          echo "committeeCode=$COMMITTEE_CODE" >> $GITHUB_OUTPUT
 
           echo "Infrastructure deployment complete"
           echo ""
@@ -197,7 +251,6 @@ jobs:
 
           echo "Storing Shiftboard secrets in Key Vault: $KV_NAME"
 
-          # Store Shiftboard API credentials
           az keyvault secret set \
             --vault-name $KV_NAME \
             --name sb-access-key \
@@ -228,7 +281,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: \`${{ github.event.inputs.environment || 'dev' }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Resource Group**: \`${{ secrets.AZURE_RESOURCE_GROUP }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Committee Code**: \`${{ steps.deploy.outputs.committeeCode || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resource Group**: \`${{ steps.deploy.outputs.resourceGroup }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Secrets" >> $GITHUB_STEP_SUMMARY
           echo "Shiftboard credentials stored in Key Vault" >> $GITHUB_STEP_SUMMARY

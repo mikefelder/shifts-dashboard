@@ -26,6 +26,10 @@ on:
           - dev
           - staging
           - prod
+      committeeCode:
+        description: 'Committee code included in resource names (e.g. "itc"). Must match the code used during infrastructure deployment.'
+        required: false
+        default: ''
 
 # Cancel any in-progress deploy for the same branch/environment. This handles
 # the case where a push triggers both the `push` path and a subsequent
@@ -62,17 +66,44 @@ jobs:
       registry: ${{ steps.check.outputs.registry }}
       backendApp: ${{ steps.check.outputs.backendApp }}
       frontendApp: ${{ steps.check.outputs.frontendApp }}
+      resourceGroup: ${{ steps.check.outputs.resourceGroup }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Resolve deployment target
+        id: resolve
+        run: |
+          ENV="${{ env.DEPLOY_ENVIRONMENT }}"
+          COMMITTEE_CODE="${{ github.event.inputs.committeeCode || secrets.COMMITTEE_CODE }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+
+          if [ -f "$PARAM_FILE" ]; then
+            APP_NAME=$(jq -r '.parameters.appName.value // "shift-dashboard"' "$PARAM_FILE")
+          else
+            APP_NAME="shift-dashboard"
+          fi
+
+          COMMITTEE_SUFFIX="${COMMITTEE_CODE:+-${COMMITTEE_CODE}}"
+          RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
+
+          echo "Environment:    $ENV"
+          echo "Committee code: ${COMMITTEE_CODE:-'(none)'}"
+          echo "Resource group: $RESOURCE_GROUP"
+
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
+
       - name: Check Resources
         id: check
         run: |
           environment="${{ env.DEPLOY_ENVIRONMENT }}"
-          rg="${{ secrets.AZURE_RESOURCE_GROUP }}"
+          rg="$RESOURCE_GROUP"
 
           echo "Checking for required Azure resources in $rg..."
 
@@ -101,6 +132,7 @@ jobs:
           echo "registry=$registry" >> $GITHUB_OUTPUT
           echo "backendApp=$backendApp" >> $GITHUB_OUTPUT
           echo "frontendApp=$frontendApp" >> $GITHUB_OUTPUT
+          echo "resourceGroup=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
 
   build-and-push:
     name: Build and Push Images
@@ -152,7 +184,7 @@ jobs:
         run: |
           az containerapp update \
             --name ${{ needs.check-infrastructure.outputs.backendApp }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
             --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
           echo "Backend deployed"
@@ -161,7 +193,7 @@ jobs:
         run: |
           az containerapp update \
             --name ${{ needs.check-infrastructure.outputs.frontendApp }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
             --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
           echo "Frontend deployed"
@@ -171,12 +203,12 @@ jobs:
         run: |
           backendUrl=$(az containerapp show \
             --name ${{ needs.check-infrastructure.outputs.backendApp }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
             --query properties.configuration.ingress.fqdn -o tsv)
 
           frontendUrl=$(az containerapp show \
             --name ${{ needs.check-infrastructure.outputs.frontendApp }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
             --query properties.configuration.ingress.fqdn -o tsv)
 
           echo "backendUrl=https://$backendUrl" >> $GITHUB_OUTPUT
