@@ -1,17 +1,14 @@
 name: Deploy to Azure Container Apps
 
 on:
-  # Triggered directly when only application code changes
+  # Triggered directly when only application code changes on main
   push:
     branches:
       - main
-      - develop
-      - 'releases/**'
     paths:
       - 'backend/**'
       - 'client/**'
       - 'package.json'
-      - '.github/workflows/deploy.yml'
   # Triggered after infrastructure deployment completes (handles the case
   # where infra + app code change together — ensures strict ordering)
   workflow_run:
