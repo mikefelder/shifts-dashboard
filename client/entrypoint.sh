@@ -4,7 +4,7 @@
 # Create runtime config file
 cat > /usr/share/nginx/html/config.js <<EOF
 window.__RUNTIME_CONFIG__ = {
-  apiUrl: '${VITE_API_URL:-http://localhost:3000}'
+  apiUrl: '${VITE_API_BASE_URL:-http://localhost:3000}'
 };
 EOF
 
