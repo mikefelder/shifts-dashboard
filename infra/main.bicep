@@ -28,6 +28,7 @@ var environmentConfig = {
     frontendMaxReplicas: 2
     zoneRedundant: false
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: false
   }
   staging: {
     containerRegistrySku: 'Standard'
@@ -42,6 +43,7 @@ var environmentConfig = {
     frontendMaxReplicas: 5
     zoneRedundant: false
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: false
   }
   prod: {
     containerRegistrySku: 'Standard'
@@ -56,6 +58,7 @@ var environmentConfig = {
     frontendMaxReplicas: 10
     zoneRedundant: true
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: true
   }
 }
 
@@ -120,6 +123,7 @@ module keyVault './modules/key-vault.bicep' = {
     keyVaultName: keyVaultName
     enableRbacAuthorization: true
     networkDefaultAction: config.networkDefaultAction
+    enablePurgeProtection: config.enablePurgeProtection
     tags: commonTags
   }
 }
