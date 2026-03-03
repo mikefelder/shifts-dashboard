@@ -18,6 +18,7 @@ ENVIRONMENT=${1:-dev}
 RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shift-dashboard-rg}
 LOCATION=${AZURE_LOCATION:-eastus}
 TEMPLATE_FILE="infra/main.bicep"
+PARAMETER_FILE="infra/params/${ENVIRONMENT}.parameters.json"
 
 echo -e "${BLUE}Validating Shift Dashboard Infrastructure${NC}"
 echo "======================================================"
@@ -96,22 +97,46 @@ echo -e "${YELLOW}Running what-if analysis...${NC}"
 echo "This shows what would happen if you deployed now:"
 echo ""
 
-if az deployment group what-if \
-    --resource-group $RESOURCE_GROUP \
-    --template-file $TEMPLATE_FILE \
-    --parameters environment=$ENVIRONMENT \
-    --no-prompt 2>&1; then
-    echo ""
-    echo -e "${GREEN}[OK]${NC} What-if analysis completed successfully"
-else
-    EXIT_CODE=$?
-    if [ $EXIT_CODE -eq 1 ]; then
+if [ -f "$PARAMETER_FILE" ]; then
+    echo "Using parameter file: $PARAMETER_FILE"
+    if az deployment group what-if \
+        --resource-group $RESOURCE_GROUP \
+        --template-file $TEMPLATE_FILE \
+        --parameters @"$PARAMETER_FILE" \
+        --no-prompt 2>&1; then
         echo ""
-        echo -e "${YELLOW}INFO: What-if returned exit code 1 (expected for non-existent resource group)${NC}"
+        echo -e "${GREEN}[OK]${NC} What-if analysis completed successfully"
     else
+        EXIT_CODE=$?
+        if [ $EXIT_CODE -eq 1 ]; then
+            echo ""
+            echo -e "${YELLOW}INFO: What-if returned exit code 1 (expected for non-existent resource group)${NC}"
+        else
+            echo ""
+            echo -e "${RED}ERROR: What-if analysis failed${NC}"
+            exit $EXIT_CODE
+        fi
+    fi
+else
+    echo "Parameter file not found: $PARAMETER_FILE"
+    echo "Using inline parameters"
+    if az deployment group what-if \
+        --resource-group $RESOURCE_GROUP \
+        --template-file $TEMPLATE_FILE \
+        --parameters environment=$ENVIRONMENT \
+        --no-prompt 2>&1; then
         echo ""
-        echo -e "${RED}ERROR: What-if analysis failed${NC}"
-        exit $EXIT_CODE
+        echo -e "${GREEN}[OK]${NC} What-if analysis completed successfully"
+    else
+        EXIT_CODE=$?
+        if [ $EXIT_CODE -eq 1 ]; then
+            echo ""
+            echo -e "${YELLOW}INFO: What-if returned exit code 1 (expected for non-existent resource group)${NC}"
+        else
+            echo ""
+            echo -e "${RED}ERROR: What-if analysis failed${NC}"
+            exit $EXIT_CODE
+        fi
     fi
 fi
 echo ""

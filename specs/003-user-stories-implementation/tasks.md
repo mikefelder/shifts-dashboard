@@ -231,9 +231,37 @@ description: 'Task list for Shift Dashboard Rebuild'
   - Updated 3 test files to use shared test helpers - removed 75+ lines of duplicate test setup
   - Removed `backend/src/utils/pagination.ts` (188 lines) - never integrated into shiftboard.service.ts, zero imports
   - Verified all tests pass (179/179), linting clean
-- [ ] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
-- [ ] T079 Security hardening (rate limiting, input sanitization, CSP headers)
-- [ ] T080 Accessibility audit (ARIA labels, keyboard navigation, screen reader support)
+- [x] T078 Performance optimization (shift grouping <50ms for 1000 shifts)
+  - Replaced O(n) Array.includes() with O(1) Set.has() for duplicate detection
+  - Added groupMemberSets Map to track Set objects for each shift group
+  - Performance verified: 1000 shifts grouped in 0.64ms (78x faster than 50ms target)
+  - All 38 tests pass
+- [x] T079 Security hardening (rate limiting, input sanitization, CSP headers)
+  - Installed express-rate-limit package
+  - Created backend/src/middleware/rate-limit.middleware.ts with 3 rate limiters:
+    - apiLimiter: 100 req/15min for general API
+    - authLimiter: 5 req/15min for auth endpoints
+    - dataLimiter: 200 req/15min for data fetching
+  - Created backend/src/middleware/sanitize.middleware.ts for XSS protection
+  - Enhanced CSP headers in index.ts (stricter directives, frame protection)
+  - Integrated rate limiting and sanitization into main app
+  - All 124 tests pass, code compiles clean
+- [x] T080 Accessibility audit (ARIA labels, keyboard navigation, screen reader support)
+  - Added ARIA labels and roles to all dialogs (ShiftDetailModal, PersonDetailModal)
+  - Enhanced TabularShiftView with:
+    - Table caption for screen readers
+    - ARIA labels on all sort controls with current direction
+    - ARIA labels on action buttons
+  - Enhanced ActiveShiftsView with:
+    - Keyboard navigation support (Tab, Enter, Space) for shift cards
+    - Focus visible outline styles
+    - ARIA labels on clickable elements
+  - Enhanced Sidebar with:
+    - ARIA labels on navigation buttons
+    - aria-current for active page
+    - ARIA labels on refresh controls with live region for status
+  - All interactive elements now keyboard accessible
+  - Client linting passes
 
 ---
 

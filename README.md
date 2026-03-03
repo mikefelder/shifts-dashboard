@@ -32,14 +32,23 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 │  │   Backend API      │         │   Frontend SPA      │    │
 │  │   (Express)        │◄────────│   (React + Vite)    │    │
 │  │   Port 3000        │         │   Static Serve      │    │
+│  │ [Managed Identity] │         │ [Managed Identity]  │    │
 │  └────────────────────┘         └─────────────────────┘    │
 │           │                                │                 │
-│           │                                │                 │
+│           │ RBAC Access                    │                 │
 │           ▼                                ▼                 │
 │  ┌────────────────────┐         ┌─────────────────────┐    │
 │  │   Key Vault        │         │   IndexedDB Cache   │    │
 │  │   (Secrets)        │         │   (Browser)         │    │
-│  └────────────────────┘         └─────────────────────┘    │
+│  │ [RBAC Enabled]     │         └─────────────────────┘    │
+│  └────────────────────┘                                     │
+│           │                                                  │
+│           │ ACR Pull (Managed Identity)                     │
+│           ▼                                                  │
+│  ┌────────────────────┐                                     │
+│  │ Container Registry │                                     │
+│  │ (Docker Images)    │                                     │
+│  └────────────────────┘                                     │
 └─────────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -48,6 +57,15 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
               │   (JSON-RPC over HTTPS) │
               └─────────────────────────┘
 ```
+
+### Security Architecture
+
+- **Managed Identity**: Both container apps use Azure system-assigned managed identities for authentication
+- **RBAC-Based Access**: Key Vault uses Azure RBAC with "Key Vault Secrets User" role (no access policies)
+- **Secure Registry Access**: Container Registry pull via managed identity with "AcrPull" role, no admin credentials
+- **Health Probes**: Liveness, readiness, and startup probes ensure container reliability
+- **Autoscaling**: HTTP request, CPU, and memory-based scaling rules for optimal resource usage
+- **Environment-Specific**: Dev/Staging/Prod configurations with appropriate resource allocations
 
 ### Technology Stack
 
@@ -76,12 +94,14 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 
 **Infrastructure**:
 
-- Azure Container Apps (scale-to-zero)
-- Azure Container Registry
-- Azure Key Vault
-- Azure Application Insights
-- Bicep (Infrastructure as Code)
-- GitHub Actions (CI/CD)
+- Azure Container Apps (scale-to-zero with health probes and autoscaling)
+- Azure Container Registry (managed identity authentication)
+- Azure Key Vault (RBAC-based secrets management)
+- Azure Application Insights (environment-specific retention)
+- Azure Log Analytics (centralized logging)
+- Managed Identity (system-assigned for secure resource access)
+- Bicep (Infrastructure as Code with environment configs)
+- GitHub Actions (CI/CD with managed identity)
 
 **Cost**: ~$48/year per instance (69% savings vs App Service with scale-to-zero)
 

@@ -32,12 +32,13 @@ import {
 import type { Account, Workgroup } from './db.service';
 import type { GroupedShift } from '../types/shift.types';
 import logger from '../utils/logger';
+import { getApiBaseUrl } from '../config/runtime';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = getApiBaseUrl();
 const API_TIMEOUT = 60000; // 60 seconds
 
 // ============================================================================

@@ -12,13 +12,14 @@ The infrastructure deploys a complete Azure Container Apps environment with:
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ Container Registry (ACR)                             │  │
-│  │ - Stores Docker images for backend and frontend     │  │
+│  │ - Stores Docker images (managed identity pull)      │  │
+│  │ - Admin credentials disabled                        │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ Log Analytics Workspace                              │  │
-│  │ - Centralized logging for all apps                  │  │
-│  │ - 30-day retention                                   │  │
+│  │ - Centralized logging                               │  │
+│  │ - Environment-specific retention (30/60/90 days)    │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
@@ -27,9 +28,22 @@ The infrastructure deploys a complete Azure Container Apps environment with:
 │  │ │ Backend Container   │  │ Frontend Container    │ │  │
 │  │ │ - Node.js API       │  │ - React SPA (Nginx)   │ │  │
 │  │ │ - Port 3000         │  │ - Port 80            │ │  │
-│  │ │ - 0.5 CPU / 1Gi    │  │ - 0.25 CPU / 0.5Gi   │ │  │
-│  │ │ - Scale: 0-3       │  │ - Scale: 0-3         │ │  │
+│  │ │ - Managed Identity  │  │ - Managed Identity   │ │  │
+│  │ │ - Health Probes     │  │ - Health Probes      │ │  │
+│  │ │ - Autoscaling (3x)  │  │ - Autoscaling (3x)   │ │  │
+│  │ │ - Env-specific CPU  │  │ - Env-specific CPU   │ │  │
 │  │ └─────────────────────┘  └────────────────────────┘ │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Key Vault (RBAC-based)                               │  │
+│  │ - Shiftboard API credentials                        │  │
+│  │ - Backend: Key Vault Secrets User role              │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Application Insights                                 │  │
+│  │ - Environment-specific retention (30/60/90 days)    │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -40,10 +54,17 @@ The infrastructure deploys a complete Azure Container Apps environment with:
 infra/
 ├── main.bicep                         # Main orchestration template
 ├── main.json                          # Generated ARM template (gitignored)
-└── modules/
-    ├── container-registry.bicep       # Azure Container Registry
-    ├── container-apps-env.bicep       # Container Apps Environment + Log Analytics
-    └── container-app.bicep            # Generic Container App template
+├── modules/
+│   ├── container-registry.bicep       # Azure Container Registry
+│   ├── container-apps-env.bicep       # Container Apps Environment + Log Analytics
+│   ├── container-app.bicep            # Generic Container App template
+│   ├── key-vault.bicep                # Key Vault with RBAC
+│   ├── app-insights.bicep             # Application Insights
+│   └── role-assignment.bicep          # RBAC role assignments (NEW)
+└── params/
+    ├── dev.parameters.json            # Development environment parameters
+    ├── staging.parameters.json        # Staging environment parameters
+    └── prod.parameters.json           # Production environment parameters
 ```
 
 ## Prerequisites
@@ -116,56 +137,109 @@ az deployment group create \
 Main orchestration template that combines all modules:
 
 - **Parameters**: `location`, `environment` (dev/staging/prod), `appName`
-- **Resources**: Calls all module templates
-- **Outputs**: Registry login server, app URLs
+- **Environment Configs**: Defines CPU, memory, replicas, retention per environment
+- **Resources**: Calls all module templates, creates RBAC role assignments
+- **Outputs**: Registry login server, app URLs, Key Vault name
+- **Tags**: All resources tagged with Environment, Application, ManagedBy
 
 ### `modules/container-registry.bicep`
 
 Azure Container Registry for storing Docker images:
 
-- **SKU**: Basic (sufficient for dev, upgrade to Standard/Premium for prod)
-- **Admin user**: Enabled for simplified authentication
-- **Network**: Public access (for development)
+- **SKU**: Basic (cost-effective for all environments)
+- **Admin credentials**: Disabled (managed identity authentication only)
+- **Network**: Public access (configurable parameter)
+- **Security**: Image pull via AcrPull RBAC role
+- **Tags**: Resource tagging support
 
 ### `modules/container-apps-env.bicep`
 
 Container Apps Environment with Log Analytics:
 
-- **Log Analytics**: 30-day retention, PerGB2018 pricing tier
-- **Environment**: Non-zone-redundant (upgrade for production)
-- **Logs**: Integrated with Log Analytics workspace
+- **Log Retention**: Environment-specific (30/60/90 days for dev/staging/prod)
+- **Pricing Tier**: PerGB2018 for Log Analytics
+- **Zone Redundancy**: Configurable per environment (prod enabled)
+- **Tags**: Resource tagging support
+
+### `modules/key-vault.bicep`
+
+Azure Key Vault for secrets management:
+
+- **Access Model**: RBAC-based (not access policies)
+- **Soft Delete**: 90-day retention enabled
+- **Purge Protection**: Configurable (recommended for production)
+- **Network Access**: Configurable (Allow/Deny public access)
+- **Tags**: Resource tagging support
+
+### `modules/app-insights.bicep`
+
+Application Insights for monitoring and telemetry:
+
+- **Retention**: Environment-specific (30/60/90 days)
+- **Connected to**: Log Analytics Workspace
+- **Tags**: Resource tagging support
 
 ### `modules/container-app.bicep`
 
 Reusable template for deploying Container Apps:
 
-- **Scaling**: Auto-scale from 0-3 replicas (scale-to-zero enabled)
+- **Identity**: System-assigned managed identity
+- **Authentication**: Registry via managed identity (no credentials)
+- **Health Probes**:
+  - Liveness: Restarts unhealthy containers (10s period)
+  - Readiness: Removes from load balancer when not ready (5s period)
+  - Startup: Allows slow start without liveness failures (3s period, 30 failures)
+- **Autoscaling**:
+  - HTTP concurrent requests (threshold: 10)
+  - CPU usage (threshold: 70%)
+  - Memory usage (threshold: 80%)
+- **Resource Allocation**: Environment-specific CPU and memory
+- **Scaling**: Environment-specific min/max replicas
 - **Ingress**: External HTTPS with auto SSL/TLS
-- **Resources**: Configurable CPU and memory
-- **Secrets**: Registry credentials stored securely
-- **Environment**: Support for environment variables
+- **Secrets**: Key Vault secrets referenced via managed identity
+- **Tags**: Resource tagging support
+
+### `modules/role-assignment.bicep` (NEW)
+
+RBAC role assignment module for managed identities:
+
+- **Roles Supported**:
+  - Key Vault Secrets User (4633458b-17de-408a-b874-0445c86b69e6)
+  - AcrPull (7f951dda-4ed3-4680-a7ca-43fe172d538d)
+- **Scope**: Resource or resource group level
+- **Usage**: Assigns roles to container app managed identities
 
 ## Environments
 
 ### Development (`dev`)
 
-- **Scale**: 0-3 replicas
-- **SKU**: Basic Container Registry
+- **Backend**: 0.25 CPU / 0.5Gi memory / 0-2 replicas (scale-to-zero)
+- **Frontend**: 0.25 CPU / 0.5Gi memory / 0-2 replicas (scale-to-zero)
+- **Log Retention**: 30 days
+- **App Insights Retention**: 30 days
 - **Zone Redundancy**: Disabled
 - **Purpose**: Development and testing
+- **Estimated Cost**: ~$34-39/month
 
 ### Staging (`staging`)
 
-- **Scale**: 0-5 replicas
-- **SKU**: Standard Container Registry (recommended)
+- **Backend**: 0.5 CPU / 1.0Gi memory / 1-5 replicas
+- **Frontend**: 0.25 CPU / 0.5Gi memory / 1-3 replicas
+- **Log Retention**: 60 days
+- **App Insights Retention**: 60 days
+- **Zone Redundancy**: Disabled
 - **Purpose**: Pre-production validation
+- **Estimated Cost**: ~$61-71/month
 
 ### Production (`prod`)
 
-- **Scale**: 1-10 replicas (no scale-to-zero for availability)
-- **SKU**: Premium Container Registry (geo-replication)
+- **Backend**: 1.0 CPU / 2.0Gi memory / 2-10 replicas (no scale-to-zero)
+- **Frontend**: 0.5 CPU / 1.0Gi memory / 1-5 replicas (no scale-to-zero)
+- **Log Retention**: 90 days
+- **App Insights Retention**: 90 days
 - **Zone Redundancy**: Enabled
 - **Purpose**: Live production workload
+- **Estimated Cost**: ~$109-149/month (active) or ~$31/month (off-season)
 
 ## Cost Optimization
 
