@@ -31,12 +31,14 @@ This document provides comprehensive deployment instructions for the Shift Dashb
 
 ### Architecture Components
 
-- **Azure Container Registry (ACR)**: Stores Docker images
-- **Azure Container Apps Environment**: Container orchestration platform
-- **Container Apps**: Backend API (Node.js) and Frontend SPA (Nginx)
-- **Log Analytics Workspace**: Centralized logging
-- **Application Insights**: Telemetry and monitoring
-- **Azure Key Vault**: Secrets management (Shiftboard credentials)
+- **Azure Container Registry (ACR)**: Stores Docker images (managed identity auth, no admin credentials)
+- **Azure Container Apps Environment**: Container orchestration platform with health probes
+- **Container Apps**: Backend API (Node.js) and Frontend SPA (Nginx) with managed identities
+- **Log Analytics Workspace**: Centralized logging with environment-specific retention
+- **Application Insights**: Telemetry and monitoring with configurable retention
+- **Azure Key Vault**: RBAC-based secrets management (Key Vault Secrets User role)
+- **Managed Identity**: System-assigned identities for secure resource access
+- **RBAC Roles**: AcrPull (Container Registry), Key Vault Secrets User (Key Vault)
 
 ---
 
@@ -126,19 +128,61 @@ AZURE_LOCATION=eastus
 # Deploy to development environment
 ./scripts/deploy-infrastructure.sh dev
 
-# Deploy to production environment
+# Deploy to production environment (with confirmation)
 ./scripts/deploy-infrastructure.sh prod
+
+# Deploy with auto-approval (non-interactive)
+./scripts/deploy-infrastructure.sh prod --yes
+
+# Skip what-if preview (faster, but use with caution)
+./scripts/deploy-infrastructure.sh dev --skip-preview
+
+# Use custom parameter file
+./scripts/deploy-infrastructure.sh staging --parameters infra/params/staging.parameters.json
 ```
+
+**Available Script Options:**
+
+- `--yes` or `-y`: Auto-approve deployment without confirmation prompt
+- `--skip-preview`: Skip the what-if analysis preview (faster deployment)
+- `--parameters <file>`: Use custom parameter file (default: infra/params/{env}.parameters.json)
 
 **What gets deployed:**
 
 - Resource Group: `shift-dashboard-rg`
-- Container Registry: `shiftdashboard{uniqueId}`
-- Container Apps Environment with Log Analytics
-- Application Insights
-- Key Vault (with managed identity access)
-- Backend Container App (placeholder)
-- Frontend Container App (placeholder)
+- Container Registry: `shiftdashboard{uniqueId}` (basic SKU, managed identity pull)
+- Container Apps Environment with Log Analytics (environment-specific retention)
+- Application Insights (environment-specific retention)
+- Key Vault with RBAC enabled (no access policies)
+- Backend Container App with:
+  - System-assigned managed identity
+  - Health probes (liveness, readiness, startup)
+  - Autoscaling rules (HTTP, CPU, memory)
+  - Environment-specific resources (CPU, memory, replicas)
+- Frontend Container App with:
+  - System-assigned managed identity
+  - Health probes (liveness, readiness, startup)
+  - Autoscaling rules (HTTP, CPU, memory)
+  - Runtime configuration for backend URL
+  - Environment-specific resources (CPU, memory, replicas)
+- RBAC Role Assignments:
+  - Backend → Key Vault Secrets User
+  - Backend → AcrPull (Container Registry)
+  - Frontend → AcrPull (Container Registry)
+
+**Environment-Specific Configurations:**
+
+| Resource               | Dev        | Staging    | Production |
+| ---------------------- | ---------- | ---------- | ---------- |
+| Backend CPU            | 0.25 cores | 0.5 cores  | 1.0 cores  |
+| Backend Memory         | 0.5Gi      | 1.0Gi      | 2.0Gi      |
+| Backend Replicas       | 0-2        | 1-5        | 2-10       |
+| Frontend CPU           | 0.25 cores | 0.25 cores | 0.5 cores  |
+| Frontend Memory        | 0.5Gi      | 0.5Gi      | 1.0Gi      |
+| Frontend Replicas      | 0-2        | 1-3        | 1-5        |
+| Log Retention          | 30 days    | 60 days    | 90 days    |
+| App Insights Retention | 30 days    | 60 days    | 90 days    |
+| Zone Redundancy        | Disabled   | Disabled   | Enabled    |
 
 **Deployment time**: ~5-10 minutes
 
@@ -254,16 +298,16 @@ git push origin main
 
 ### Key Vault Secrets
 
-Store sensitive configuration in Key Vault:
+Store sensitive configuration in Key Vault (RBAC-based access):
 
 ```bash
-# Get Key Vault name
+# Get Key Vault name from deployment outputs
 KEY_VAULT_NAME=$(az deployment group show \
   --resource-group shift-dashboard-rg \
   --name <deployment-name> \
   --query properties.outputs.keyVaultName.value -o tsv)
 
-# Set Shiftboard credentials
+# Set Shiftboard credentials (requires Key Vault Secrets Officer role)
 az keyvault secret set \
   --vault-name $KEY_VAULT_NAME \
   --name ShiftboardAccessKeyId \
@@ -273,6 +317,21 @@ az keyvault secret set \
   --vault-name $KEY_VAULT_NAME \
   --name ShiftboardSecretKey \
   --value "your-secret-key"
+```
+
+**RBAC Configuration:**
+
+The Key Vault uses Azure RBAC (not access policies). The infrastructure deployment automatically assigns:
+
+- **Backend App**: `Key Vault Secrets User` role (4633458b-17de-408a-b874-0445c86b69e6)
+- **Your User**: Manually assign `Key Vault Secrets Officer` role to set secrets:
+
+```bash
+# Assign yourself Secrets Officer role to manage secrets
+az role assignment create \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --role "Key Vault Secrets Officer" \
+  --scope /subscriptions/<subscription-id>/resourceGroups/shift-dashboard-rg/providers/Microsoft.KeyVault/vaults/$KEY_VAULT_NAME
 ```
 
 ### Environment Variables
@@ -462,14 +521,28 @@ ContainerAppConsoleLogs_CL
 
 ### Health Checks
 
+The infrastructure includes built-in health probes for reliability:
+
+**Backend Health Probes:**
+
+- **Liveness**: `/health` (10s period) - Restarts container if unhealthy
+- **Readiness**: `/health` (5s period) - Removes from load balancer if not ready
+- **Startup**: `/health` (3s period, 30 failures) - Allows slow start without restarts
+
+**Frontend Health Probes:**
+
+- **Liveness**: `/` (10s period)
+- **Readiness**: `/` (5s period)
+- **Startup**: `/` (3s period, 30 failures)
+
 ```bash
-# Backend health
+# Manual health check endpoints
 curl https://backend.example.com/health
 
 # Frontend availability
 curl -I https://dashboard.example.com
 
-# Shiftboard connectivity
+# Shiftboard connectivity test
 curl https://backend.example.com/api/system/echo -X POST \
   -H "Content-Type: application/json" \
   -d '{"message":"test"}'
@@ -502,25 +575,45 @@ az containerapp revision activate \
 
 ### Cost Breakdown (Estimated)
 
-**Active Season (minReplicas=1):**
+**Development Environment (scale-to-zero enabled):**
 
 - Container Apps Environment: $10/month
-- Log Analytics (5 GB): $15/month
-- Application Insights: $5/month
+- Log Analytics (30-day retention): $10/month
+- Application Insights (30-day retention): $3/month
 - Container Registry (Basic): $5/month
-- Container Apps (2 instances): $30/month
+- Container Apps (0.25-0.5 CPU, 0-2 replicas): $5-10/month
 - Key Vault: $1/month
-- **Total: ~$65-70/month**
+- **Total: ~$34-39/month**
 
-**Off-Season (scale-to-zero):**
+**Staging Environment (minimal replicas):**
 
 - Container Apps Environment: $10/month
-- Log Analytics (minimal): $5/month
+- Log Analytics (60-day retention): $15/month
+- Application Insights (60-day retention): $5/month
+- Container Registry (shared): $0/month (shared with dev)
+- Container Apps (0.5-1.0 CPU, 1-5 replicas): $30-40/month
+- Key Vault: $1/month
+- **Total: ~$61-71/month**
+
+**Production Environment (active season, zone redundancy):**
+
+- Container Apps Environment (zone redundant): $15/month
+- Log Analytics (90-day retention): $20/month
+- Application Insights (90-day retention): $8/month
+- Container Registry (Basic): $5/month
+- Container Apps (1.0-2.0 CPU, 2-10 replicas): $60-100/month
+- Key Vault: $1/month
+- **Total: ~$109-149/month**
+
+**Production Off-Season (scale-to-zero):**
+
+- Container Apps Environment: $15/month
+- Log Analytics (minimal data): $10/month
 - Application Insights (disabled): $0/month
 - Container Registry: $5/month
 - Container Apps (zero replicas): $0/month
 - Key Vault: $1/month
-- **Total: ~$20-25/month**
+- **Total: ~$31/month**
 
 ### Cost Optimization Tips
 
@@ -578,7 +671,62 @@ curl -X POST https://backend.example.com/api/system/echo \
   -H "Content-Type: application/json" \
   -d '{"message":"test"}'
 
-# Check Key Vault access
+# Check Key Vault access (RBAC)
+az role assignment list \
+  --scope /subscriptions/<subscription-id>/resourceGroups/shift-dashboard-rg/providers/Microsoft.KeyVault/vaults/<vault-name> \
+  --query "[?principalType=='ServicePrincipal'].{Name:principalName, Role:roleDefinitionName}" \
+  --output table
+
+# Verify managed identity has Key Vault Secrets User role (check metadata only, not the secret value)
+az keyvault secret show \
+  --vault-name <vault-name> \
+  --name ShiftboardAccessKeyId \
+  --query "{id:id, name:name, enabled:attributes.enabled}" \
+  --output json
+```
+
+### Key Vault Access Issues
+
+```bash
+# If you get "Forbidden" errors, assign yourself the Secrets Officer role
+az role assignment create \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --role "Key Vault Secrets Officer" \
+  --scope /subscriptions/<subscription-id>/resourceGroups/shift-dashboard-rg/providers/Microsoft.KeyVault/vaults/<vault-name>
+
+# Verify backend app managed identity has correct role
+BACKEND_IDENTITY=$(az containerapp show \
+  --name shift-dashboard-backend-prod \
+  --resource-group shift-dashboard-rg \
+  --query identity.principalId -o tsv)
+
+az role assignment create \
+  --assignee $BACKEND_IDENTITY \
+  --role "Key Vault Secrets User" \
+  --scope /subscriptions/<subscription-id>/resourceGroups/shift-dashboard-rg/providers/Microsoft.KeyVault/vaults/<vault-name>
+```
+
+### Container Registry Authentication Issues
+
+```bash
+# Verify managed identity has AcrPull role
+BACKEND_IDENTITY=$(az containerapp show \
+  --name shift-dashboard-backend-prod \
+  --resource-group shift-dashboard-rg \
+  --query identity.principalId -o tsv)
+
+az role assignment create \
+  --assignee $BACKEND_IDENTITY \
+  --role "AcrPull" \
+  --scope /subscriptions/<subscription-id>/resourceGroups/shift-dashboard-rg/providers/Microsoft.ContainerRegistry/registries/<registry-name>
+
+# Admin credentials should be disabled for security
+az acr update \
+  --name <registry-name> \
+  --admin-enabled false
+```
+
+```bash
 az keyvault secret show \
   --vault-name <vault-name> \
   --name ShiftboardAccessKeyId

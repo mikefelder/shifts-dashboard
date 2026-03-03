@@ -10,6 +10,8 @@ import { WorkgroupService } from '../services/workgroup.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateParams } from '../middleware/validation.middleware';
 import { CommonSchemas } from '../middleware/validation.middleware';
+import logger from '../config/logger';
+import { getTimingMetadata } from '../utils/timing';
 
 // ============================================================================
 // Controller Factory
@@ -37,27 +39,20 @@ export function createWorkgroupController(workgroupService: WorkgroupService) {
       asyncHandler(async (_req: Request, res: Response) => {
         const requestStart = Date.now();
 
-        console.log('[workgroup.controller] GET /api/workgroups/list');
+        logger.debug('[workgroup.controller] GET /api/workgroups/list');
 
         const result = await workgroupService.listWorkgroups();
-
-        const requestEnd = Date.now();
 
         res.status(200).json({
           result: {
             workgroups: result.workgroups,
             total: result.total,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
 
-        console.log(
-          `[workgroup.controller] Returned ${result.total} workgroups in ${requestEnd - requestStart}ms`
-        );
+        const duration = Date.now() - requestStart;
+        logger.info(`[workgroup.controller] Returned ${result.total} workgroups in ${duration}ms`);
       }),
     ],
 
@@ -84,11 +79,9 @@ export function createWorkgroupController(workgroupService: WorkgroupService) {
         // validateParams guarantees this is a non-empty string
         const wgId = String(workgroupId);
 
-        console.log(`[workgroup.controller] GET /api/workgroups/${wgId}/roles`);
+        logger.debug(`[workgroup.controller] GET /api/workgroups/${wgId}/roles`);
 
         const result = await workgroupService.getRoles(wgId);
-
-        const requestEnd = Date.now();
 
         res.status(200).json({
           result: {
@@ -96,15 +89,12 @@ export function createWorkgroupController(workgroupService: WorkgroupService) {
             roles: result.roles,
             total: result.total,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
 
-        console.log(
-          `[workgroup.controller] Returned ${result.total} roles for workgroup ${wgId} in ${requestEnd - requestStart}ms`
+        const duration = Date.now() - requestStart;
+        logger.info(
+          `[workgroup.controller] Returned ${result.total} roles for workgroup ${wgId} in ${duration}ms`
         );
       }),
     ],

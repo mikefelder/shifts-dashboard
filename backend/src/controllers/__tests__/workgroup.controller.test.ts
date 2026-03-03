@@ -7,34 +7,7 @@
 
 import { createWorkgroupController } from '../workgroup.controller';
 import type { WorkgroupResult, RoleResult } from '../../services/workgroup.service';
-
-// ============================================================================
-// Helpers: Mock req/res
-// ============================================================================
-
-function makeReq(
-  overrides: Partial<{
-    params: Record<string, string>;
-    query: Record<string, string>;
-    body: unknown;
-  }> = {}
-) {
-  return {
-    params: {},
-    query: {},
-    body: {},
-    headers: {},
-    ...overrides,
-  } as Partial<import('express').Request> as import('express').Request;
-}
-
-function makeRes() {
-  const res = {
-    status: jest.fn().mockReturnThis(),
-    json: jest.fn().mockReturnThis(),
-  };
-  return res as unknown as import('express').Response;
-}
+import { makeReq, makeRes, runLastHandler } from './test-helpers';
 
 // ============================================================================
 // Fixtures
@@ -73,20 +46,6 @@ function makeMockWorkgroupService(
     listAllRoles: jest.fn().mockResolvedValue({ roles: [], total: 0 }),
     ...overrides,
   } as unknown as import('../../services/workgroup.service').WorkgroupService;
-}
-
-// ============================================================================
-// Utility: Run the last handler in a middleware array
-// ============================================================================
-
-async function runLastHandler(
-  handlers: Array<any>,
-  req: import('express').Request,
-  res: import('express').Response
-): Promise<void> {
-  const handler = handlers[handlers.length - 1];
-  // asyncHandler wraps a function — call the inner fn directly
-  await handler(req, res, jest.fn());
 }
 
 // ============================================================================

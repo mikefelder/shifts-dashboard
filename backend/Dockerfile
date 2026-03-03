@@ -34,9 +34,10 @@ RUN npm ci --omit=dev
 # Copy built application from build stage
 COPY --from=build /app/dist ./dist
 
-# Create non-root user for security
+# Create non-root user for security and logs directory
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
+    mkdir -p /app/logs && \
     chown -R nodejs:nodejs /app
 
 USER nodejs

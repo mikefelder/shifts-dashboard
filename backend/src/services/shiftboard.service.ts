@@ -16,12 +16,7 @@
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { buildAuthenticatedPostRequest, validateAuthConfig } from '../utils/shiftboard-auth';
-// Pagination utilities - uncomment when callPaginated method is needed
-// import {
-//   fetchAllPages,
-//   parsePaginationMetadata,
-//   PaginatedResponse,
-// } from '../utils/pagination';
+import logger from '../config/logger';
 
 // ============================================================================
 // Configuration
@@ -196,7 +191,7 @@ export class ShiftboardService {
     // Request interceptor for logging
     this.axios.interceptors.request.use((config) => {
       const method = new URL(config.url || '').searchParams.get('method');
-      console.log(`[Shiftboard] → ${method || config.url}`);
+      logger.debug(`[Shiftboard] → ${method || config.url}`);
       return config;
     });
 
@@ -204,14 +199,14 @@ export class ShiftboardService {
     this.axios.interceptors.response.use(
       (response) => {
         const method = new URL(response.config.url || '').searchParams.get('method');
-        console.log(`[Shiftboard] ✓ ${method} (${response.status})`);
+        logger.debug(`[Shiftboard] ✓ ${method} (${response.status})`);
         return response;
       },
       (error) => {
         const method = error.config?.url
           ? new URL(error.config.url).searchParams.get('method')
           : 'unknown';
-        console.error(`[Shiftboard] ✗ ${method} (${error.response?.status || 'NO_RESPONSE'})`);
+        logger.error(`[Shiftboard] ✗ ${method} (${error.response?.status || 'NO_RESPONSE'})`);
         return Promise.reject(error);
       }
     );
@@ -241,7 +236,7 @@ export class ShiftboardService {
 
       // Return result or throw if missing
       if (response.data.result === undefined) {
-        console.log('[Shiftboard] ERROR: No result in response');
+        logger.error('[Shiftboard] ERROR: No result in response');
         throw new Error('Shiftboard API returned no result');
       }
 
@@ -251,37 +246,6 @@ export class ShiftboardService {
       throw error; // TypeScript requires this, but handleError always throws
     }
   }
-
-  /**
-   * Make paginated request and fetch all pages automatically
-   * Note: Currently unused but kept for future pagination needs
-   */
-  /* private async callPaginated<T>(
-    method: string,
-    params: Record<string, unknown> = {}
-  ): Promise<T[]> {
-    const fetchPage = async (
-      page: number,
-      limit: number
-    ): Promise<PaginatedResponse<T>> => {
-      const start = (page - 1) * limit;
-      const response = await this.call<{
-        data?: T[];
-        results?: T[];
-        total?: number;
-        count?: number;
-        page?: ShiftboardPage;
-      }>(method, {
-        ...params,
-        start,
-        batch: limit,
-      });
-
-      return parsePaginationMetadata<T>(response, page, limit);
-    };
-
-    return await fetchAllPages(fetchPage);
-  } */
 
   /**
    * Error handler - converts Axios and Shiftboard errors to standard format

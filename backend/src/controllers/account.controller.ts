@@ -9,6 +9,8 @@ import type { Request, Response, RequestHandler } from 'express';
 import { AccountService } from '../services/account.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateParams, validateQuery, CommonSchemas } from '../middleware/validation.middleware';
+import logger from '../config/logger';
+import { getTimingMetadata } from '../utils/timing';
 
 // ============================================================================
 // Controller Factory
@@ -38,28 +40,21 @@ export function createAccountController(accountService: AccountService) {
         const requestStart = Date.now();
         const { workgroup } = req.query as { workgroup?: string };
 
-        console.log('[account.controller] GET /api/accounts/list', { workgroup });
+        logger.debug('[account.controller] GET /api/accounts/list', { workgroup });
 
         const params = workgroup ? { workgroup } : undefined;
         const result = await accountService.listAccounts(params);
-
-        const requestEnd = Date.now();
 
         res.status(200).json({
           result: {
             accounts: result.accounts,
             total: result.total,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
 
-        console.log(
-          `[account.controller] Returned ${result.total} accounts in ${requestEnd - requestStart}ms`
-        );
+        const duration = Date.now() - requestStart;
+        logger.info(`[account.controller] Returned ${result.total} accounts in ${duration}ms`);
       }),
     ],
 
@@ -76,21 +71,15 @@ export function createAccountController(accountService: AccountService) {
       asyncHandler(async (_req: Request, res: Response) => {
         const requestStart = Date.now();
 
-        console.log('[account.controller] GET /api/accounts/self');
+        logger.debug('[account.controller] GET /api/accounts/self');
 
         const result = await accountService.getSelf();
-
-        const requestEnd = Date.now();
 
         res.status(200).json({
           result: {
             account: result.account,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
       }),
     ],
@@ -115,11 +104,9 @@ export function createAccountController(accountService: AccountService) {
         const { workgroupId } = req.params;
         const wgId = String(workgroupId);
 
-        console.log(`[account.controller] GET /api/accounts/workgroup/${wgId}`);
+        logger.debug(`[account.controller] GET /api/accounts/workgroup/${wgId}`);
 
         const result = await accountService.getByWorkgroup(wgId);
-
-        const requestEnd = Date.now();
 
         res.status(200).json({
           result: {
@@ -127,15 +114,12 @@ export function createAccountController(accountService: AccountService) {
             total: result.total,
             workgroupId: wgId,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
 
-        console.log(
-          `[account.controller] Returned ${result.total} accounts for workgroup ${wgId} in ${requestEnd - requestStart}ms`
+        const duration = Date.now() - requestStart;
+        logger.info(
+          `[account.controller] Returned ${result.total} accounts for workgroup ${wgId} in ${duration}ms`
         );
       }),
     ],
@@ -160,26 +144,19 @@ export function createAccountController(accountService: AccountService) {
         const { accountId } = req.params;
         const accId = String(accountId);
 
-        console.log(`[account.controller] GET /api/accounts/${accId}`);
+        logger.debug(`[account.controller] GET /api/accounts/${accId}`);
 
         const result = await accountService.getById(accId);
-
-        const requestEnd = Date.now();
 
         res.status(200).json({
           result: {
             account: result.account,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
 
-        console.log(
-          `[account.controller] Returned account ${accId} in ${requestEnd - requestStart}ms`
-        );
+        const duration = Date.now() - requestStart;
+        logger.info(`[account.controller] Returned account ${accId} in ${duration}ms`);
       }),
     ],
   };

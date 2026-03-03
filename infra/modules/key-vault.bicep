@@ -4,12 +4,23 @@ param location string = resourceGroup().location
 @description('Key Vault name')
 param keyVaultName string
 
-@description('Backend Container App principal ID for Key Vault access')
-param backendPrincipalId string = ''
+@description('Enable RBAC authorization (recommended over access policies)')
+param enableRbacAuthorization bool = true
+
+@description('Enable purge protection (recommended for production; cannot be disabled once enabled)')
+param enablePurgeProtection bool = false
+
+@description('Default network action')
+@allowed(['Allow', 'Deny'])
+param networkDefaultAction string = 'Allow'
+
+@description('Resource tags')
+param tags object = {}
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
+  tags: tags
   properties: {
     enabledForDeployment: false
     enabledForDiskEncryption: false
@@ -17,25 +28,15 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     tenantId: subscription().tenantId
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
-    enableRbacAuthorization: false
-    accessPolicies: !empty(backendPrincipalId) ? [
-      {
-        tenantId: subscription().tenantId
-        objectId: backendPrincipalId
-        permissions: {
-          secrets: [
-            'get'
-            'list'
-          ]
-        }
-      }
-    ] : []
+    enablePurgeProtection: enablePurgeProtection ? true : null
+    enableRbacAuthorization: enableRbacAuthorization
+    accessPolicies: []
     sku: {
       name: 'standard'
       family: 'A'
     }
     networkAcls: {
-      defaultAction: 'Allow'
+      defaultAction: networkDefaultAction
       bypass: 'AzureServices'
     }
   }

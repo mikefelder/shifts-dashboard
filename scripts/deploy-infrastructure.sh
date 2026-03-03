@@ -3,6 +3,9 @@
 # Deploy Azure Infrastructure for Shift Dashboard
 # Usage: ./scripts/deploy-infrastructure.sh [environment]
 # Example: ./scripts/deploy-infrastructure.sh dev
+# Options:
+#   --yes          Skip confirmation prompts (for CI/CD)
+#   --skip-preview Skip what-if preview
 
 set -e
 
@@ -13,10 +16,32 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-ENVIRONMENT=${1:-dev}
+ENVIRONMENT="dev"
 RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shift-dashboard-rg}
 LOCATION=${AZURE_LOCATION:-eastus}
 TEMPLATE_FILE="infra/main.bicep"
+AUTO_APPROVE=false
+SKIP_PREVIEW=false
+
+# Parse options and positional arguments
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --yes)
+      AUTO_APPROVE=true
+      shift
+      ;;
+    --skip-preview)
+      SKIP_PREVIEW=true
+      shift
+      ;;
+    *)
+      ENVIRONMENT="$1"
+      shift
+      ;;
+  esac
+done
+
+PARAMETER_FILE="infra/params/${ENVIRONMENT}.parameters.json"
 
 echo -e "${GREEN}Deploying Shift Dashboard Infrastructure${NC}"
 echo "======================================================"
@@ -30,6 +55,14 @@ echo ""
 if ! command -v az &> /dev/null; then
     echo -e "${RED}ERROR: Azure CLI is not installed. Please install it first.${NC}"
     echo "Visit: https://docs.microsoft.com/cli/azure/install-azure-cli"
+    exit 1
+fi
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo -e "${RED}ERROR: jq is not installed. Please install it first.${NC}"
+    echo "macOS: brew install jq"
+    echo "Ubuntu: sudo apt-get install jq"
     exit 1
 fi
 
@@ -64,34 +97,67 @@ fi
 echo -e "${GREEN}[OK]${NC} Bicep validation successful"
 echo ""
 
-# Show what-if preview
-echo -e "${YELLOW}Preview of changes:${NC}"
-az deployment group what-if \
-    --resource-group $RESOURCE_GROUP \
-    --template-file $TEMPLATE_FILE \
-    --parameters environment=$ENVIRONMENT
-echo ""
+# Show what-if preview (unless skipped)
+if [ "$SKIP_PREVIEW" = false ]; then
+    echo -e "${YELLOW}Preview of changes:${NC}"
+    if [ -f "$PARAMETER_FILE" ]; then
+        echo "Using parameter file: $PARAMETER_FILE"
+        az deployment group what-if \
+            --resource-group $RESOURCE_GROUP \
+            --template-file $TEMPLATE_FILE \
+            --parameters @"$PARAMETER_FILE"
+    else
+        echo "Parameter file not found, using inline parameters"
+        az deployment group what-if \
+            --resource-group $RESOURCE_GROUP \
+            --template-file $TEMPLATE_FILE \
+            --parameters environment=$ENVIRONMENT
+    fi
+    echo ""
+fi
 
 # Confirm deployment
-read -p "Do you want to proceed with deployment? (yes/no): " -r
-echo ""
-if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-    echo -e "${YELLOW}Deployment cancelled${NC}"
-    exit 0
+if [ "$AUTO_APPROVE" = false ]; then
+    read -p "Do you want to proceed with deployment? (yes/no): " -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+        echo -e "${YELLOW}Deployment cancelled${NC}"
+        exit 0
+    fi
+else
+    echo -e "${GREEN}Auto-approve enabled, proceeding with deployment${NC}"
+    echo ""
 fi
 
 # Deploy infrastructure
 echo -e "${GREEN}Deploying infrastructure...${NC}"
 DEPLOYMENT_NAME="shift-dashboard-$(date +%Y%m%d-%H%M%S)"
 
-az deployment group create \
-    --name $DEPLOYMENT_NAME \
-    --resource-group $RESOURCE_GROUP \
-    --template-file $TEMPLATE_FILE \
-    --parameters environment=$ENVIRONMENT \
-    --output json > deployment-output.json
+if [ -f "$PARAMETER_FILE" ]; then
+    echo "Using parameter file: $PARAMETER_FILE"
+    az deployment group create \
+        --name $DEPLOYMENT_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --template-file $TEMPLATE_FILE \
+        --parameters @"$PARAMETER_FILE" \
+        --output json > deployment-output.json
+else
+    echo "Parameter file not found, using inline parameters"
+    az deployment group create \
+        --name $DEPLOYMENT_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --template-file $TEMPLATE_FILE \
+        --parameters environment=$ENVIRONMENT \
+        --output json > deployment-output.json
+fi
 
-# Extract outputs
+# Verify deployment output file exists
+if [ ! -f deployment-output.json ]; then
+    echo -e "${RED}ERROR: Deployment output file not created${NC}"
+    exit 1
+fi
+
+# Extract outputs with error handling
 echo ""
 echo -e "${GREEN}Deployment complete!${NC}"
 echo ""
@@ -99,13 +165,22 @@ echo "======================================================"
 echo -e "${GREEN}Deployment Outputs:${NC}"
 echo "======================================================"
 
-REGISTRY_LOGIN_SERVER=$(jq -r '.properties.outputs.containerRegistryLoginServer.value' deployment-output.json)
-BACKEND_URL=$(jq -r '.properties.outputs.backendUrl.value' deployment-output.json)
-FRONTEND_URL=$(jq -r '.properties.outputs.frontendUrl.value' deployment-output.json)
+REGISTRY_LOGIN_SERVER=$(jq -r '.properties.outputs.containerRegistryLoginServer.value // "N/A"' deployment-output.json)
+BACKEND_URL=$(jq -r '.properties.outputs.backendUrl.value // "N/A"' deployment-output.json)
+FRONTEND_URL=$(jq -r '.properties.outputs.frontendUrl.value // "N/A"' deployment-output.json)
+KEY_VAULT_NAME=$(jq -r '.properties.outputs.keyVaultName.value // "N/A"' deployment-output.json)
+
+if [ "$REGISTRY_LOGIN_SERVER" = "N/A" ] || [ "$BACKEND_URL" = "N/A" ]; then
+    echo -e "${RED}ERROR: Failed to extract deployment outputs${NC}"
+    echo "Deployment output file contents:"
+    cat deployment-output.json
+    exit 1
+fi
 
 echo "Container Registry: $REGISTRY_LOGIN_SERVER"
 echo "Backend URL: $BACKEND_URL"
 echo "Frontend URL: $FRONTEND_URL"
+echo "Key Vault: $KEY_VAULT_NAME"
 echo ""
 
 # Save outputs to .env file for local development
@@ -113,12 +188,19 @@ cat > .env.infrastructure <<EOF
 AZURE_CONTAINER_REGISTRY=$REGISTRY_LOGIN_SERVER
 BACKEND_URL=$BACKEND_URL
 FRONTEND_URL=$FRONTEND_URL
+KEY_VAULT_NAME=$KEY_VAULT_NAME
 EOF
 
 echo -e "${GREEN}[OK]${NC} Outputs saved to .env.infrastructure"
 echo ""
 echo -e "${GREEN}Next steps:${NC}"
-echo "1. Push Docker images to: $REGISTRY_LOGIN_SERVER"
-echo "2. Deploy applications using GitHub Actions or:"
-echo "   ./scripts/deploy-apps.sh"
+echo "1. Configure secrets in Key Vault: $KEY_VAULT_NAME"
+echo "   - sb-access-key (Shiftboard Access Key)"
+echo "   - sb-signature-key (Shiftboard Signature Key)"
+echo "2. Push Docker images to: $REGISTRY_LOGIN_SERVER"
+echo "   - Use GitHub Actions deploy workflow or:"
+echo "   - Build and push manually (requires ACR login)"
+echo "3. Access your applications:"
+echo "   - Backend:  $BACKEND_URL"
+echo "   - Frontend: $FRONTEND_URL"
 echo ""

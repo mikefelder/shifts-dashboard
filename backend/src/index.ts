@@ -4,6 +4,8 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
+import { apiLimiter, dataLimiter } from './middleware/rate-limit.middleware';
+import { sanitizeInput } from './middleware/sanitize.middleware';
 import { getShiftboardService } from './services/shiftboard.service';
 import { createShiftService } from './services/shift.service';
 import { createShiftController } from './controllers/shift.controller';
@@ -34,22 +36,32 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // Security Middleware
 // ============================================================================
 
-// Helmet - Security headers
+// Helmet - Enhanced security headers
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for MUI
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"], // Restrict AJAX/WebSocket connections
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"], // Disable plugins
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"], // Prevent embedding
       },
     },
     hsts: {
-      maxAge: 31536000,
+      maxAge: 31536000, // 1 year
       includeSubDomains: true,
       preload: true,
     },
+    frameguard: {
+      action: 'deny', // Prevent clickjacking
+    },
+    noSniff: true, // Prevent MIME sniffing
+    xssFilter: true, // Enable XSS filter
   })
 );
 
@@ -63,8 +75,15 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400, // Cache preflight for 24 hours
   })
 );
+
+// Rate limiting - Prevent abuse
+app.use('/api', apiLimiter); // General API rate limit
+
+// Input sanitization - Prevent XSS/injection
+app.use(sanitizeInput);
 
 // ============================================================================
 // Logging Middleware
@@ -117,11 +136,11 @@ app.get('/', (_req: Request, res: Response) => {
 // Initialize shared Shiftboard service
 const shiftboardService = getShiftboardService();
 
-// Shift routes
+// Shift routes (with data limiter for high-frequency endpoints)
 const shiftService = createShiftService(shiftboardService);
 const shiftController = createShiftController(shiftService);
 const shiftRoutes = createShiftRoutes(shiftController);
-app.use('/api/shifts', shiftRoutes);
+app.use('/api/shifts', dataLimiter, shiftRoutes);
 
 // Workgroup routes
 const workgroupService = createWorkgroupService(shiftboardService);
@@ -151,10 +170,6 @@ app.use('/api/calendar', calendarRoutes);
 const systemController = createSystemController();
 const systemRoutes = createSystemRoutes(systemController);
 app.use('/api/system', systemRoutes);
-
-console.log(
-  '[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts, /api/roles, /api/calendar, /api/system'
-);
 
 // ============================================================================
 // Error Handling

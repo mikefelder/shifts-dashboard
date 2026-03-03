@@ -5,6 +5,8 @@
  * Currently provides stub implementation for summary endpoint.
  */
 
+import logger from '../config/logger';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -34,7 +36,7 @@ export class CalendarService {
    * - Clocked in vs not clocked in stats
    */
   async getSummary(): Promise<CalendarSummaryResult> {
-    console.log('[calendar.service] Fetching calendar summary (stub)');
+    logger.debug('[calendar.service] Fetching calendar summary (stub)');
 
     // Stub implementation - to be enhanced in future versions
     return {
