@@ -20,8 +20,8 @@ on:
           - dev
           - staging
           - prod
-      committeeCode:
-        description: 'Committee code to include in resource names (e.g. "itc"). Leave blank if not applicable.'
+      committeeCodes:
+        description: 'Comma-separated committee codes to scope this deployment (e.g. "ITC", "ITC,FINANCE"). Pass "ALL" or leave blank to disable filtering.'
         required: false
         default: ''
 
@@ -66,18 +66,27 @@ jobs:
         run: |
           ENV="${{ github.event.inputs.environment || 'dev' }}"
           PARAM_FILE="infra/params/${ENV}.parameters.json"
-          COMMITTEE_CODE="${{ github.event.inputs.committeeCode || secrets.COMMITTEE_CODE }}"
+          COMMITTEE_CODES="${{ github.event.inputs.committeeCodes || vars.COMMITTEE_CODES }}"
+          COMMITTEE_CODES="${COMMITTEE_CODES,,}"
+
+          # The first code (before any comma) drives resource naming.
+          # If the value is 'all' or empty, no committee suffix is applied.
+          FIRST_CODE=$(echo "$COMMITTEE_CODES" | cut -d',' -f1 | xargs)
+          if [[ "$FIRST_CODE" == "all" || -z "$FIRST_CODE" ]]; then
+            FIRST_CODE=""
+          fi
 
           APP_NAME=$(jq -r '.parameters.appName.value // "shift-dashboard"' "$PARAM_FILE" 2>/dev/null || echo 'shift-dashboard')
-          COMMITTEE_SUFFIX="${COMMITTEE_CODE:+-${COMMITTEE_CODE}}"
+          COMMITTEE_SUFFIX="${FIRST_CODE:+-${FIRST_CODE}}"
           RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
 
           echo "Environment:    $ENV"
-          echo "Committee code: ${COMMITTEE_CODE:-'(none)'}"
+          echo "Committee codes: ${COMMITTEE_CODES:-'(none)'}"
+          echo "First code (naming): ${FIRST_CODE:-'(none)'}"
           echo "Resource group: $RESOURCE_GROUP"
 
           echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
-          echo "COMMITTEE_CODE=$COMMITTEE_CODE" >> $GITHUB_ENV
+          echo "COMMITTEE_CODES=$COMMITTEE_CODES" >> $GITHUB_ENV
 
       - name: What-If Deployment
         run: |
@@ -89,13 +98,13 @@ jobs:
             az deployment group what-if \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE" committeeCode="$COMMITTEE_CODE"
+              --parameters @"$PARAM_FILE" committeeCodes="$COMMITTEE_CODES"
           else
             echo "Parameter file not found, using inline parameters"
             az deployment group what-if \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters environment="$ENV" committeeCode="$COMMITTEE_CODE"
+              --parameters environment="$ENV" committeeCodes="$COMMITTEE_CODES"
           fi
 
   deploy:
@@ -122,14 +131,23 @@ jobs:
         run: |
           ENV="${{ github.event.inputs.environment || 'dev' }}"
           PARAM_FILE="infra/params/${ENV}.parameters.json"
-          COMMITTEE_CODE="${{ github.event.inputs.committeeCode || secrets.COMMITTEE_CODE }}"
+          COMMITTEE_CODES="${{ github.event.inputs.committeeCodes || vars.COMMITTEE_CODES }}"
+          COMMITTEE_CODES="${COMMITTEE_CODES,,}"
+
+          # The first code (before any comma) drives resource naming.
+          # If the value is 'all' or empty, no committee suffix is applied.
+          FIRST_CODE=$(echo "$COMMITTEE_CODES" | cut -d',' -f1 | xargs)
+          if [[ "$FIRST_CODE" == "all" || -z "$FIRST_CODE" ]]; then
+            FIRST_CODE=""
+          fi
 
           APP_NAME=$(jq -r '.parameters.appName.value // "shift-dashboard"' "$PARAM_FILE" 2>/dev/null || echo 'shift-dashboard')
-          COMMITTEE_SUFFIX="${COMMITTEE_CODE:+-${COMMITTEE_CODE}}"
+          COMMITTEE_SUFFIX="${FIRST_CODE:+-${FIRST_CODE}}"
           RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
 
           echo "Environment:    $ENV"
-          echo "Committee code: ${COMMITTEE_CODE:-'(none)'}"
+          echo "Committee codes: ${COMMITTEE_CODES:-'(none)'}"
+          echo "First code (naming): ${FIRST_CODE:-'(none)'}"
           echo "Resource group: $RESOURCE_GROUP"
 
           echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
@@ -195,7 +213,7 @@ jobs:
             output=$(az deployment group create \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE" committeeCode="$COMMITTEE_CODE" \
+              --parameters @"$PARAM_FILE" committeeCodes="$COMMITTEE_CODES" \
               --query 'properties.outputs' \
               --output json)
           else
@@ -203,7 +221,7 @@ jobs:
             output=$(az deployment group create \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters environment="$ENV" committeeCode="$COMMITTEE_CODE" \
+              --parameters environment="$ENV" committeeCodes="$COMMITTEE_CODES" \
               --query 'properties.outputs' \
               --output json)
           fi
@@ -236,7 +254,7 @@ jobs:
           echo "frontendAppName=$frontendAppName" >> $GITHUB_OUTPUT
           echo "backendPrincipalId=$backendPrincipalId" >> $GITHUB_OUTPUT
           echo "resourceGroup=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
-          echo "committeeCode=$COMMITTEE_CODE" >> $GITHUB_OUTPUT
+          echo "committeeCode=$COMMITTEE_CODES" >> $GITHUB_OUTPUT
 
           echo "Infrastructure deployment complete"
           echo ""
@@ -281,7 +299,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: \`${{ github.event.inputs.environment || 'dev' }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Committee Code**: \`${{ steps.deploy.outputs.committeeCode || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Committee Codes**: \`${{ steps.deploy.outputs.committeeCode || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Resource Group**: \`${{ steps.deploy.outputs.resourceGroup }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Secrets" >> $GITHUB_STEP_SUMMARY

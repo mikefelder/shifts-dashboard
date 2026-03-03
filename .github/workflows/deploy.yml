@@ -26,8 +26,8 @@ on:
           - dev
           - staging
           - prod
-      committeeCode:
-        description: 'Committee code included in resource names (e.g. "itc"). Must match the code used during infrastructure deployment.'
+      committeeCodes:
+        description: 'Committee codes included in resource names (e.g. "ITC", "ITC,FINANCE"). Must match the codes used during infrastructure deployment.'
         required: false
         default: ''
 
@@ -80,7 +80,14 @@ jobs:
         id: resolve
         run: |
           ENV="${{ env.DEPLOY_ENVIRONMENT }}"
-          COMMITTEE_CODE="${{ github.event.inputs.committeeCode || secrets.COMMITTEE_CODE }}"
+          COMMITTEE_CODES="${{ github.event.inputs.committeeCodes || vars.COMMITTEE_CODES }}"
+          COMMITTEE_CODES="${COMMITTEE_CODES,,}"
+
+          # The first code drives resource naming; ALL or empty means no suffix.
+          FIRST_CODE=$(echo "$COMMITTEE_CODES" | cut -d',' -f1 | xargs)
+          if [[ "$FIRST_CODE" == "all" || -z "$FIRST_CODE" ]]; then
+            FIRST_CODE=""
+          fi
           PARAM_FILE="infra/params/${ENV}.parameters.json"
 
           if [ -f "$PARAM_FILE" ]; then
@@ -89,11 +96,12 @@ jobs:
             APP_NAME="shift-dashboard"
           fi
 
-          COMMITTEE_SUFFIX="${COMMITTEE_CODE:+-${COMMITTEE_CODE}}"
+          COMMITTEE_SUFFIX="${FIRST_CODE:+-${FIRST_CODE}}"
           RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
 
           echo "Environment:    $ENV"
-          echo "Committee code: ${COMMITTEE_CODE:-'(none)'}"
+          echo "Committee codes: ${COMMITTEE_CODES:-'(none)'}"
+          echo "First code (naming): ${FIRST_CODE:-'(none)'}"
           echo "Resource group: $RESOURCE_GROUP"
 
           echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV

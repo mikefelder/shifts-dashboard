@@ -17,9 +17,8 @@ param uniqueSuffix string = uniqueString(resourceGroup().id)
 @allowed(['Basic', 'Standard', 'Premium'])
 param containerRegistrySku string = 'Basic'
 
-@description('Optional committee code to include in resource names (e.g. "itc"). Leave empty if not applicable.')
-@maxLength(12)
-param committeeCode string = ''
+@description('Optional comma-separated committee codes to scope this deployment (e.g. "ITC", "ITC,FINANCE"). Pass "ALL" or leave empty to disable committee filtering.')
+param committeeCodes string = ''
 
 // Environment-specific configurations
 var environmentConfig = {
@@ -69,9 +68,19 @@ var environmentConfig = {
 
 var config = environmentConfig[environment]
 
-// Name infix: environment + optional committee code
+// Committee code handling
+// Lowercase the full list; treat empty or 'all' as "no filtering".
+var codesLower = toLower(committeeCodes)
+var isAllCommittees = empty(committeeCodes) || codesLower == 'all'
+// First code drives resource naming; remaining codes are UI-only.
+var codesList = isAllCommittees ? [] : split(codesLower, ',')
+var firstCode = isAllCommittees ? '' : trim(codesList[0])
+// Value surfaced to container apps. 'ALL' tells the UI to show every committee.
+var committeeCodesEnvValue = isAllCommittees ? 'ALL' : codesLower
+
+// Name infix: environment + first committee code (if any)
 // e.g. 'dev', 'dev-itc', 'prod-finance'
-var committeeSegment = empty(committeeCode) ? '' : '-${committeeCode}'
+var committeeSegment = empty(firstCode) ? '' : '-${firstCode}'
 var nameInfix = '${environment}${committeeSegment}'
 
 // Resource naming
@@ -79,10 +88,10 @@ var nameInfix = '${environment}${committeeSegment}'
 var registryName = take(replace('${appName}-${nameInfix}-${uniqueSuffix}', '-', ''), 50)
 
 // Key Vault: 3-24 chars max, globally unique
-// Format: sd-{env}-[{code}-]kv-{suffix}
+// Format: sd-{env}-[{first-code}-]kv-{suffix}
 // e.g. sd-dev-kv-qu7yv (16) | sd-dev-itc-kv-qu7yv (20) | sd-staging-itc-kv-qu7yv (23)
 var kvEnvSegment = take(environment, 7)
-var kvCodeSegment = empty(committeeCode) ? '' : '-${take(committeeCode, 3)}'
+var kvCodeSegment = empty(firstCode) ? '' : '-${take(firstCode, 3)}'
 var keyVaultName = 'sd-${kvEnvSegment}${kvCodeSegment}-kv-${take(uniqueSuffix, 5)}'
 
 var backendAppName = '${appName}-${nameInfix}-backend'
@@ -91,7 +100,7 @@ var frontendAppName = '${appName}-${nameInfix}-frontend'
 // Common tags
 var commonTags = {
   Environment: environment
-  CommitteeCode: committeeCode
+  CommitteeCodes: committeeCodes
   Application: appName
   ManagedBy: 'Bicep'
 }
@@ -183,6 +192,10 @@ module backendApp './modules/container-app.bicep' = {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: appInsights.outputs.connectionString
       }
+      {
+        name: 'COMMITTEE_CODES'
+        value: committeeCodesEnvValue
+      }
     ]
   }
   dependsOn: [
@@ -233,6 +246,10 @@ module frontendApp './modules/container-app.bicep' = {
       {
         name: 'VITE_API_URL'
         value: backendApp.outputs.appUrl
+      }
+      {
+        name: 'VITE_COMMITTEE_CODES'
+        value: committeeCodesEnvValue
       }
     ]
   }
