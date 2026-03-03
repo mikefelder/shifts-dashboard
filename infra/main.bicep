@@ -38,6 +38,16 @@ module containerAppsEnv './modules/container-apps-env.bicep' = {
   }
 }
 
+// Application Insights (connected to Log Analytics)
+module appInsights './modules/app-insights.bicep' = {
+  name: 'app-insights-deployment'
+  params: {
+    location: location
+    appInsightsName: '${appName}-ai-${uniqueSuffix}'
+    logAnalyticsId: containerAppsEnv.outputs.logAnalyticsId
+  }
+}
+
 // Key Vault (deployed after backend to get principal ID)
 module keyVault './modules/key-vault.bicep' = {
   name: 'key-vault-deployment'
@@ -79,6 +89,10 @@ module backendApp './modules/container-app.bicep' = {
         name: 'KEY_VAULT_NAME'
         value: keyVaultName
       }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsights.outputs.connectionString
+      }
     ]
   }
 }
@@ -110,6 +124,8 @@ output environmentName string = containerAppsEnv.outputs.environmentName
 output backendUrl string = backendApp.outputs.appUrl
 output frontendUrl string = frontendApp.outputs.appUrl
 output backendFqdn string = backendApp.outputs.fqdn
+output appInsightsConnectionString string = appInsights.outputs.connectionString
+output appInsightsInstrumentationKey string = appInsights.outputs.instrumentationKey
 output frontendFqdn string = frontendApp.outputs.fqdn
 output keyVaultName string = keyVault.outputs.keyVaultName
 output backendAppName string = backendApp.outputs.appName
