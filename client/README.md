@@ -59,7 +59,7 @@ The frontend uses a **runtime configuration** system to inject the backend API U
 2. **Container Start**: `entrypoint.sh` generates `/usr/share/nginx/html/config.js`:
    ```javascript
    window.__RUNTIME_CONFIG__ = {
-     VITE_API_URL: 'https://backend.example.com',
+     apiUrl: 'https://backend.example.com',
    };
    ```
 3. **Runtime**: Application reads config via `getRuntimeConfig()` utility
@@ -77,7 +77,7 @@ export function getRuntimeConfig(): RuntimeConfig {
 // Get API base URL (runtime or build-time fallback)
 export function getApiBaseUrl(): string {
   const runtimeConfig = getRuntimeConfig();
-  return runtimeConfig.VITE_API_URL || import.meta.env.VITE_API_URL || '';
+  return runtimeConfig.apiUrl || import.meta.env.VITE_API_BASE_URL || '';
 }
 ```
 
@@ -96,14 +96,14 @@ const apiClient = axios.create({
 **Development** (`.env.development`):
 
 ```bash
-VITE_API_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3000
 ```
 
 **Production** (injected at runtime):
 
 ```bash
 # Set in Azure Container App environment
-VITE_API_URL=https://shift-dashboard-backend-prod.azurecontainerapps.io
+VITE_API_BASE_URL=https://shift-dashboard-backend-prod.azurecontainerapps.io
 ```
 
 ## Development
@@ -227,7 +227,7 @@ Expected output:
 
 ```json
 {
-  "VITE_API_URL": "https://backend.example.com"
+  "apiUrl": "https://backend.example.com"
 }
 ```
 

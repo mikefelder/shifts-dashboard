@@ -16,17 +16,16 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-ENVIRONMENT=${1:-dev}
+ENVIRONMENT="dev"
 RESOURCE_GROUP=${AZURE_RESOURCE_GROUP:-shift-dashboard-rg}
 LOCATION=${AZURE_LOCATION:-eastus}
 TEMPLATE_FILE="infra/main.bicep"
-PARAMETER_FILE="infra/params/${ENVIRONMENT}.parameters.json"
 AUTO_APPROVE=false
 SKIP_PREVIEW=false
 
-# Parse options
-for arg in "$@"; do
-  case $arg in
+# Parse options and positional arguments
+while [ $# -gt 0 ]; do
+  case "$1" in
     --yes)
       AUTO_APPROVE=true
       shift
@@ -35,8 +34,14 @@ for arg in "$@"; do
       SKIP_PREVIEW=true
       shift
       ;;
+    *)
+      ENVIRONMENT="$1"
+      shift
+      ;;
   esac
 done
+
+PARAMETER_FILE="infra/params/${ENVIRONMENT}.parameters.json"
 
 echo -e "${GREEN}Deploying Shift Dashboard Infrastructure${NC}"
 echo "======================================================"

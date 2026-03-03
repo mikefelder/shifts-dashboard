@@ -13,10 +13,13 @@ param appName string = 'shift-dashboard'
 @description('Unique suffix for resource names')
 param uniqueSuffix string = uniqueString(resourceGroup().id)
 
+@description('SKU for the Azure Container Registry. Defaults to Basic; override to Standard in deployment pipelines when needed.')
+@allowed(['Basic', 'Standard', 'Premium'])
+param containerRegistrySku string = 'Basic'
+
 // Environment-specific configurations
 var environmentConfig = {
   dev: {
-    containerRegistrySku: 'Basic'
     logRetentionDays: 30
     backendCpu: '0.25'
     backendMemory: '0.5Gi'
@@ -28,9 +31,9 @@ var environmentConfig = {
     frontendMaxReplicas: 2
     zoneRedundant: false
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: false
   }
   staging: {
-    containerRegistrySku: 'Standard'
     logRetentionDays: 60
     backendCpu: '0.5'
     backendMemory: '1Gi'
@@ -42,9 +45,9 @@ var environmentConfig = {
     frontendMaxReplicas: 5
     zoneRedundant: false
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: false
   }
   prod: {
-    containerRegistrySku: 'Standard'
     logRetentionDays: 90
     backendCpu: '1.0'
     backendMemory: '2Gi'
@@ -56,6 +59,7 @@ var environmentConfig = {
     frontendMaxReplicas: 10
     zoneRedundant: true
     networkDefaultAction: 'Allow'
+    enablePurgeProtection: true
   }
 }
 
@@ -80,7 +84,7 @@ module containerRegistry './modules/container-registry.bicep' = {
   params: {
     location: location
     registryName: registryName
-    sku: config.containerRegistrySku
+    sku: containerRegistrySku
     adminUserEnabled: false // Use managed identity instead
     publicNetworkAccess: 'Enabled'
     tags: commonTags
@@ -120,6 +124,7 @@ module keyVault './modules/key-vault.bicep' = {
     keyVaultName: keyVaultName
     enableRbacAuthorization: true
     networkDefaultAction: config.networkDefaultAction
+    enablePurgeProtection: config.enablePurgeProtection
     tags: commonTags
   }
 }
