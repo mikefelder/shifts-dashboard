@@ -2,7 +2,10 @@ name: Deploy to Azure Container Apps
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
+      - 'releases/**'
     paths:
       - 'backend/**'
       - 'client/**'
