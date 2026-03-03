@@ -1,8 +1,11 @@
+// Load environment variables FIRST before any other imports
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Application, Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { apiLimiter, dataLimiter } from './middleware/rate-limit.middleware';
 import { sanitizeInput } from './middleware/sanitize.middleware';
@@ -24,9 +27,6 @@ import { createCalendarController } from './controllers/calendar.controller';
 import { createCalendarRoutes } from './routes/calendar.routes';
 import { createSystemController } from './controllers/system.controller';
 import { createSystemRoutes } from './routes/system.routes';
-
-// Load environment variables
-dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;

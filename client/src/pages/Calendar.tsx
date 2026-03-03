@@ -7,10 +7,8 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Typography, Alert, Box } from '@mui/material';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import ActiveShiftsView from '../components/Calendar/ActiveShiftsView';
-import ShiftDetailModal from '../components/Calendar/ShiftDetailModal';
-import PersonDetailModal from '../components/Calendar/PersonDetailModal';
 import { getShifts } from '../services/api.service';
 import type { GroupedShift } from '../types/shift.types';
 import { useWorkgroup } from '../contexts/WorkgroupContext';
@@ -29,35 +27,14 @@ export default function Calendar() {
   const [error, setError] = useState<string | null>(null);
   const [isFreshData, setIsFreshData] = useState(true);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
-  const [selectedShift, setSelectedShift] = useState<GroupedShift | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
-  const [selectedPersonName, setSelectedPersonName] = useState('');
-  const [selectedPersonClockedIn, setSelectedPersonClockedIn] = useState(false);
-  const [personModalOpen, setPersonModalOpen] = useState(false);
 
+  const navigate = useNavigate();
   const { selectedWorkgroup } = useWorkgroup();
   const context = useOutletContext<RefreshContext>();
   const refreshTimestamp = context?.refreshTimestamp || 0;
 
   function handleShiftClick(shift: GroupedShift) {
-    setSelectedShift(shift);
-    setModalOpen(true);
-  }
-
-  function handleModalClose() {
-    setModalOpen(false);
-  }
-
-  function handlePersonClick(personId: string, personName: string, isClockedIn: boolean) {
-    setSelectedPersonId(personId);
-    setSelectedPersonName(personName);
-    setSelectedPersonClockedIn(isClockedIn);
-    setPersonModalOpen(true);
-  }
-
-  function handlePersonModalClose() {
-    setPersonModalOpen(false);
+    navigate(`/shift/${shift.id}`);
   }
 
   // Fetch shifts on mount and when refresh is triggered
@@ -138,23 +115,6 @@ export default function Calendar() {
           onShiftClick={handleShiftClick}
         />
       </Box>
-
-      {/* Shift Detail Modal */}
-      <ShiftDetailModal
-        shift={selectedShift}
-        open={modalOpen}
-        onClose={handleModalClose}
-        onPersonClick={handlePersonClick}
-      />
-
-      {/* Person Detail Modal */}
-      <PersonDetailModal
-        personId={selectedPersonId}
-        personName={selectedPersonName}
-        isClockedIn={selectedPersonClockedIn}
-        open={personModalOpen}
-        onClose={handlePersonModalClose}
-      />
     </Container>
   );
 }

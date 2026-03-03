@@ -1,249 +1,189 @@
 # Shift Dashboard - Frontend
 
-React + TypeScript + Vite frontend for the Shift Dashboard application.
+> React + TypeScript + Vite + Material-UI
 
-## Overview
-
-The frontend provides a real-time dashboard for viewing volunteer shift assignments and clock-in status. Built with React 19, Material-UI, and Vite for optimal development experience and production performance.
-
-### Key Features
-
-- **Active Shifts Timeline**: Vertical hourly timeline with dynamic time window
-- **Tabular View**: Sortable data table with 8 columns
-- **Workgroup Filtering**: Global dropdown selector
-- **Shift Details Modal**: Comprehensive shift information
-- **Person Contact Modal**: Direct call/text actions
-- **Manual & Auto Refresh**: Configurable intervals (5/10/15 minutes)
-- **Offline Mode**: IndexedDB cache with graceful degradation
-- **Responsive Design**: Desktop and mobile-optimized layouts
+Frontend SPA for the Shift Dashboard application providing real-time visibility into volunteer shift assignments and clock-in status.
 
 ## Technology Stack
 
-- **React 19.2+**: UI framework with latest features
-- **TypeScript 5.x**: Type-safe development
-- **Vite 7.3+**: Fast build tool with HMR
-- **Material-UI (MUI) 7.3+**: Component library
-- **React Router 7.13+**: Client-side routing
-- **IndexedDB/idb 8.0+**: Offline storage
-- **date-fns 4.1+**: Date formatting and manipulation
+- **React 19.2+** - UI framework
+- **TypeScript 5.x** - Type safety
+- **Vite 7.3+** - Build tool and dev server
+- **Material-UI (MUI) 7.3+** - Component library
+- **React Router 7.13+** - Client-side routing
+- **IndexedDB/idb 8.0+** - Offline-first data storage
+- **date-fns 4.1+** - Date/time utilities
+- **Vitest** - Unit testing
+- **Playwright** - E2E testing
+
+## Features
+
+- **Active Shifts Timeline** - Vertical timeline view with dynamic time window
+- **Tabular View** - Sortable data table with 8 columns
+- **Shift Detail Page** - Dedicated view with responsive and large-screen modes
+- **Workgroup Filtering** - Global dropdown to filter by workgroup
+- **Offline Mode** - IndexedDB cache with graceful degradation
+- **Auto Refresh** - Configurable intervals (5/10/15 minutes)
+- **Responsive Design** - Mobile and desktop optimized
+
+## Quick Start
+
+### Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server (http://localhost:5173)
+npm run dev
+
+# Run tests
+npm test
+
+# Run E2E tests
+npm run test:e2e
+
+# Lint and format
+npm run lint
+npm run format
+```
+
+### Build
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Environment Variables
+
+Create `.env` file:
+
+```env
+# Backend API URL
+VITE_API_BASE_URL=http://localhost:3000/api
+
+# Application name (displayed in header)
+VITE_APP_NAME=Shift Dashboard
+
+# Upcoming shift preview window in minutes (default: 30)
+VITE_UPCOMING_SHIFT_PREVIEW_MINUTES=30
+
+# Optional: Committee-specific deployment
+# VITE_COMMITTEE_NAME=Finance Committee
+# VITE_COMMITTEE_WORKGROUP=finance-committee-id
+```
 
 ## Project Structure
 
 ```
-client/
-├── src/
-│   ├── components/       # Reusable UI components
-│   ├── config/           # Runtime configuration utilities
-│   ├── contexts/         # React contexts (Settings, Cache, Theme)
-│   ├── pages/            # Route page components
-│   ├── services/         # API and cache services
-│   ├── theme/            # MUI theme configuration
-│   ├── types/            # TypeScript type definitions
-│   ├── utils/            # Utility functions
-│   ├── App.tsx           # Main application component
-│   └── main.tsx          # Application entry point
-├── public/               # Static assets
-├── e2e/                  # Playwright E2E tests
-├── Dockerfile            # Production container image
-├── nginx.conf            # Nginx server configuration
-└── index.html            # HTML template
+src/
+├── components/          # React components
+│   ├── Calendar/       # Timeline and shift views
+│   ├── Filters/        # Workgroup filter dropdown
+│   ├── Layout/         # App layout, header, sidebar
+│   └── ErrorBoundary.tsx
+├── contexts/           # React Context providers
+│   └── WorkgroupContext.tsx
+├── pages/              # Route pages
+│   ├── Calendar.tsx    # Active shifts timeline
+│   ├── Table.tsx       # Tabular view
+│   └── ShiftDetail.tsx # Individual shift detail page
+├── services/           # API and data services
+│   ├── api.service.ts  # Backend API client
+│   └── db.service.ts   # IndexedDB operations
+├── theme/              # MUI theme configuration
+│   └── theme.ts
+├── types/              # TypeScript type definitions
+│   └── shift.types.ts
+├── App.tsx             # Root component with routing
+└── main.tsx            # Application entry point
 ```
 
-## Runtime Configuration
+## Routes
 
-The frontend uses a **runtime configuration** system to inject the backend API URL at container startup, avoiding the need to rebuild images for different environments.
+- `/` - Active shifts timeline (Calendar view)
+- `/calendar` - Same as `/` (alias)
+- `/table` - Tabular view of all shifts
+- `/shift/:shiftId` - Individual shift detail page
 
-### How It Works
+## Key Components
 
-1. **Build Time**: Frontend is built with placeholders
-2. **Container Start**: `entrypoint.sh` generates `/usr/share/nginx/html/config.js`:
-   ```javascript
-   window.__RUNTIME_CONFIG__ = {
-     apiUrl: 'https://backend.example.com',
-   };
-   ```
-3. **Runtime**: Application reads config via `getRuntimeConfig()` utility
+### Pages
 
-### Configuration Utilities
+- **Calendar** - Displays active shifts in vertical timeline format
+- **Table** - Shows all shifts in sortable table with 8 columns
+- **ShiftDetail** - Detailed view of single shift with two display modes
 
-**`src/config/runtime.ts`**:
+### Layout
 
-```typescript
-// Get runtime configuration
-export function getRuntimeConfig(): RuntimeConfig {
-  return window.__RUNTIME_CONFIG__ || {};
-}
+- **AppLayout** - Main layout with header, sidebar, and content area
+- **AppHeader** - Top navigation with app name and workgroup filter
+- **Sidebar** - Refresh controls and auto-refresh settings
 
-// Get API base URL (runtime or build-time fallback)
-export function getApiBaseUrl(): string {
-  const runtimeConfig = getRuntimeConfig();
-  return runtimeConfig.apiUrl || import.meta.env.VITE_API_BASE_URL || '';
-}
-```
+### Calendar Components
 
-**Usage in Services**:
+- **ActiveShiftsView** - Timeline view with current time indicator
+- **TabularShiftView** - Sortable table with column headers
+- **ShiftDetailModal** - Modal dialog for shift details
+- **PersonDetailModal** - Modal dialog for person contact info
 
-```typescript
-import { getApiBaseUrl } from '@/config/runtime';
+### Filters
 
-const apiClient = axios.create({
-  baseURL: getApiBaseUrl(),
-});
-```
+- **WorkgroupFilter** - Dropdown selector for filtering by workgroup
 
-### Environment Variables
+## Data Flow
 
-**Development** (`.env.development`):
+1. **API Layer** (`api.service.ts`)
+   - Fetches data from backend API
+   - Handles errors and retries
+   - Returns `DataWithFreshness<T>` with fresh/stale indicators
 
-```bash
-VITE_API_BASE_URL=http://localhost:3000
-```
+2. **Cache Layer** (`db.service.ts`)
+   - Stores data in IndexedDB (4 stores: shifts, accounts, workgroups, metadata)
+   - Provides fallback when API unavailable
+   - Tracks last sync timestamp
 
-**Production** (injected at runtime):
+3. **UI Layer** (React components)
+   - Displays data with loading/error states
+   - Shows stale data warnings when offline
+   - Auto-refreshes on configurable intervals
 
-```bash
-# Set in Azure Container App environment
-VITE_API_BASE_URL=https://shift-dashboard-backend-prod.azurecontainerapps.io
-```
-
-## Development
-
-### Prerequisites
-
-- Node.js 20.x LTS
-- npm or yarn
-
-### Install Dependencies
-
-```bash
-npm install
-```
-
-### Run Development Server
-
-```bash
-npm run dev
-```
-
-Runs on `http://localhost:5173` with hot module replacement.
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-Outputs to `dist/` directory.
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
-### Run Tests
+## Testing
 
 ```bash
 # Unit tests (Vitest)
-npm run test
+npm test
+npm run test:coverage
 
 # E2E tests (Playwright)
 npm run test:e2e
+npm run test:e2e:ui  # Interactive mode
+
+# Lint and type-check
+npm run lint
+npm run type-check
 ```
 
-## Docker Deployment
-
-### Build Image
+## Docker
 
 ```bash
-docker build -t shift-dashboard-frontend -f client/Dockerfile .
+# Build image
+docker build -t shift-dashboard-frontend .
+
+# Run container
+docker run -p 80:80 shift-dashboard-frontend
 ```
 
-### Run Container
+## Notes
 
-```bash
-docker run -p 8080:80 \
-  -e VITE_API_URL=http://backend:3000 \
-  shift-dashboard-frontend
-```
+- Uses **strict TypeScript** mode
+- **ESLint** enforced on pre-commit
+- **Prettier** for code formatting
+- **Nginx** serves production build in Docker
+- **IndexedDB** enables offline-first architecture
 
-The `entrypoint.sh` script will:
-
-1. Generate `/usr/share/nginx/html/config.js` with runtime config
-2. Start Nginx server
-
-### Azure Container Apps
-
-The frontend is deployed to Azure Container Apps with:
-
-- **Managed Identity**: System-assigned for secure resource access
-- **Health Probes**: Liveness (/) and readiness (/) checks
-- **Autoscaling**: HTTP (10 concurrent), CPU (70%), Memory (80%)
-- **Environment Variables**: `VITE_API_URL` injected from backend URL output
-
-## Key Dependencies
-
-- **@mui/material**: Material-UI component library
-- **react-router-dom**: Client-side routing
-- **axios**: HTTP client for API calls
-- **idb**: IndexedDB wrapper for offline storage
-- **date-fns**: Date utility library
-
-## ESLint Configuration
-
-This template uses a minimal ESLint setup. For production applications, we recommend enabling type-aware lint rules:
-
-```js
-export default defineConfig([
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      tseslint.configs.recommendedTypeChecked,
-      reactX.configs['recommended-typescript'],
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-]);
-```
-
-## Troubleshooting
-
-### Backend API Not Reachable
-
-Check runtime configuration:
-
-```javascript
-// In browser console
-console.log(window.__RUNTIME_CONFIG__);
-```
-
-Expected output:
-
-```json
-{
-  "apiUrl": "https://backend.example.com"
-}
-```
-
-### Offline Mode Not Working
-
-1. Check IndexedDB in browser DevTools → Application → Storage
-2. Verify cache service is initialized in browser console:
-   ```javascript
-   // Should see cache operations in Network tab
-   ```
-
-### Build Errors
-
-```bash
-# Clear cache and reinstall
-rm -rf node_modules dist
-npm install
-npm run build
-```
+For full documentation, see [../README.md](../README.md)

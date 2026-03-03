@@ -5,18 +5,16 @@
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { WorkgroupProvider } from './contexts/WorkgroupContext';
 import AppLayout from './components/Layout/AppLayout';
 import Calendar from './pages/Calendar';
 import Table from './pages/Table';
-import theme from './theme/theme';
+import ShiftDetail from './pages/ShiftDetail';
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ThemeProvider>
       <WorkgroupProvider>
         <BrowserRouter>
           <Routes>
@@ -24,6 +22,7 @@ function App() {
               <Route index element={<Calendar />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="table" element={<Table />} />
+              <Route path="shift/:shiftId" element={<ShiftDetail />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

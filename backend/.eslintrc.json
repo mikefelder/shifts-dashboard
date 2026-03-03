@@ -15,6 +15,9 @@
   "overrides": [
     {
       "files": ["**/__tests__/**/*.ts", "**/*.test.ts", "**/*.spec.ts"],
+      "parserOptions": {
+        "project": null
+      },
       "rules": {
         "@typescript-eslint/no-explicit-any": "off"
       }

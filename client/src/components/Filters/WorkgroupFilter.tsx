@@ -18,7 +18,7 @@ export const WorkgroupFilter = ({
 }: WorkgroupFilterProps) => {
   const sortedWorkgroups = [...workgroups].sort((a, b) => a.name.localeCompare(b.name));
 
-  const allWorkgroups = [{ id: '', name: 'All Workgroups' }, ...sortedWorkgroups];
+  const allWorkgroups = [{ id: '', name: 'All' }, ...sortedWorkgroups];
 
   return (
     <FormControl
@@ -54,6 +54,7 @@ export const WorkgroupFilter = ({
       }}
     >
       <InputLabel
+        shrink
         sx={{
           '&.Mui-focused': { color: 'white' },
           '&.MuiInputLabel-shrink': {
@@ -61,22 +62,16 @@ export const WorkgroupFilter = ({
           },
         }}
       >
-        Workgroup Filter
+        Committee
       </InputLabel>
       <Select
         value={selectedWorkgroup}
         onChange={(e) => onWorkgroupChange(e.target.value || null)}
-        label="Workgroup"
+        label="Committee"
         displayEmpty
-        defaultValue=""
-        inputProps={{
-          'aria-label': 'Select workgroup filter',
-          'aria-describedby': 'workgroup-filter-description',
-        }}
         renderValue={(value) => {
-          if (!value) return '';
           const selected = allWorkgroups.find((wg) => wg.id === value);
-          return selected?.name || '';
+          return selected?.name || 'All';
         }}
         MenuProps={{
           PaperProps: {

@@ -30,12 +30,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ./backend
-        env:
-          CI: true
+        run: npm ci
 
       - name: Run linter
         run: npm run lint

@@ -2,15 +2,13 @@
  * ActiveShiftsView Component
  *
  * Timeline view of active shifts with clock-in status.
- * Optimized for large-screen display (5-15 feet viewing distance).
+ * Optimized for readability with responsive grid layout.
  *
  * Features:
- * - Dynamic time window (current hour ±1 hour)
- * - Current time indicator (updates every second)
- * - Too many shifts guard (>25 threshold)
- * - Person chips with clock-in status colors AND icons
- * - Large typography for distance readability (18px+ body text)
- * - High contrast colors (WCAG AAA compliant)
+ * - Current time indicator
+ * - Active shifts display
+ * - Click to view shift details
+ * - Person chips with clock-in status
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -58,7 +56,7 @@ export default function ActiveShiftsView({
     return () => clearInterval(timer);
   }, []);
 
-  // Filter active shifts (within time window)
+  // Filter active shifts
   const activeShifts = useMemo(() => {
     const now = new Date();
     return shifts.filter((shift) => {
@@ -142,7 +140,18 @@ export default function ActiveShiftsView({
       </Box>
 
       {/* Shifts Grid */}
-      <Box display="flex" flexDirection="column" gap={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            md: 'repeat(2, 1fr)',
+            lg: 'repeat(2, 1fr)',
+            xl: 'repeat(3, 1fr)',
+          },
+          gap: 3,
+        }}
+      >
         {shouldDisplay &&
           activeShifts.map((shift, index) => (
             <Fade key={shift.id} in timeout={300 + index * 50}>

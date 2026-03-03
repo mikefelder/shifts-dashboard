@@ -187,6 +187,126 @@ GET /api/shifts/whos-on?workgroup=abc123&batch=100
 
 ---
 
+#### GET /api/shifts/upcoming
+
+Returns grouped shifts that will start within a future time window. This endpoint is optimized for displaying upcoming shift transitions and uses Shiftboard's `shift.list` with date range filters rather than fetching all shifts.
+
+**Query Parameters**:
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `minutes` | number | No | 30 | Minutes into the future to look for upcoming shifts |
+| `workgroup` | string | No | null | Filter shifts by workgroup ID |
+| `batch` | number | No | 100 | Page size for Shiftboard request. Max: 100. |
+
+**Example Request**:
+
+```http
+GET /api/shifts/upcoming?minutes=60&workgroup=abc123
+```
+
+**Success Response** (200 OK):
+
+```json
+{
+  "result": {
+    "shifts": [
+      {
+        "id": "shift-12345",
+        "name": "Security Patrol",
+        "subject": "Arena Patrol",
+        "location": "Main Arena",
+        "workgroup": "abc123",
+        "local_start_date": "2026-02-24T14:00:00",
+        "local_end_date": "2026-02-24T18:00:00",
+        "assignedPeople": ["member-001", "member-002"],
+        "assignedPersonNames": ["John Doe", "Jane Smith"],
+        "clockStatuses": [false, false],
+        "display_date": "2026-02-24",
+        "display_start_time": "02:00 PM",
+        "display_time": "02:00 PM - 06:00 PM",
+        "timezone": "America/Chicago",
+        "covered": true,
+        "published": true
+      }
+    ],
+    "referenced_objects": {
+      "account": [
+        {
+          "id": "member-001",
+          "first_name": "John",
+          "last_name": "Doe",
+          "screen_name": "jdoe",
+          "mobile_phone": "(555) 123-4567",
+          "clocked_in": false
+        }
+      ],
+      "workgroup": [
+        {
+          "id": "abc123",
+          "name": "Security Team"
+        }
+      ]
+    },
+    "page": {
+      "start": 0,
+      "batch": 100,
+      "total": 2,
+      "next": null
+    }
+  },
+  "timing": {
+    "start": "2026-02-24T13:30:00.000Z",
+    "end": "2026-02-24T13:30:00.450Z",
+    "duration_ms": 450
+  }
+}
+```
+
+**Field Descriptions**:
+
+- Same shift object structure as `/api/shifts/whos-on`
+- `shifts` array contains only shifts starting within the specified time window
+- Shifts are filtered by comparing `local_start_date` to current time + minutes
+- Empty array returned if no upcoming shifts found
+
+**Backend Requirements**:
+
+1. Calculate date range: `[now, now + minutes]`
+2. Convert to RFC 3339 format dates: `YYYY-MM-DD`
+3. Call Shiftboard `shift.list` with:
+   - `select.start_date`: Start date of window
+   - `select.end_date`: End date of window
+   - `select.workgroup`: Workgroup filter (if provided)
+   - `select.published`: true
+   - `select.covered`: true
+   - `timeclock_status`: true
+   - `extended`: true
+4. Filter results to exact time window (Shiftboard returns full days)
+5. Apply shift grouping algorithm
+6. Return normalized response
+
+**Use Cases**:
+
+- **Shift Detail Page**: Show preview of next shifts starting soon
+- **Operations Dashboard**: Display upcoming shift transitions
+- **Staffing Alerts**: Monitor shifts starting within N minutes
+
+**Performance**:
+
+- Much faster than `/api/shifts/whos-on` for time-limited queries
+- Typical response: <500ms for 30-minute window
+- Date range filtering happens at Shiftboard API level
+
+**Error Response** (500):
+
+```json
+{
+  "error": "Shiftboard API error: Authentication failed"
+}
+```
+
+---
+
 #### GET /api/shifts/list
 
 Pass-through to Shiftboard `shift.list` endpoint without grouping.

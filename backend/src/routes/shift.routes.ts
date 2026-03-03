@@ -30,12 +30,17 @@ export function createShiftRoutes(shiftController: ShiftController): Router {
   // Query: ?workgroup=abc123&batch=100
   router.get('/whos-on', ...shiftController.whosOn);
 
+  // GET /api/shifts/upcoming
+  // Returns upcoming shifts in future time window
+  // Query: ?minutes=30&workgroup=abc123&batch=100
+  router.get('/upcoming', ...shiftController.upcomingShifts);
+
   // GET /api/shifts/list
   // Returns raw shifts (pass-through to Shiftboard)
   // Query: ?start=0&batch=100&workgroup=abc123
   router.get('/list', ...shiftController.listShifts);
 
-  logger.debug('[shift.routes] Registered shift routes: /whos-on, /list');
+  logger.debug('[shift.routes] Registered shift routes: /whos-on, /upcoming, /list');
 
   return router;
 }

@@ -6,16 +6,29 @@
  *
  * Features:
  * - Refresh state management (manual + auto-refresh)
- * - Workgroup filtering integration
+ * - Workgroup filtering integration (global or single committee mode)
  * - Permanent sidebar with navigation and controls (via Sidebar component)
  * - Outlet context for child routes
+ * - Committee configuration support
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Box, AppBar, Toolbar, Typography, Drawer, useTheme } from '@mui/material';
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Drawer,
+  useTheme,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { Outlet } from 'react-router-dom';
 import { useWorkgroup } from '../../contexts/WorkgroupContext';
+import { useTheme as useAppTheme } from '../../contexts/ThemeContext';
 import { WorkgroupFilter } from '../Filters/WorkgroupFilter';
+import { committeeConfig } from '../../config/committee.config';
 import Sidebar from './Sidebar';
 import logger from '../../utils/logger';
 
@@ -43,6 +56,7 @@ export interface RefreshContext {
 
 export default function AppLayout() {
   const theme = useTheme();
+  const { mode, toggleTheme } = useAppTheme();
   const { selectedWorkgroup, workgroups, setSelectedWorkgroup } = useWorkgroup();
 
   // State
@@ -110,16 +124,34 @@ export default function AppLayout() {
           }}
         >
           <Typography variant="h6" noWrap component="div">
-            Shiftboard Reporting
+            {committeeConfig.name}
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <WorkgroupFilter
-              selectedWorkgroup={selectedWorkgroup || ''}
-              onWorkgroupChange={setSelectedWorkgroup}
-              workgroups={workgroups || []}
-            />
-          </Box>
+          {/* Show workgroup filter for global mode or multi-workgroup modes */}
+          {committeeConfig.shouldShowWorkgroupFilter && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <WorkgroupFilter
+                selectedWorkgroup={selectedWorkgroup || ''}
+                onWorkgroupChange={setSelectedWorkgroup}
+                workgroups={workgroups || []}
+              />
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <IconButton onClick={toggleTheme} color="inherit" size="large">
+                  {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
+          {/* Show dark mode toggle even in single-committee mode */}
+          {!committeeConfig.isGlobalMode && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <IconButton onClick={toggleTheme} color="inherit" size="large">
+                  {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
         </Toolbar>
       </AppBar>
 
