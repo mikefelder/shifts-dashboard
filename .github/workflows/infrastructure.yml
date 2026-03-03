@@ -95,6 +95,40 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Check Resource Location Conflicts
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          RESOURCE_GROUP="${{ secrets.AZURE_RESOURCE_GROUP }}"
+
+          # Read target location from parameter file, fallback to eastus
+          if [ -f "$PARAM_FILE" ]; then
+            LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE")
+          else
+            LOCATION="eastus"
+          fi
+          echo "Target location: $LOCATION"
+
+          # Only check if the resource group already exists
+          if az group show --name "$RESOURCE_GROUP" &> /dev/null; then
+            CONFLICTING=$(az resource list \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "[?location!='${LOCATION}'].{name:name, location:location, type:type}" \
+              -o json)
+            COUNT=$(echo "$CONFLICTING" | jq 'length')
+            if [ "$COUNT" -gt 0 ]; then
+              echo "::error::Location conflict detected! These resources already exist in a different location than '$LOCATION':"
+              echo "$CONFLICTING" | jq -r '.[] | "  - " + .name + " [" + .type + "] is in " + .location'
+              echo ""
+              echo "To resolve: update 'location' in $PARAM_FILE to match the existing resources,"
+              echo "delete the conflicting resources, or use a different resource group."
+              exit 1
+            fi
+            echo "No location conflicts found. All existing resources are in: $LOCATION"
+          else
+            echo "Resource group does not exist yet — no conflict check needed."
+          fi
+
       - name: Deploy to Azure
         id: deploy
         run: |

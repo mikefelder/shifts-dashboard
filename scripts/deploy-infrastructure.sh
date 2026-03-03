@@ -83,6 +83,28 @@ else
 fi
 echo ""
 
+# Check for resource location conflicts before deploying
+echo -e "${YELLOW}Checking for resource location conflicts...${NC}"
+CONFLICTING_RESOURCES=$(az resource list \
+    --resource-group "$RESOURCE_GROUP" \
+    --query "[?location!='${LOCATION}'].{name:name, location:location, type:type}" \
+    -o json 2>/dev/null || echo "[]")
+CONFLICT_COUNT=$(echo "$CONFLICTING_RESOURCES" | jq 'length')
+if [ "$CONFLICT_COUNT" -gt 0 ]; then
+    echo -e "${RED}ERROR: Location conflict detected!${NC}"
+    echo "Target location:  $LOCATION"
+    echo "The following existing resources are in a different location:"
+    echo "$CONFLICTING_RESOURCES" | jq -r '.[] | "  - " + .name + " [" + .type + "] is in " + .location'
+    echo ""
+    echo "To resolve this, choose one of:"
+    echo "  1. Update 'location' in $PARAMETER_FILE to match the existing resources"
+    echo "  2. Delete the conflicting resources and redeploy to $LOCATION"
+    echo "  3. Use a different resource group for the $LOCATION deployment"
+    exit 1
+fi
+echo -e "${GREEN}[OK]${NC} No location conflicts found"
+echo ""
+
 # Validate Bicep template
 echo -e "${YELLOW}Validating Bicep template...${NC}"
 if ! az bicep build --file $TEMPLATE_FILE; then
