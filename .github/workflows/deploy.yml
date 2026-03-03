@@ -1,6 +1,7 @@
 name: Deploy to Azure Container Apps
 
 on:
+  # Triggered directly when only application code changes
   push:
     branches:
       - main
@@ -11,6 +12,12 @@ on:
       - 'client/**'
       - 'package.json'
       - '.github/workflows/deploy.yml'
+  # Triggered after infrastructure deployment completes (handles the case
+  # where infra + app code change together — ensures strict ordering)
+  workflow_run:
+    workflows: ['Infrastructure Deployment']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -23,14 +30,37 @@ on:
           - staging
           - prod
 
+# Cancel any in-progress deploy for the same branch/environment. This handles
+# the case where a push triggers both the `push` path and a subsequent
+# `workflow_run` (because infra also changed): the earlier push-triggered run
+# is cancelled and the ordered workflow_run-triggered run takes over.
+concurrency:
+  group: deploy-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
+
 env:
   BACKEND_IMAGE_NAME: shift-dashboard-backend
   FRONTEND_IMAGE_NAME: shift-dashboard-frontend
+  # Resolve environment once for all jobs.
+  # workflow_run: derive from the triggering branch.
+  # push:         always 'dev' (main branch only in push trigger).
+  # workflow_dispatch: use the explicit input.
+  DEPLOY_ENVIRONMENT: >
+    ${{ github.event.inputs.environment
+      || (github.event.workflow_run.head_branch == 'main' && 'dev')
+      || (github.event.workflow_run.head_branch == 'staging' && 'staging')
+      || (github.event.workflow_run.head_branch == 'prod' && 'prod')
+      || 'dev' }}
 
 jobs:
   check-infrastructure:
     name: Check Infrastructure
     runs-on: ubuntu-latest
+    # When triggered by workflow_run, only proceed if infrastructure deployment succeeded.
+    # For push and workflow_dispatch triggers, always run.
+    if: |
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     outputs:
       registry: ${{ steps.check.outputs.registry }}
       backendApp: ${{ steps.check.outputs.backendApp }}
@@ -44,7 +74,7 @@ jobs:
       - name: Check Resources
         id: check
         run: |
-          environment="${{ github.event.inputs.environment || 'dev' }}"
+          environment="${{ env.DEPLOY_ENVIRONMENT }}"
           rg="${{ secrets.AZURE_RESOURCE_GROUP }}"
 
           echo "Checking for required Azure resources in $rg..."
