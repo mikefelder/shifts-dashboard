@@ -16,12 +16,7 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 
 - **Active Shifts Timeline**: Vertical hourly timeline with dynamic time window and overlap handling
 - **Tabular View**: Sortable data table with 8 columns (time, name, location, people, status)
-- **Shift Detail Page**: Dedicated view for individual shifts with two display modes:
-  - **Responsive Mode**: Mobile and desktop-friendly layout
-  - **Large Screen Mode**: Optimized for 50"+ displays in operations rooms
-  - **Upcoming Shift Preview**: Shows next shifts starting within configurable time window
 - **Workgroup Filtering**: Global dropdown selector to filter shifts by workgroup
-- **Committee Configuration**: Optional single-committee mode for white-label deployments
 - **Shift Details Modal**: Comprehensive shift information with assigned people and clock status
 - **Person Contact Modal**: Direct call/text actions with phone number access
 - **Manual & Auto Refresh**: Configurable refresh intervals (5/10/15 minutes) with manual refresh button
@@ -154,9 +149,6 @@ SHIFTBOARD_HOST=api.shiftboard.com
 SHIFTBOARD_PATH=/api/v1/
 ALLOWED_ORIGINS=http://localhost:5173
 LOG_LEVEL=debug
-
-# Optional: Committee Configuration (for single-committee deployments)
-# COMMITTEE_WORKGROUP=finance-committee-id
 ```
 
 **Frontend** (`client/.env`):
@@ -170,90 +162,6 @@ Edit `client/.env`:
 ```env
 VITE_API_BASE_URL=http://localhost:3000/api
 VITE_APP_NAME=Shift Dashboard
-
-# Optional: Upcoming shift preview window in minutes (default: 30)
-VITE_UPCOMING_SHIFT_PREVIEW_MINUTES=30
-
-# Optional: Committee Configuration (for single-committee deployments)
-# VITE_COMMITTEE_NAME=Finance Committee
-# VITE_COMMITTEE_WORKGROUP=finance-committee-id
-```
-
-### 3.1 Committee Configuration (Optional)
-
-The application supports **multi-committee deployment** for multi-tenant or white-label scenarios. This allows you to filter the dashboard to specific committees/workgroups and customize the branding.
-
-#### Configuration Modes
-
-**Global Mode (Default)**: Shows all workgroups with dropdown filter enabled.
-
-```env
-# Frontend (.env)
-VITE_APP_NAME=Shift Dashboard
-# No committee-specific configuration
-
-# Backend (.env)
-# No COMMITTEE_IDS, COMMITTEE_CODES, or COMMITTEE_WORKGROUP set
-```
-
-**Multi-Committee Mode (by IDs)**: Filter to specific workgroups by ID.
-
-```env
-# Backend (.env)
-COMMITTEE_IDS=5676546,5676571,198353    # Comma-separated workgroup IDs
-```
-
-**Multi-Committee Mode (by Codes)**: Filter to specific workgroups by code.
-
-```env
-# Backend (.env)
-COMMITTEE_CODES=ITCS,ITC365,ITC         # Comma-separated workgroup codes
-```
-
-**Single Committee Mode (Legacy)**: Locks dashboard to one committee.
-
-```env
-# Frontend (.env)
-VITE_APP_NAME=Shift Dashboard
-VITE_COMMITTEE_NAME=Finance Committee           # Display name in header
-VITE_COMMITTEE_WORKGROUP=finance-committee-id   # Shiftboard workgroup ID
-
-# Backend (.env)
-COMMITTEE_WORKGROUP=finance-committee-id        # Must match frontend
-```
-
-**Priority Order**: `COMMITTEE_IDS` > `COMMITTEE_CODES` > `COMMITTEE_WORKGROUP`
-
-#### Behavior
-
-| Mode                        | Workgroup Filter    | Data Filtering                        | Use Case                             |
-| --------------------------- | ------------------- | ------------------------------------- | ------------------------------------ |
-| **Global**                  | ✅ Visible dropdown | None (all workgroups)                 | Single deployment for all committees |
-| **Multi-Committee (IDs)**   | ✅ Visible dropdown | Filtered to specified workgroup IDs   | Department-specific view             |
-| **Multi-Committee (Codes)** | ✅ Visible dropdown | Filtered to specified workgroup codes | Role-based filtering                 |
-| **Single Committee**        | ❌ Hidden           | Locked to configured workgroup        | One deployment per committee         |
-
-#### Security
-
-- **Frontend**: Committee name displayed in header; workgroup filter auto-selected
-- **Backend**: API calls enforced with `committeeConfig.workgroupIds` fallback (supports single or multiple workgroups)
-- **Data Isolation**: Backend filters all shift, account, and workgroup queries
-
-#### Deployment Examples
-
-```bash
-# Multi-committee deployment (by IDs)
-docker run -e COMMITTEE_IDS="5676546,5676571,198353" \
-           shifts-dashboard
-
-# Multi-committee deployment (by codes)
-docker run -e COMMITTEE_CODES="ITCS,ITC365,ITC" \
-           shifts-dashboard
-
-# Single committee deployment (legacy)
-docker run -e COMMITTEE_WORKGROUP="finance-123" \
-           -e VITE_COMMITTEE_NAME="Finance Committee" \
-           shifts-dashboard
 ```
 
 ### 4. Development
@@ -275,33 +183,6 @@ cd client
 npm run dev
 # Vite dev server starts at http://localhost:5173
 ```
-
-#### 4.1 Mock Data Mode (Development Only)
-
-For UI development and testing when there are no active shifts, you can enable mock data generation:
-
-**Backend** (`backend/.env`):
-
-```env
-ENABLE_MOCK_DATA=true
-```
-
-**Features**:
-
-- Generates realistic shift data based on current time
-- Includes morning (6am-12pm), afternoon (12pm-6pm), and evening (6pm-10pm) shifts
-- Mix of clocked in/out statuses for testing different UI states
-- Multiple workgroups, locations, and roles
-- Includes overlapping shifts to test grouping algorithm
-
-**When to use**:
-
-- UI development when real Shiftboard API has no active shifts
-- Testing edge cases (empty shifts, all clocked in, mixed statuses)
-- Developing without access to Shiftboard credentials
-- Playwright/integration tests
-
-**Note**: Mock mode is only active when `ENABLE_MOCK_DATA=true`. The app automatically falls back to the real Shiftboard API when disabled.
 
 **Or use Docker Compose**:
 
@@ -423,8 +304,7 @@ shifts-dashboard/
 │   │   │   └── WorkgroupContext.tsx
 │   │   ├── pages/           # Route pages ✅
 │   │   │   ├── Calendar.tsx
-│   │   │   ├── Table.tsx
-│   │   │   └── ShiftDetail.tsx
+│   │   │   └── Table.tsx
 │   │   ├── services/        # API & IndexedDB ✅
 │   │   │   ├── api.service.ts
 │   │   │   └── db.service.ts
@@ -483,9 +363,6 @@ shifts-dashboard/
 - **GET** `/api/shifts/whos-on` - Get active shifts with clock-in status (grouped)
   - Query: `?workgroup={id}` (optional)
   - Response: Grouped shifts with `assignedPeople`, `clockStatuses`, metrics
-- **GET** `/api/shifts/upcoming` - Get upcoming shifts within a future time window
-  - Query: `?minutes={n}&workgroup={id}&batch={size}` (all optional)
-  - Response: Grouped shifts starting within specified time window
 - **GET** `/api/shifts/list` - Get all shifts (raw from Shiftboard)
 
 ### Accounts
@@ -517,7 +394,7 @@ shifts-dashboard/
 
 ## Development Status
 
-### ✅ Completed (77/80 tasks)
+### ✅ Completed (76/80 tasks)
 
 **Phase 1: Setup** (6/6 tasks) ✓
 
@@ -686,7 +563,7 @@ Push to `main` branch triggers:
 - **[Feature Specification](specs/003-user-stories-implementation/spec.md)**: Complete feature specification
 - **[API Contracts](specs/003-user-stories-implementation/contracts/api-contracts.md)**: Endpoint contracts & schemas
 - **[Implementation Plan](specs/003-user-stories-implementation/plan.md)**: Technical implementation plan
-- **[Tasks Breakdown](specs/003-user-stories-implementation/tasks.md)**: Tasks organized by user story (77/80 complete)
+- **[Tasks Breakdown](specs/003-user-stories-implementation/tasks.md)**: Tasks organized by user story (76/80 complete)
 - **[Data Model](specs/003-user-stories-implementation/data-model.md)**: Data structures & schemas
 
 ## Contributing
