@@ -726,11 +726,11 @@ az acr update \
   --admin-enabled false
 ```
 
+```bash
 az keyvault secret show \
- --vault-name <vault-name> \
- --name ShiftboardAccessKeyId
-
-````
+  --vault-name <vault-name> \
+  --name ShiftboardAccessKeyId
+```
 
 ### High Latency
 
@@ -743,7 +743,7 @@ az containerapp update \
   --name shift-dashboard-backend-prod \
   --cpu 1.0 \
   --memory 2Gi
-````
+```
 
 ### Deployment Failures
 
