@@ -85,6 +85,19 @@ jobs:
           echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
           echo "COMMITTEE_CODES=$COMMITTEE_CODES" >> $GITHUB_ENV
 
+      - name: Ensure resource group exists
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE" 2>/dev/null || echo 'eastus')
+
+          if ! az group show --name "$RESOURCE_GROUP" &> /dev/null; then
+            echo "Creating resource group: $RESOURCE_GROUP in $LOCATION"
+            az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
+          else
+            echo "Resource group $RESOURCE_GROUP already exists"
+          fi
+
       - name: What-If Deployment
         run: |
           ENV="${{ github.event.inputs.environment || 'dev' }}"
