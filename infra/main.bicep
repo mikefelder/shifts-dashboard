@@ -73,7 +73,8 @@ var config = environmentConfig[environment]
 var codesLower = toLower(committeeCodes)
 var isAllCommittees = empty(committeeCodes) || codesLower == 'all'
 // First code drives resource naming; remaining codes are UI-only.
-var codesList = isAllCommittees ? [] : split(codesLower, ',')
+// Always split a non-empty string so codesList is typed as string[] (never <empty array>).
+var codesList = split(isAllCommittees ? '_' : codesLower, ',')
 var firstCode = isAllCommittees ? '' : trim(codesList[0])
 // Value surfaced to container apps. 'ALL' tells the UI to show every committee.
 var committeeCodesEnvValue = isAllCommittees ? 'ALL' : codesLower
