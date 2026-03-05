@@ -173,14 +173,14 @@ module backendApp './modules/container-app.bicep' = {
     containerImage: useDefaultImage ? placeholderImage : '${containerRegistry.outputs.loginServer}/${appName}-backend:latest'
     registryServer: containerRegistry.outputs.loginServer
     useManagedIdentityForRegistry: !useDefaultImage
-    targetPort: 3000
+    targetPort: useDefaultImage ? 80 : 3000
     external: true
     minReplicas: config.backendMinReplicas
     maxReplicas: config.backendMaxReplicas
     cpu: config.backendCpu
     memory: config.backendMemory
     enableManagedIdentity: true
-    healthProbePath: '/health'
+    healthProbePath: useDefaultImage ? '/' : '/health'
     tags: commonTags
     environmentVariables: [
       {
