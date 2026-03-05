@@ -84,8 +84,14 @@ This document provides comprehensive deployment instructions for the Shift Dashb
 
 ### Azure Account Setup
 
-1. **Azure Subscription**: Active subscription with Contributor role
-2. **Resource Limits**: Ensure sufficient quota for:
+1. **Azure Subscription**: Active subscription
+2. **Resource Providers**: Register required providers:
+   ```bash
+   az provider register --namespace Microsoft.App
+   az provider register --namespace Microsoft.AlertsManagement
+   az provider register --namespace Microsoft.OperationalInsights
+   ```
+3. **Resource Limits**: Ensure sufficient quota for:
    - Container Apps: 10 cores
    - Container Registry: Basic tier
    - Log Analytics: 5 GB/month
@@ -262,35 +268,110 @@ az containerapp update \
 
 ### Option 2: GitHub Actions (Recommended)
 
-#### Setup GitHub Secrets
+#### Setup Service Principal with OIDC
 
-Navigate to your repository → Settings → Secrets and add:
+The workflows use OpenID Connect (OIDC) federated credentials — no long-lived secrets stored in GitHub.
 
-```yaml
-AZURE_CREDENTIALS: { Azure service principal JSON }
-AZURE_RESOURCE_GROUP: shift-dashboard-rg
-AZURE_REGISTRY_NAME: shiftdashboardabc123
-SHIFTBOARD_ACCESS_KEY_ID: your-key
-SHIFTBOARD_SECRET_KEY: your-secret
+```bash
+# 1. Create app registration and service principal
+az ad app create --display-name shift-dashboard-sp
+APP_ID=$(az ad app list --filter "displayName eq 'shift-dashboard-sp'" --query "[0].appId" -o tsv)
+az ad sp create --id $APP_ID
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+# 2. Grant Contributor on the subscription
+az role assignment create \
+  --assignee $APP_ID \
+  --role Contributor \
+  --scope /subscriptions/$SUBSCRIPTION_ID
+
+# 3. Create federated credentials for GitHub environments
+APP_OBJ_ID=$(az ad app list --filter "displayName eq 'shift-dashboard-sp'" --query "[0].id" -o tsv)
+
+for ENV in dev uat prod; do
+  az ad app federated-credential create --id $APP_OBJ_ID --parameters '{
+    "name": "github-env-'$ENV'",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:<owner>/<repo>:environment:'$ENV'",
+    "audiences": ["api://AzureADTokenExchange"]
+  }'
+done
+
+# Also for branch-based triggers (develop, main) and pull requests
+for REF in refs/heads/develop refs/heads/main; do
+  NAME=$(echo $REF | sed 's|refs/heads/||' | sed 's|/|-|g')
+  az ad app federated-credential create --id $APP_OBJ_ID --parameters '{
+    "name": "github-'$NAME'",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:<owner>/<repo>:ref:'$REF'",
+    "audiences": ["api://AzureADTokenExchange"]
+  }'
+done
 ```
+
+Replace `<owner>/<repo>` with your GitHub repository path.
+
+#### Post-Deployment: Assign Scoped Roles
+
+After the first infra deployment creates the resource group and Key Vault, grant these additional roles:
+
+```bash
+RG_NAME="shift-dashboard-dev-rg"
+KV_NAME="<key-vault-name>"  # from deployment outputs
+
+# User Access Administrator — so the SP can create RBAC role assignments
+az role assignment create \
+  --assignee $APP_ID \
+  --role "User Access Administrator" \
+  --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME
+
+# Key Vault Secrets Officer — so the SP can populate secrets
+az role assignment create \
+  --assignee $APP_ID \
+  --role "Key Vault Secrets Officer" \
+  --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME/providers/Microsoft.KeyVault/vaults/$KV_NAME
+```
+
+Then re-run the infrastructure workflow to complete the role assignments and secret population.
+
+> **Repeat for each environment** (dev, uat, prod) using the respective resource group and Key Vault names.
+
+#### Configure GitHub Secrets
+
+In your repository, go to **Settings → Environments** and create `dev`, `uat`, and `prod`. Add these secrets to each:
+
+| Secret                  | Value                             |
+| ----------------------- | --------------------------------- |
+| `AZURE_CLIENT_ID`       | Service principal app (client) ID |
+| `AZURE_TENANT_ID`       | Azure AD tenant ID                |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID             |
+| `SB_ACCESS_KEY`         | Shiftboard API access key         |
+| `SB_SIGNATURE_KEY`      | Shiftboard API signature key      |
 
 #### Trigger Deployment
 
 ```bash
-# On push to main (automatic)
-git push origin main
+# On push to main/develop (automatic if infra/** changed)
+git push origin develop
 
 # Or manually via GitHub UI
-# Actions → Deploy → Run workflow
+# Actions → Infrastructure Deployment → Run workflow → select environment
 ```
 
-**Workflow steps:**
+**Infrastructure workflow steps:**
 
-1. Build Docker images
-2. Push to ACR
-3. Update Container Apps with new images
-4. Run smoke tests
-5. Notify on success/failure
+1. Validate Bicep templates
+2. Ensure resource group exists, preview changes (what-if)
+3. Deploy Azure resources (placeholder images on first run)
+4. Populate Key Vault with Shiftboard secrets
+5. Output resource URLs and names
+
+**Application deploy workflow steps:**
+
+1. Check infrastructure exists
+2. Build Docker images for backend and frontend
+3. Push to Container Registry
+4. Update Container Apps with new images
 
 ---
 
