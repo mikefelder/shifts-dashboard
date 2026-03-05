@@ -50,7 +50,7 @@ env:
   # workflow_run: derive from the triggering branch.
   # push:         always 'dev' (main branch only in push trigger).
   # workflow_dispatch: use the explicit input.
-  DEPLOY_ENVIRONMENT: >
+  DEPLOY_ENVIRONMENT: >-
     ${{ github.event.inputs.environment
       || (github.event.workflow_run.head_branch == 'main' && 'dev')
       || (github.event.workflow_run.head_branch == 'uat' && 'uat')
