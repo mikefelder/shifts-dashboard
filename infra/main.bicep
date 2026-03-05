@@ -20,6 +20,9 @@ param containerRegistrySku string = 'Basic'
 @description('Optional comma-separated committee codes to scope this deployment (e.g. "ITC", "ITC,FINANCE"). Pass "ALL" or leave empty to disable committee filtering.')
 param committeeCodes string = ''
 
+@description('Use a public placeholder image for initial infra deployment (before real images are pushed to ACR)')
+param useDefaultImage bool = true
+
 // Environment-specific configurations
 var environmentConfig = {
   dev: {
@@ -98,6 +101,9 @@ var keyVaultName = 'sd-${kvEnvSegment}${kvCodeSegment}-kv-${take(uniqueSuffix, 5
 var backendAppName = '${appName}-${nameInfix}-backend'
 var frontendAppName = '${appName}-${nameInfix}-frontend'
 
+// Placeholder image for first-time deployments (before app images exist in ACR)
+var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+
 // Common tags
 var commonTags = {
   Environment: environment
@@ -164,9 +170,9 @@ module backendApp './modules/container-app.bicep' = {
     location: location
     appName: backendAppName
     environmentId: containerAppsEnv.outputs.environmentId
-    containerImage: '${containerRegistry.outputs.loginServer}/${appName}-backend:latest'
+    containerImage: useDefaultImage ? placeholderImage : '${containerRegistry.outputs.loginServer}/${appName}-backend:latest'
     registryServer: containerRegistry.outputs.loginServer
-    useManagedIdentityForRegistry: true
+    useManagedIdentityForRegistry: !useDefaultImage
     targetPort: 3000
     external: true
     minReplicas: config.backendMinReplicas
@@ -231,9 +237,9 @@ module frontendApp './modules/container-app.bicep' = {
     location: location
     appName: frontendAppName
     environmentId: containerAppsEnv.outputs.environmentId
-    containerImage: '${containerRegistry.outputs.loginServer}/${appName}-frontend:latest'
+    containerImage: useDefaultImage ? placeholderImage : '${containerRegistry.outputs.loginServer}/${appName}-frontend:latest'
     registryServer: containerRegistry.outputs.loginServer
-    useManagedIdentityForRegistry: true
+    useManagedIdentityForRegistry: !useDefaultImage
     targetPort: 80
     external: true
     minReplicas: config.frontendMinReplicas

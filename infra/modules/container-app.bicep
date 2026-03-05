@@ -80,19 +80,19 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           server: registryServer
           identity: 'system'
         }
-      ] : [
+      ] : !empty(registryUsername) ? [
         {
           server: registryServer
           username: registryUsername
           passwordSecretRef: 'registry-password'
         }
-      ]
-      secrets: useManagedIdentityForRegistry ? [] : [
+      ] : []
+      secrets: !empty(registryUsername) && !useManagedIdentityForRegistry ? [
         {
           name: 'registry-password'
           value: registryPassword
         }
-      ]
+      ] : []
     }
     template: {
       containers: [
