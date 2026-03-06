@@ -46,24 +46,39 @@ jobs:
 
           echo "Checking for required Azure resources in $rg..."
 
+          # Verify the resource group exists before querying anything inside it.
+          # az acr list / az containerapp list exit with code 3 when the RG is
+          # not found, which produces a cryptic error. This gives a clear message.
+          if ! az group show --name "$rg" &>/dev/null; then
+            echo "::error::Resource group '$rg' does not exist."
+            echo ""
+            echo "The AZURE_RESOURCE_GROUP secret is set to: $rg"
+            echo "Make sure this matches the resource group created by the"
+            echo "infrastructure deployment workflow."
+            echo ""
+            echo "Existing resource groups in this subscription:"
+            az group list --query "[].name" -o tsv | sort || true
+            exit 1
+          fi
+
           # Find Container Registry
-          registry=$(az acr list --resource-group $rg --query "[0].loginServer" -o tsv)
+          registry=$(az acr list --resource-group "$rg" --query "[0].loginServer" -o tsv)
           if [ -z "$registry" ]; then
-            echo "ERROR: No Container Registry found. Run infrastructure deployment first."
+            echo "::error::No Container Registry found in $rg. Run infrastructure deployment first."
             exit 1
           fi
 
           # Find Backend Container App
-          backendApp=$(az containerapp list --resource-group $rg --query "[?contains(name, 'backend')].name | [0]" -o tsv)
+          backendApp=$(az containerapp list --resource-group "$rg" --query "[?contains(name, 'backend')].name | [0]" -o tsv)
           if [ -z "$backendApp" ]; then
-            echo "ERROR: No backend Container App found. Run infrastructure deployment first."
+            echo "::error::No backend Container App found in $rg. Run infrastructure deployment first."
             exit 1
           fi
 
           # Find Frontend Container App
-          frontendApp=$(az containerapp list --resource-group $rg --query "[?contains(name, 'frontend')].name | [0]" -o tsv)
+          frontendApp=$(az containerapp list --resource-group "$rg" --query "[?contains(name, 'frontend')].name | [0]" -o tsv)
           if [ -z "$frontendApp" ]; then
-            echo "ERROR: No frontend Container App found. Run infrastructure deployment first."
+            echo "::error::No frontend Container App found in $rg. Run infrastructure deployment first."
             exit 1
           fi
 
