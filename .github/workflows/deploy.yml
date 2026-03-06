@@ -1,10 +1,10 @@
 name: Deploy to Azure Container Apps
 
 on:
-  # Triggered directly when only application code changes on main
+  # Triggered directly when only application code changes on develop
   push:
     branches:
-      - main
+      - develop
     paths:
       - 'backend/**'
       - 'client/**'
@@ -14,7 +14,7 @@ on:
   workflow_run:
     workflows: ['Infrastructure Deployment']
     types: [completed]
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
     inputs:
       environment:
