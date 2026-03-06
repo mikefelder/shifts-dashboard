@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
 
 /**
- * Shiftboard HMAC SHA-1 Authentication Utility
+ * Shiftboard HMAC SHA-256 Authentication Utility
  *
- * Implements Shiftboard's authentication protocol using HMAC SHA-1 signatures.
+ * Implements Shiftboard's authentication protocol using HMAC SHA-256 signatures.
  * Required for all API calls to Shiftboard.
  *
  * @see https://www.shiftboard.com/api-docs
@@ -24,13 +24,13 @@ export interface AuthenticatedRequest {
 }
 
 /**
- * Generate HMAC SHA-1 signature for Shiftboard API request
+ * Generate HMAC SHA-256 signature for Shiftboard API request
  *
  * @param method - RPC method name (e.g., 'shift.whosOn')
  * @param params - Method parameters as object
  * @param timestamp - Unix timestamp in seconds
  * @param secretKey - Shiftboard secret key
- * @returns Hex-encoded HMAC SHA-1 signature
+ * @returns Hex-encoded HMAC SHA-256 signature
  */
 export function generateSignature(
   method: string,
@@ -44,8 +44,8 @@ export function generateSignature(
   // Construct message: method + params + timestamp + secret
   const message = `${method}${paramsJson}${timestamp}${secretKey}`;
 
-  // Compute HMAC SHA-1
-  const hmac = crypto.createHmac('sha1', secretKey);
+  // Compute HMAC SHA-256
+  const hmac = crypto.createHmac('sha256', secretKey);
   hmac.update(message);
 
   return hmac.digest('hex');
