@@ -20,6 +20,9 @@ on:
           - staging
           - prod
 
+permissions:
+  contents: read
+
 env:
   BACKEND_IMAGE_NAME: shift-dashboard-backend
   FRONTEND_IMAGE_NAME: shift-dashboard-frontend
