@@ -203,7 +203,9 @@ jobs:
           az containerapp update \
             --name ${{ needs.check-infrastructure.outputs.backendApp }} \
             --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
-            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }} \
+            --registry-server ${{ needs.check-infrastructure.outputs.registry }} \
+            --registry-identity system
 
           echo "Backend deployed"
 
@@ -212,7 +214,9 @@ jobs:
           az containerapp update \
             --name ${{ needs.check-infrastructure.outputs.frontendApp }} \
             --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
-            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} \
+            --registry-server ${{ needs.check-infrastructure.outputs.registry }} \
+            --registry-identity system
 
           echo "Frontend deployed"
 
