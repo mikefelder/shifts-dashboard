@@ -200,23 +200,31 @@ jobs:
 
       - name: Deploy Backend
         run: |
+          az containerapp registry set \
+            --name ${{ needs.check-infrastructure.outputs.backendApp }} \
+            --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
+            --server ${{ needs.check-infrastructure.outputs.registry }} \
+            --identity system
+
           az containerapp update \
             --name ${{ needs.check-infrastructure.outputs.backendApp }} \
             --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
-            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }} \
-            --registry-server ${{ needs.check-infrastructure.outputs.registry }} \
-            --registry-identity system
+            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
           echo "Backend deployed"
 
       - name: Deploy Frontend
         run: |
+          az containerapp registry set \
+            --name ${{ needs.check-infrastructure.outputs.frontendApp }} \
+            --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
+            --server ${{ needs.check-infrastructure.outputs.registry }} \
+            --identity system
+
           az containerapp update \
             --name ${{ needs.check-infrastructure.outputs.frontendApp }} \
             --resource-group ${{ needs.check-infrastructure.outputs.resourceGroup }} \
-            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} \
-            --registry-server ${{ needs.check-infrastructure.outputs.registry }} \
-            --registry-identity system
+            --image ${{ needs.check-infrastructure.outputs.registry }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
           echo "Frontend deployed"
 
