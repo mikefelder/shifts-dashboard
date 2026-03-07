@@ -161,7 +161,7 @@ jobs:
           echo "Resource group: $RESOURCE_GROUP"
 
           echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
-          echo "COMMITTEE_CODE=$COMMITTEE_CODE" >> $GITHUB_ENV
+          echo "COMMITTEE_CODES=$COMMITTEE_CODES" >> $GITHUB_ENV
 
       - name: Ensure resource group exists
         run: |
