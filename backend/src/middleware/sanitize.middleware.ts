@@ -18,8 +18,13 @@ function sanitizeString(value: string): string {
     return value;
   }
 
-  // Remove HTML tags
-  let sanitized = value.replace(/<[^>]*>/g, '');
+  // Remove HTML tags repeatedly until no more can be removed
+  let sanitized = value;
+  let prev: string;
+  do {
+    prev = sanitized;
+    sanitized = sanitized.replace(/<[^>]*>/g, '');
+  } while (sanitized !== prev);
 
   // Remove potentially dangerous characters but preserve common punctuation
   // Keep: letters, numbers, spaces, common punctuation (.,!?:;-_@()[]/)
