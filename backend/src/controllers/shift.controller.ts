@@ -10,6 +10,8 @@ import { ShiftService } from '../services/shift.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateQuery } from '../middleware/validation.middleware';
 import { CommonSchemas } from '../middleware/validation.middleware';
+import logger from '../config/logger';
+import { getTimingMetadata } from '../utils/timing';
 
 // ============================================================================
 // Controller Factory
@@ -45,7 +47,7 @@ export function createShiftController(shiftService: ShiftService) {
 
         const { workgroup, batch } = req.query;
 
-        console.log(
+        logger.debug(
           `[shift.controller] GET /api/shifts/whos-on (workgroup=${workgroup || 'all'}, batch=${batch || 100})`
         );
 
@@ -56,8 +58,6 @@ export function createShiftController(shiftService: ShiftService) {
         );
 
         // Format response with timing metadata
-        const requestEnd = Date.now();
-
         res.status(200).json({
           result: {
             shifts: result.shifts,
@@ -65,15 +65,12 @@ export function createShiftController(shiftService: ShiftService) {
             metrics: result.metrics,
             page: result.page,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
 
-        console.log(
-          `[shift.controller] Returned ${result.shifts.length} grouped shifts (${result.metrics.original_shift_count} original) in ${requestEnd - requestStart}ms`
+        const duration = Date.now() - requestStart;
+        logger.info(
+          `[shift.controller] Returned ${result.shifts.length} grouped shifts (${result.metrics.original_shift_count} original) in ${duration}ms`
         );
       }),
     ],
@@ -101,7 +98,7 @@ export function createShiftController(shiftService: ShiftService) {
 
         const { start, batch, workgroup } = req.query;
 
-        console.log(
+        logger.debug(
           `[shift.controller] GET /api/shifts/list (start=${start || 0}, batch=${batch || 100}, workgroup=${workgroup || 'all'})`
         );
 
@@ -113,22 +110,17 @@ export function createShiftController(shiftService: ShiftService) {
         });
 
         // Format response with timing
-        const requestEnd = Date.now();
-
         res.status(200).json({
           result: {
             shifts: result.shifts,
             page: result.page,
           },
-          timing: {
-            start: new Date(requestStart).toISOString(),
-            end: new Date(requestEnd).toISOString(),
-            duration_ms: requestEnd - requestStart,
-          },
+          timing: getTimingMetadata(requestStart),
         });
 
-        console.log(
-          `[shift.controller] Returned ${result.shifts.length} raw shifts in ${requestEnd - requestStart}ms`
+        const duration = Date.now() - requestStart;
+        logger.info(
+          `[shift.controller] Returned ${result.shifts.length} raw shifts in ${duration}ms`
         );
       }),
     ],

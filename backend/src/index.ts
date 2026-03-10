@@ -4,6 +4,26 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
+import { apiLimiter } from './middleware/rate-limit.middleware';
+import { sanitizeInput } from './middleware/sanitize.middleware';
+import { getShiftboardService } from './services/shiftboard.service';
+import { createShiftService } from './services/shift.service';
+import { createShiftController } from './controllers/shift.controller';
+import { createShiftRoutes } from './routes/shift.routes';
+import { createWorkgroupService } from './services/workgroup.service';
+import { createWorkgroupController } from './controllers/workgroup.controller';
+import { createWorkgroupRoutes } from './routes/workgroup.routes';
+import { createAccountService } from './services/account.service';
+import { createAccountController } from './controllers/account.controller';
+import { createAccountRoutes } from './routes/account.routes';
+import { createRoleService } from './services/role.service';
+import { createRoleController } from './controllers/role.controller';
+import { createRoleRoutes } from './routes/role.routes';
+import { createCalendarService } from './services/calendar.service';
+import { createCalendarController } from './controllers/calendar.controller';
+import { createCalendarRoutes } from './routes/calendar.routes';
+import { createSystemController } from './controllers/system.controller';
+import { createSystemRoutes } from './routes/system.routes';
 
 // Load environment variables
 dotenv.config();
@@ -16,22 +36,32 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // Security Middleware
 // ============================================================================
 
-// Helmet - Security headers
+// Helmet - Enhanced security headers
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for MUI
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"], // Restrict AJAX/WebSocket connections
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"], // Disable plugins
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"], // Prevent embedding
       },
     },
     hsts: {
-      maxAge: 31536000,
+      maxAge: 31536000, // 1 year
       includeSubDomains: true,
       preload: true,
     },
+    frameguard: {
+      action: 'deny', // Prevent clickjacking
+    },
+    noSniff: true, // Prevent MIME sniffing
+    xssFilter: true, // Enable XSS filter
   })
 );
 
@@ -45,8 +75,15 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400, // Cache preflight for 24 hours
   })
 );
+
+// Rate limiting - Prevent abuse
+app.use('/api', apiLimiter); // General API rate limit
+
+// Input sanitization - Prevent XSS/injection
+app.use(sanitizeInput);
 
 // ============================================================================
 // Logging Middleware
@@ -98,6 +135,48 @@ app.get('/', (_req: Request, res: Response) => {
 
 // API routes will be mounted here
 // TODO: Mount API routes (e.g., app.use('/api', apiRouter))
+
+// Initialize shared Shiftboard service
+const shiftboardService = getShiftboardService();
+
+// Shift routes
+const shiftService = createShiftService(shiftboardService);
+const shiftController = createShiftController(shiftService);
+const shiftRoutes = createShiftRoutes(shiftController);
+app.use('/api/shifts', shiftRoutes);
+
+// Workgroup routes
+const workgroupService = createWorkgroupService(shiftboardService);
+const workgroupController = createWorkgroupController(workgroupService);
+const workgroupRoutes = createWorkgroupRoutes(workgroupController);
+app.use('/api/workgroups', workgroupRoutes);
+
+// Account routes
+const accountService = createAccountService(shiftboardService);
+const accountController = createAccountController(accountService);
+const accountRoutes = createAccountRoutes(accountController);
+app.use('/api/accounts', accountRoutes);
+
+// Role routes
+const roleService = createRoleService(shiftboardService);
+const roleController = createRoleController(roleService);
+const roleRoutes = createRoleRoutes(roleController);
+app.use('/api/roles', roleRoutes);
+
+// Calendar routes
+const calendarService = createCalendarService();
+const calendarController = createCalendarController(calendarService);
+const calendarRoutes = createCalendarRoutes(calendarController);
+app.use('/api/calendar', calendarRoutes);
+
+// System routes
+const systemController = createSystemController();
+const systemRoutes = createSystemRoutes(systemController);
+app.use('/api/system', systemRoutes);
+
+console.log(
+  '[app] Mounted routes: /api/shifts, /api/workgroups, /api/accounts, /api/roles, /api/calendar, /api/system'
+);
 
 // ============================================================================
 // Error Handling

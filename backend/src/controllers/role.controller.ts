@@ -10,6 +10,8 @@ import { RoleService } from '../services/role.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { validateParams } from '../middleware/validation.middleware';
 import { CommonSchemas } from '../middleware/validation.middleware';
+import logger from '../config/logger';
+import { getRequestDuration } from '../utils/timing';
 
 // ============================================================================
 // Types
@@ -50,22 +52,19 @@ export function createRoleController(roleService: RoleService): RoleController {
         const requestStart = Date.now();
         const roleId = req.params.roleId as string;
 
-        console.log(`[role.controller] GET /api/roles/${roleId}`);
+        logger.debug(`[role.controller] GET /api/roles/${roleId}`);
 
         const result = await roleService.getRole(roleId);
 
-        const requestEnd = Date.now();
-
+        const meta = getRequestDuration(requestStart);
         res.status(200).json({
           result: {
             role: result.role,
           },
-          meta: {
-            requestDuration: requestEnd - requestStart,
-          },
+          meta,
         });
 
-        console.log(`[role.controller] Role ${roleId} returned in ${requestEnd - requestStart}ms`);
+        logger.info(`[role.controller] Role ${roleId} returned in ${meta.requestDuration}ms`);
       }),
     ],
 
@@ -83,24 +82,21 @@ export function createRoleController(roleService: RoleService): RoleController {
       asyncHandler(async (_req: Request, res: Response) => {
         const requestStart = Date.now();
 
-        console.log('[role.controller] GET /api/roles/list');
+        logger.debug('[role.controller] GET /api/roles/list');
 
         const result = await roleService.listRoles();
 
-        const requestEnd = Date.now();
-
+        const meta = getRequestDuration(requestStart);
         res.status(200).json({
           result: {
             roles: result.roles,
             total: result.total,
           },
-          meta: {
-            requestDuration: requestEnd - requestStart,
-          },
+          meta,
         });
 
-        console.log(
-          `[role.controller] ${result.total} roles returned in ${requestEnd - requestStart}ms`
+        logger.info(
+          `[role.controller] ${result.total} roles returned in ${meta.requestDuration}ms`
         );
       }),
     ],

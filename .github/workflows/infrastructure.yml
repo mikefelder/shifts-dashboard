@@ -2,7 +2,8 @@ name: Infrastructure Deployment
 
 on:
   push:
-    branches: [main]
+    branches:
+      - develop
     paths:
       - 'infra/**'
       - '.github/workflows/infrastructure.yml'
@@ -15,8 +16,12 @@ on:
         type: choice
         options:
           - dev
-          - staging
+          - uat
           - prod
+      committeeCodes:
+        description: 'Comma-separated committee codes to scope this deployment (e.g. "ITC", "ITC,FINANCE"). Pass "ALL" or leave blank to disable filtering.'
+        required: false
+        default: ''
 
 permissions:
   id-token: write
@@ -29,11 +34,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Azure CLI
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Validate Bicep
         run: |
@@ -50,16 +50,70 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve deployment target
+        id: target
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          COMMITTEE_CODES="${{ github.event.inputs.committeeCodes || vars.COMMITTEE_CODES }}"
+          COMMITTEE_CODES="${COMMITTEE_CODES,,}"
+
+          # The first code (before any comma) drives resource naming.
+          # If the value is 'all' or empty, no committee suffix is applied.
+          FIRST_CODE=$(echo "$COMMITTEE_CODES" | cut -d',' -f1 | xargs)
+          if [[ "$FIRST_CODE" == "all" || -z "$FIRST_CODE" ]]; then
+            FIRST_CODE=""
+          fi
+
+          APP_NAME=$(jq -r '.parameters.appName.value // "shift-dashboard"' "$PARAM_FILE" 2>/dev/null || echo 'shift-dashboard')
+          COMMITTEE_SUFFIX="${FIRST_CODE:+-${FIRST_CODE}}"
+          RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
+
+          echo "Environment:    $ENV"
+          echo "Committee codes: ${COMMITTEE_CODES:-'(none)'}"
+          echo "First code (naming): ${FIRST_CODE:-'(none)'}"
+          echo "Resource group: $RESOURCE_GROUP"
+
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+          echo "COMMITTEE_CODES=$COMMITTEE_CODES" >> $GITHUB_ENV
+
+      - name: Ensure resource group exists
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE" 2>/dev/null || echo 'eastus')
+
+          if ! az group show --name "$RESOURCE_GROUP" &> /dev/null; then
+            echo "Creating resource group: $RESOURCE_GROUP in $LOCATION"
+            az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
+          else
+            echo "Resource group $RESOURCE_GROUP already exists"
+          fi
 
       - name: What-If Deployment
         run: |
-          az deployment group what-if \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --template-file infra/main.bicep \
-            --parameters environment=${{ github.event.inputs.environment || 'dev' }}
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+
+          if [ -f "$PARAM_FILE" ]; then
+            echo "Using parameter file: $PARAM_FILE"
+            az deployment group what-if \
+              --resource-group "$RESOURCE_GROUP" \
+              --template-file infra/main.bicep \
+              --parameters @"$PARAM_FILE" committeeCodes="$COMMITTEE_CODES"
+          else
+            echo "Parameter file not found, using inline parameters"
+            az deployment group what-if \
+              --resource-group "$RESOURCE_GROUP" \
+              --template-file infra/main.bicep \
+              --parameters environment="$ENV" committeeCodes="$COMMITTEE_CODES"
+          fi
 
   deploy:
     name: Deploy Infrastructure
@@ -76,32 +130,130 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve deployment target
+        id: target
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          COMMITTEE_CODES="${{ github.event.inputs.committeeCodes || vars.COMMITTEE_CODES }}"
+          COMMITTEE_CODES="${COMMITTEE_CODES,,}"
+
+          # The first code (before any comma) drives resource naming.
+          # If the value is 'all' or empty, no committee suffix is applied.
+          FIRST_CODE=$(echo "$COMMITTEE_CODES" | cut -d',' -f1 | xargs)
+          if [[ "$FIRST_CODE" == "all" || -z "$FIRST_CODE" ]]; then
+            FIRST_CODE=""
+          fi
+
+          APP_NAME=$(jq -r '.parameters.appName.value // "shift-dashboard"' "$PARAM_FILE" 2>/dev/null || echo 'shift-dashboard')
+          COMMITTEE_SUFFIX="${FIRST_CODE:+-${FIRST_CODE}}"
+          RESOURCE_GROUP="${APP_NAME}-${ENV}${COMMITTEE_SUFFIX}-rg"
+
+          echo "Environment:    $ENV"
+          echo "Committee codes: ${COMMITTEE_CODES:-'(none)'}"
+          echo "First code (naming): ${FIRST_CODE:-'(none)'}"
+          echo "Resource group: $RESOURCE_GROUP"
+
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+          echo "COMMITTEE_CODES=$COMMITTEE_CODES" >> $GITHUB_ENV
+
+      - name: Ensure resource group exists
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+          LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE" 2>/dev/null || echo 'eastus')
+
+          if ! az group show --name "$RESOURCE_GROUP" &> /dev/null; then
+            echo "Creating resource group: $RESOURCE_GROUP in $LOCATION"
+            az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
+          else
+            echo "Resource group $RESOURCE_GROUP already exists"
+          fi
+
+      - name: Check Resource Location Conflicts
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+
+          # Read target location from parameter file, fallback to eastus
+          if [ -f "$PARAM_FILE" ]; then
+            LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE")
+          else
+            LOCATION="eastus"
+          fi
+          echo "Target location: $LOCATION"
+
+          # Only check if the resource group already exists
+          if az group show --name "$RESOURCE_GROUP" &> /dev/null; then
+            CONFLICTING=$(az resource list \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "[?location!='${LOCATION}'].{name:name, location:location, type:type}" \
+              -o json)
+            COUNT=$(echo "$CONFLICTING" | jq 'length')
+            if [ "$COUNT" -gt 0 ]; then
+              echo "::error::Location conflict detected! These resources already exist in a different location than '$LOCATION':"
+              echo "$CONFLICTING" | jq -r '.[] | "  - " + .name + " [" + .type + "] is in " + .location'
+              echo ""
+              echo "To resolve: update 'location' in $PARAM_FILE to match the existing resources,"
+              echo "delete the conflicting resources, or use a different resource group."
+              exit 1
+            fi
+            echo "No location conflicts found. All existing resources are in: $LOCATION"
+          else
+            echo "Resource group does not exist yet — no conflict check needed."
+          fi
 
       - name: Deploy to Azure
         id: deploy
         run: |
           echo "Deploying infrastructure..."
 
-          output=$(az deployment group create \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --template-file infra/main.bicep \
-            --parameters environment=${{ github.event.inputs.environment || 'dev' }} \
-            --query 'properties.outputs' \
-            --output json)
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          PARAM_FILE="infra/params/${ENV}.parameters.json"
+
+          # Use parameter file if it exists, otherwise use inline parameters
+          if [ -f "$PARAM_FILE" ]; then
+            echo "Using parameter file: $PARAM_FILE"
+            output=$(az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --template-file infra/main.bicep \
+              --parameters @"$PARAM_FILE" committeeCodes="$COMMITTEE_CODES" \
+              --query 'properties.outputs' \
+              --output json)
+          else
+            echo "Parameter file not found, using inline parameters"
+            output=$(az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --template-file infra/main.bicep \
+              --parameters environment="$ENV" committeeCodes="$COMMITTEE_CODES" \
+              --query 'properties.outputs' \
+              --output json)
+          fi
 
           echo "Deployment output: $output"
 
-          # Extract outputs
-          registryName=$(echo $output | jq -r '.containerRegistryName.value')
-          registryLoginServer=$(echo $output | jq -r '.containerRegistryLoginServer.value')
-          backendUrl=$(echo $output | jq -r '.backendUrl.value')
-          frontendUrl=$(echo $output | jq -r '.frontendUrl.value')
-          keyVaultName=$(echo $output | jq -r '.keyVaultName.value')
-          backendAppName=$(echo $output | jq -r '.backendAppName.value')
-          frontendAppName=$(echo $output | jq -r '.frontendAppName.value')
+          # Extract outputs with error handling
+          registryName=$(echo $output | jq -r '.containerRegistryName.value // "N/A"')
+          registryLoginServer=$(echo $output | jq -r '.containerRegistryLoginServer.value // "N/A"')
+          backendUrl=$(echo $output | jq -r '.backendUrl.value // "N/A"')
+          frontendUrl=$(echo $output | jq -r '.frontendUrl.value // "N/A"')
+          keyVaultName=$(echo $output | jq -r '.keyVaultName.value // "N/A"')
+          backendAppName=$(echo $output | jq -r '.backendAppName.value // "N/A"')
+          frontendAppName=$(echo $output | jq -r '.frontendAppName.value // "N/A"')
+          backendPrincipalId=$(echo $output | jq -r '.backendPrincipalId.value // "N/A"')
+
+          # Validate outputs
+          if [ "$registryLoginServer" = "N/A" ] || [ "$backendUrl" = "N/A" ]; then
+            echo "ERROR: Failed to extract deployment outputs"
+            echo "Output: $output"
+            exit 1
+          fi
 
           echo "registryName=$registryName" >> $GITHUB_OUTPUT
           echo "registryLoginServer=$registryLoginServer" >> $GITHUB_OUTPUT
@@ -110,6 +262,9 @@ jobs:
           echo "keyVaultName=$keyVaultName" >> $GITHUB_OUTPUT
           echo "backendAppName=$backendAppName" >> $GITHUB_OUTPUT
           echo "frontendAppName=$frontendAppName" >> $GITHUB_OUTPUT
+          echo "backendPrincipalId=$backendPrincipalId" >> $GITHUB_OUTPUT
+          echo "resourceGroup=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
+          echo "committeeCode=$COMMITTEE_CODES" >> $GITHUB_OUTPUT
 
           echo "Infrastructure deployment complete"
           echo ""
@@ -124,7 +279,6 @@ jobs:
 
           echo "Storing Shiftboard secrets in Key Vault: $KV_NAME"
 
-          # Store Shiftboard API credentials
           az keyvault secret set \
             --vault-name $KV_NAME \
             --name sb-access-key \
@@ -155,7 +309,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: \`${{ github.event.inputs.environment || 'dev' }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Resource Group**: \`${{ secrets.AZURE_RESOURCE_GROUP }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Committee Codes**: \`${{ steps.deploy.outputs.committeeCode || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resource Group**: \`${{ steps.deploy.outputs.resourceGroup }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Secrets" >> $GITHUB_STEP_SUMMARY
           echo "Shiftboard credentials stored in Key Vault" >> $GITHUB_STEP_SUMMARY

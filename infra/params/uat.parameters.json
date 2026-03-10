@@ -3,10 +3,13 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "environment": {
-      "value": "staging"
+      "value": "uat"
     },
     "appName": {
       "value": "shift-dashboard"
+    },
+    "committeeCodes": {
+      "value": ""
     },
     "location": {
       "value": "eastus"

@@ -98,6 +98,8 @@ export default function Sidebar({
             data-testid="nav-current-shifts"
             onClick={() => navigate('/')}
             selected={isActive('/') || isActive('/calendar')}
+            aria-label="Navigate to current shifts view"
+            aria-current={isActive('/') || isActive('/calendar') ? 'page' : undefined}
             sx={{
               color: 'white',
               '& .MuiListItemIcon-root': { color: 'white' },
@@ -120,6 +122,8 @@ export default function Sidebar({
             data-testid="nav-tabular-view"
             onClick={() => navigate('/table')}
             selected={isActive('/table')}
+            aria-label="Navigate to tabular view"
+            aria-current={isActive('/table') ? 'page' : undefined}
             sx={{
               color: 'white',
               '& .MuiListItemIcon-root': { color: 'white' },
@@ -158,6 +162,10 @@ export default function Sidebar({
             data-testid="auto-refresh-select"
             value={refreshInterval}
             onChange={(e) => onIntervalChange?.(Number(e.target.value))}
+            inputProps={{
+              'aria-label': 'Select auto-refresh interval',
+              'aria-describedby': 'auto-refresh-description',
+            }}
             sx={{
               color: 'white',
               '.MuiOutlinedInput-notchedOutline': {
@@ -204,6 +212,8 @@ export default function Sidebar({
           onClick={onRefreshNow}
           disabled={isRefreshing}
           fullWidth
+          aria-label={isRefreshing ? 'Refreshing shifts data' : 'Refresh shifts data now'}
+          aria-live="polite"
           sx={{
             color: 'white',
             borderColor: 'white',

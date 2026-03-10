@@ -8,6 +8,9 @@
     "appName": {
       "value": "shift-dashboard"
     },
+    "committeeCodes": {
+      "value": ""
+    },
     "location": {
       "value": "eastus"
     }

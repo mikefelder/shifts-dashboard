@@ -8,6 +8,8 @@
 import type { Request, Response, RequestHandler } from 'express';
 import { CalendarService } from '../services/calendar.service';
 import { asyncHandler } from '../middleware/error.middleware';
+import logger from '../config/logger';
+import { getRequestDuration } from '../utils/timing';
 
 // ============================================================================
 // Types
@@ -45,20 +47,17 @@ export function createCalendarController(calendarService: CalendarService): Cale
       asyncHandler(async (_req: Request, res: Response) => {
         const requestStart = Date.now();
 
-        console.log('[calendar.controller] GET /api/calendar/summary');
+        logger.debug('[calendar.controller] GET /api/calendar/summary');
 
         const result = await calendarService.getSummary();
 
-        const requestEnd = Date.now();
-
+        const meta = getRequestDuration(requestStart);
         res.status(200).json({
           result,
-          meta: {
-            requestDuration: requestEnd - requestStart,
-          },
+          meta,
         });
 
-        console.log(`[calendar.controller] Summary returned in ${requestEnd - requestStart}ms`);
+        logger.info(`[calendar.controller] Summary returned in ${meta.requestDuration}ms`);
       }),
     ],
   };

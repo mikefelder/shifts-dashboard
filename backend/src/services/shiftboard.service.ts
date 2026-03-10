@@ -15,13 +15,8 @@
  */
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { buildAuthenticatedUrl, validateAuthConfig } from '../utils/shiftboard-auth';
-// Pagination utilities - uncomment when callPaginated method is needed
-// import {
-//   fetchAllPages,
-//   parsePaginationMetadata,
-//   PaginatedResponse,
-// } from '../utils/pagination';
+import { buildAuthenticatedPostRequest, validateAuthConfig } from '../utils/shiftboard-auth';
+import logger from '../config/logger';
 
 // ============================================================================
 // Configuration
@@ -38,8 +33,8 @@ export interface ShiftboardConfig {
 function getConfig(): ShiftboardConfig {
   const accessKeyId = process.env.SHIFTBOARD_ACCESS_KEY_ID || '';
   const secretKey = process.env.SHIFTBOARD_SECRET_KEY || '';
-  const host = process.env.SHIFTBOARD_HOST || 'api.shiftboard.com';
-  const path = process.env.SHIFTBOARD_PATH || '/api/v1/';
+  const host = process.env.SHIFTBOARD_HOST || 'api.shiftdata.com';
+  const path = process.env.SHIFTBOARD_PATH || '/servola/api/api.cgi';
   const timeout = parseInt(process.env.SHIFTBOARD_TIMEOUT || '30000', 10);
 
   validateAuthConfig(accessKeyId, secretKey);
@@ -182,6 +177,7 @@ export class ShiftboardService {
   constructor(config?: Partial<ShiftboardConfig>) {
     const envConfig = getConfig();
     this.config = { ...envConfig, ...config };
+    // Full API URL including path
     this.baseUrl = `https://${this.config.host}${this.config.path}`;
 
     this.axios = axios.create({
@@ -195,7 +191,7 @@ export class ShiftboardService {
     // Request interceptor for logging
     this.axios.interceptors.request.use((config) => {
       const method = new URL(config.url || '').searchParams.get('method');
-      console.log(`[Shiftboard] → ${method || config.url}`);
+      logger.debug(`[Shiftboard] → ${method || config.url}`);
       return config;
     });
 
@@ -203,14 +199,14 @@ export class ShiftboardService {
     this.axios.interceptors.response.use(
       (response) => {
         const method = new URL(response.config.url || '').searchParams.get('method');
-        console.log(`[Shiftboard] ✓ ${method} (${response.status})`);
+        logger.debug(`[Shiftboard] ✓ ${method} (${response.status})`);
         return response;
       },
       (error) => {
         const method = error.config?.url
           ? new URL(error.config.url).searchParams.get('method')
           : 'unknown';
-        console.error(`[Shiftboard] ✗ ${method} (${error.response?.status || 'NO_RESPONSE'})`);
+        logger.error(`[Shiftboard] ✗ ${method} (${error.response?.status || 'NO_RESPONSE'})`);
         return Promise.reject(error);
       }
     );
@@ -218,18 +214,19 @@ export class ShiftboardService {
 
   /**
    * Generic RPC call method
-   * Makes authenticated request to Shiftboard JSON-RPC API
+   * Makes authenticated POST request to Shiftboard JSON-RPC API
    */
   private async call<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
     try {
-      const url = buildAuthenticatedUrl(this.baseUrl, '', {
+      // Build authenticated POST request (signs the full JSON-RPC body)
+      const { url, body } = buildAuthenticatedPostRequest(this.baseUrl, {
         method,
         params,
         accessKeyId: this.config.accessKeyId,
         secretKey: this.config.secretKey,
       });
 
-      const response = await this.axios.get<ShiftboardResponse<T>>(url);
+      const response = await this.axios.post<ShiftboardResponse<T>>(url, body);
 
       // Check for Shiftboard API errors
       if (response.data.error) {
@@ -248,37 +245,6 @@ export class ShiftboardService {
       throw error; // TypeScript requires this, but handleError always throws
     }
   }
-
-  /**
-   * Make paginated request and fetch all pages automatically
-   * Note: Currently unused but kept for future pagination needs
-   */
-  /* private async callPaginated<T>(
-    method: string,
-    params: Record<string, unknown> = {}
-  ): Promise<T[]> {
-    const fetchPage = async (
-      page: number,
-      limit: number
-    ): Promise<PaginatedResponse<T>> => {
-      const start = (page - 1) * limit;
-      const response = await this.call<{
-        data?: T[];
-        results?: T[];
-        total?: number;
-        count?: number;
-        page?: ShiftboardPage;
-      }>(method, {
-        ...params,
-        start,
-        batch: limit,
-      });
-
-      return parsePaginationMetadata<T>(response, page, limit);
-    };
-
-    return await fetchAllPages(fetchPage);
-  } */
 
   /**
    * Error handler - converts Axios and Shiftboard errors to standard format
@@ -376,6 +342,18 @@ export class ShiftboardService {
    */
   async getAccountsByWorkgroup(workgroupId: string): Promise<ShiftboardAccount[]> {
     return await this.listAccounts({ workgroup: workgroupId });
+  }
+
+  /**
+   * Get a single account by ID.
+   * Calls account.get with the account param.
+   */
+  async getAccountById(accountId: string): Promise<ShiftboardAccount> {
+    const response = await this.call<{ account: ShiftboardAccount }>('account.get', {
+      account: accountId,
+      extended: true,
+    });
+    return response.account;
   }
 
   // ==========================================================================

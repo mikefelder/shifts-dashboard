@@ -1,7 +1,7 @@
 # Shift Dashboard
 
 [![Phase](https://img.shields.io/badge/Phase-10%3A%20Polish-blue)](specs/003-user-stories-implementation/tasks.md)
-[![Progress](https://img.shields.io/badge/Progress-76%2F80%20Tasks-brightgreen)](specs/003-user-stories-implementation/tasks.md)
+[![Progress](https://img.shields.io/badge/Progress-77%2F80%20Tasks-brightgreen)](specs/003-user-stories-implementation/tasks.md)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Real-time volunteer shift visibility dashboard with clock-in status tracking, powered by the Shiftboard API.
@@ -32,14 +32,23 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 │  │   Backend API      │         │   Frontend SPA      │    │
 │  │   (Express)        │◄────────│   (React + Vite)    │    │
 │  │   Port 3000        │         │   Static Serve      │    │
+│  │ [Managed Identity] │         │ [Managed Identity]  │    │
 │  └────────────────────┘         └─────────────────────┘    │
 │           │                                │                 │
-│           │                                │                 │
+│           │ RBAC Access                    │                 │
 │           ▼                                ▼                 │
 │  ┌────────────────────┐         ┌─────────────────────┐    │
 │  │   Key Vault        │         │   IndexedDB Cache   │    │
 │  │   (Secrets)        │         │   (Browser)         │    │
-│  └────────────────────┘         └─────────────────────┘    │
+│  │ [RBAC Enabled]     │         └─────────────────────┘    │
+│  └────────────────────┘                                     │
+│           │                                                  │
+│           │ ACR Pull (Managed Identity)                     │
+│           ▼                                                  │
+│  ┌────────────────────┐                                     │
+│  │ Container Registry │                                     │
+│  │ (Docker Images)    │                                     │
+│  └────────────────────┘                                     │
 └─────────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -48,6 +57,15 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
               │   (JSON-RPC over HTTPS) │
               └─────────────────────────┘
 ```
+
+### Security Architecture
+
+- **Managed Identity**: Both container apps use Azure system-assigned managed identities for authentication
+- **RBAC-Based Access**: Key Vault uses Azure RBAC with "Key Vault Secrets User" role (no access policies)
+- **Secure Registry Access**: Container Registry pull via managed identity with "AcrPull" role, no admin credentials
+- **Health Probes**: Liveness, readiness, and startup probes ensure container reliability
+- **Autoscaling**: HTTP request, CPU, and memory-based scaling rules for optimal resource usage
+- **Environment-Specific**: Dev/Staging/Prod configurations with appropriate resource allocations
 
 ### Technology Stack
 
@@ -76,12 +94,14 @@ The Shift Dashboard provides real-time visibility into volunteer shift assignmen
 
 **Infrastructure**:
 
-- Azure Container Apps (scale-to-zero)
-- Azure Container Registry
-- Azure Key Vault
-- Azure Application Insights
-- Bicep (Infrastructure as Code)
-- GitHub Actions (CI/CD)
+- Azure Container Apps (scale-to-zero with health probes and autoscaling)
+- Azure Container Registry (managed identity authentication)
+- Azure Key Vault (RBAC-based secrets management)
+- Azure Application Insights (environment-specific retention)
+- Azure Log Analytics (centralized logging)
+- Managed Identity (system-assigned for secure resource access)
+- Bicep (Infrastructure as Code with environment configs)
+- GitHub Actions (CI/CD with managed identity)
 
 **Cost**: ~$48/year per instance (69% savings vs App Service with scale-to-zero)
 
@@ -251,13 +271,15 @@ shifts-dashboard/
 │   │   │   ├── shiftboard.service.ts
 │   │   │   └── workgroup.service.ts
 │   │   ├── utils/           # Utilities ✅
-│   │   │   ├── pagination.ts
-│   │   │   ├── shift.utils.ts
-│   │   │   └── shiftboard-auth.ts
+│   │   │   ├── shift.utils.ts      # Shift grouping & clock status
+│   │   │   ├── shiftboard-auth.ts  # HMAC authentication
+│   │   │   └── timing.ts           # Request timing metadata
 │   │   ├── types/           # TypeScript types ✅
 │   │   ├── validators/      # Zod schemas ✅
 │   │   └── index.ts         # Express app entry point ✅
 │   ├── tests/               # Jest tests ✅
+│   │   └── __tests__/
+│   │       └── test-helpers.ts # Shared test utilities (makeReq, makeRes, runHandler)
 │   ├── dist/                # Compiled JavaScript ✅
 │   ├── package.json         # ✅ Backend dependencies
 │   ├── tsconfig.json        # ✅ TypeScript config
@@ -380,7 +402,7 @@ shifts-dashboard/
 
 **Phase 2: Foundational** (11/11 tasks) ✓
 
-- T007-T017: Shiftboard authentication, pagination, services, middleware, IndexedDB, MUI theme, app layout
+- T007-T017: Shiftboard authentication, services, middleware, IndexedDB, MUI theme, app layout
 
 **Phase 3: User Story 1 - Active Shifts Timeline** (10/10 tasks) ✓ 🎯 **MVP**
 
@@ -410,13 +432,13 @@ shifts-dashboard/
 
 - T064-T070: Cache-first logic, ErrorBoundary, stale data warnings
 
-**Phase 10: Polish & Infrastructure** (6/10 tasks) ✓
+**Phase 10: Polish & Infrastructure** (7/10 tasks) ✓
 
-- T071-T076: Role/calendar services, Bicep templates, deployment scripts, parameter files, deployment documentation
+- T071-T077: Role/calendar services, Bicep templates, deployment scripts, parameter files, deployment documentation, code cleanup
+  - **T077 Cleanup**: Created `timing.ts` utility (reduced 250+ lines), consolidated test helpers, removed unused code
 
-### 🚧 Remaining Tasks (4/80)
+### 🚧 Remaining Tasks (3/80)
 
-- **T077**: Code cleanup and refactoring across all modules
 - **T078**: Performance optimization (shift grouping <50ms for 1000 shifts)
 - **T079**: Security hardening (rate limiting, input sanitization, CSP headers)
 - **T080**: Accessibility audit (ARIA labels, keyboard navigation, screen reader support)
