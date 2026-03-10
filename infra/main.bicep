@@ -251,7 +251,7 @@ module frontendApp './modules/container-app.bicep' = {
     tags: commonTags
     environmentVariables: [
       {
-        name: 'VITE_API_URL'
+        name: 'VITE_API_BASE_URL'
         value: backendApp.outputs.appUrl
       }
       {
