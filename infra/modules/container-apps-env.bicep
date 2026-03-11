@@ -13,6 +13,9 @@ param logRetentionInDays int = 30
 @description('Enable zone redundancy')
 param zoneRedundant bool = false
 
+@description('Optional: ID of the dedicated infrastructure subnet (must be /21 minimum, delegated to Microsoft.App/environments). When provided, the environment is VNet-integrated. Cannot be changed after environment creation.')
+param infrastructureSubnetId string = ''
+
 @description('Resource tags')
 param tags object = {}
 
@@ -41,6 +44,9 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-05-01'
       }
     }
     zoneRedundant: zoneRedundant
+    vnetConfiguration: empty(infrastructureSubnetId) ? null : {
+      infrastructureSubnetId: infrastructureSubnetId
+    }
   }
 }
 

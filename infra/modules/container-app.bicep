@@ -51,6 +51,9 @@ param enableManagedIdentity bool = false
 @description('Health probe path')
 param healthProbePath string = '/health'
 
+@description('Additional Container App secrets (e.g., Key Vault secret references using keyVaultUrl + identity). Merged with any registry password secret.')
+param additionalSecrets array = []
+
 @description('Resource tags')
 param tags object = {}
 
@@ -87,12 +90,15 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           passwordSecretRef: 'registry-password'
         }
       ] : []
-      secrets: !empty(registryUsername) && !useManagedIdentityForRegistry ? [
-        {
-          name: 'registry-password'
-          value: registryPassword
-        }
-      ] : []
+      secrets: concat(
+        (!empty(registryUsername) && !useManagedIdentityForRegistry) ? [
+          {
+            name: 'registry-password'
+            value: registryPassword
+          }
+        ] : [],
+        additionalSecrets
+      )
     }
     template: {
       containers: [

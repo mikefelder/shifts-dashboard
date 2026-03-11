@@ -14,6 +14,10 @@ param enablePurgeProtection bool = false
 @allowed(['Allow', 'Deny'])
 param networkDefaultAction string = 'Allow'
 
+@description('Whether to allow public network access. Set to Disabled when all access is routed via a private endpoint.')
+@allowed(['Enabled', 'Disabled'])
+param publicNetworkAccess string = 'Enabled'
+
 @description('Resource tags')
 param tags object = {}
 
@@ -35,6 +39,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       name: 'standard'
       family: 'A'
     }
+    publicNetworkAccess: publicNetworkAccess
     networkAcls: {
       defaultAction: networkDefaultAction
       bypass: 'AzureServices'

@@ -125,6 +125,16 @@ module containerRegistry './modules/container-registry.bicep' = {
   }
 }
 
+// Virtual Network — required for VNet-integrated Container Apps Environment and KV private endpoint
+module vnet './modules/vnet.bicep' = {
+  name: 'vnet-deployment'
+  params: {
+    location: location
+    vnetName: '${appName}-${nameInfix}-vnet'
+    tags: commonTags
+  }
+}
+
 // Container Apps Environment with Log Analytics
 module containerAppsEnv './modules/container-apps-env.bicep' = {
   name: 'container-apps-env-deployment'
@@ -134,6 +144,7 @@ module containerAppsEnv './modules/container-apps-env.bicep' = {
     logAnalyticsName: '${appName}-${nameInfix}-logs-${uniqueSuffix}'
     logRetentionInDays: config.logRetentionDays
     zoneRedundant: config.zoneRedundant
+    infrastructureSubnetId: vnet.outputs.containerAppsSubnetId
     tags: commonTags
   }
 }
@@ -159,6 +170,20 @@ module keyVault './modules/key-vault.bicep' = {
     enableRbacAuthorization: true
     networkDefaultAction: config.networkDefaultAction
     enablePurgeProtection: config.enablePurgeProtection
+    publicNetworkAccess: 'Disabled'
+    tags: commonTags
+  }
+}
+
+// Key Vault private endpoint — allows VNet-integrated Container Apps to reach KV on a private IP
+module keyVaultPrivateEndpoint './modules/private-endpoint.bicep' = {
+  name: 'kv-private-endpoint-deployment'
+  params: {
+    location: location
+    privateEndpointName: '${keyVaultName}-pe'
+    subnetId: vnet.outputs.privateEndpointsSubnetId
+    keyVaultId: keyVault.outputs.keyVaultId
+    vnetId: vnet.outputs.vnetId
     tags: commonTags
   }
 }
@@ -182,32 +207,55 @@ module backendApp './modules/container-app.bicep' = {
     enableManagedIdentity: true
     healthProbePath: useDefaultImage ? '/' : '/health'
     tags: commonTags
-    environmentVariables: [
+    // Only wire KV secret references when deploying the real image — the placeholder has no need
+    // for Shiftboard credentials and the managed identity role assignment runs after this module.
+    additionalSecrets: useDefaultImage ? [] : [
       {
-        name: 'NODE_ENV'
-        value: 'production'
+        name: 'shiftboard-access-key'
+        keyVaultUrl: '${keyVault.outputs.keyVaultUri}secrets/sb-access-key'
+        identity: 'system'
       }
       {
-        name: 'PORT'
-        value: '3000'
-      }
-      {
-        name: 'KEY_VAULT_NAME'
-        value: keyVaultName
-      }
-      {
-        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-        value: appInsights.outputs.connectionString
-      }
-      {
-        name: 'COMMITTEE_CODES'
-        value: committeeCodesEnvValue
+        name: 'shiftboard-secret-key'
+        keyVaultUrl: '${keyVault.outputs.keyVaultUri}secrets/sb-signature-key'
+        identity: 'system'
       }
     ]
+    environmentVariables: concat(
+      [
+        {
+          name: 'NODE_ENV'
+          value: 'production'
+        }
+        {
+          name: 'PORT'
+          value: '3000'
+        }
+        {
+          name: 'KEY_VAULT_NAME'
+          value: keyVaultName
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsights.outputs.connectionString
+        }
+        {
+          name: 'COMMITTEE_CODES'
+          value: committeeCodesEnvValue
+        }
+      ],
+      useDefaultImage ? [] : [
+        {
+          name: 'SHIFTBOARD_ACCESS_KEY_ID'
+          secretRef: 'shiftboard-access-key'
+        }
+        {
+          name: 'SHIFTBOARD_SECRET_KEY'
+          secretRef: 'shiftboard-secret-key'
+        }
+      ]
+    )
   }
-  dependsOn: [
-    keyVault
-  ]
 }
 
 // Grant backend access to Key Vault secrets
@@ -251,7 +299,7 @@ module frontendApp './modules/container-app.bicep' = {
     tags: commonTags
     environmentVariables: [
       {
-        name: 'VITE_API_URL'
+        name: 'VITE_API_BASE_URL'
         value: backendApp.outputs.appUrl
       }
       {
