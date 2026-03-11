@@ -28,6 +28,35 @@ permissions:
   contents: read
 
 jobs:
+  resolve-target:
+    name: Resolve Target Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      committeeCodes: ${{ steps.resolve.outputs.committeeCodes }}
+    steps:
+      - name: Resolve environment and committee codes
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.environment }}" ]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+          else
+            ENVIRONMENT="dev"
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.committeeCodes }}" ]; then
+            COMMITTEE_CODES="${{ github.event.inputs.committeeCodes }}"
+          else
+            COMMITTEE_CODES="${{ vars.COMMITTEE_CODES }}"
+          fi
+
+          COMMITTEE_CODES="${COMMITTEE_CODES,,}"
+
+          echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
+          echo "committeeCodes=$COMMITTEE_CODES" >> "$GITHUB_OUTPUT"
+          echo "Resolved environment: $ENVIRONMENT"
+          echo "Resolved committee codes: ${COMMITTEE_CODES:-'(none)'}"
+
   validate:
     name: Validate Bicep Templates
     runs-on: ubuntu-latest
@@ -43,11 +72,28 @@ jobs:
   preview:
     name: Preview Infrastructure Changes
     runs-on: ubuntu-latest
-    needs: validate
-    environment: ${{ github.event.inputs.environment || 'dev' }}
+    needs: [resolve-target, validate]
+    environment: ${{ needs.resolve-target.outputs.environment }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate Azure environment secrets
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          missing=()
+
+          [ -z "$AZURE_CLIENT_ID" ] && missing+=("AZURE_CLIENT_ID")
+          [ -z "$AZURE_TENANT_ID" ] && missing+=("AZURE_TENANT_ID")
+          [ -z "$AZURE_SUBSCRIPTION_ID" ] && missing+=("AZURE_SUBSCRIPTION_ID")
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required environment secrets for '${{ needs.resolve-target.outputs.environment }}': ${missing[*]}"
+            exit 1
+          fi
 
       - name: Azure Login
         uses: azure/login@v2
@@ -59,9 +105,9 @@ jobs:
       - name: Resolve deployment target
         id: target
         run: |
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          ENV="${{ needs.resolve-target.outputs.environment }}"
           PARAM_FILE="infra/params/${ENV}.parameters.json"
-          COMMITTEE_CODES="${{ github.event.inputs.committeeCodes || vars.COMMITTEE_CODES }}"
+          COMMITTEE_CODES="${{ needs.resolve-target.outputs.committeeCodes }}"
           COMMITTEE_CODES="${COMMITTEE_CODES,,}"
 
           # The first code (before any comma) drives resource naming.
@@ -96,7 +142,7 @@ jobs:
 
       - name: What-If Deployment
         run: |
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          ENV="${{ needs.resolve-target.outputs.environment }}"
           PARAM_FILE="infra/params/${ENV}.parameters.json"
 
           if [ -f "$PARAM_FILE" ]; then
@@ -116,8 +162,8 @@ jobs:
   deploy:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    needs: [validate, preview]
-    environment: ${{ github.event.inputs.environment || 'dev' }}
+    needs: [resolve-target, validate, preview]
+    environment: ${{ needs.resolve-target.outputs.environment }}
     outputs:
       registryName: ${{ steps.deploy.outputs.registryName }}
       registryLoginServer: ${{ steps.deploy.outputs.registryLoginServer }}
@@ -126,6 +172,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate Azure environment secrets
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          missing=()
+
+          [ -z "$AZURE_CLIENT_ID" ] && missing+=("AZURE_CLIENT_ID")
+          [ -z "$AZURE_TENANT_ID" ] && missing+=("AZURE_TENANT_ID")
+          [ -z "$AZURE_SUBSCRIPTION_ID" ] && missing+=("AZURE_SUBSCRIPTION_ID")
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required environment secrets for '${{ needs.resolve-target.outputs.environment }}': ${missing[*]}"
+            exit 1
+          fi
 
       - name: Azure Login
         uses: azure/login@v2
@@ -137,9 +200,9 @@ jobs:
       - name: Resolve deployment target
         id: target
         run: |
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          ENV="${{ needs.resolve-target.outputs.environment }}"
           PARAM_FILE="infra/params/${ENV}.parameters.json"
-          COMMITTEE_CODES="${{ github.event.inputs.committeeCodes || vars.COMMITTEE_CODES }}"
+          COMMITTEE_CODES="${{ needs.resolve-target.outputs.committeeCodes }}"
           COMMITTEE_CODES="${COMMITTEE_CODES,,}"
 
           # The first code (before any comma) drives resource naming.
@@ -204,7 +267,7 @@ jobs:
         run: |
           echo "Deploying infrastructure..."
 
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          ENV="${{ needs.resolve-target.outputs.environment }}"
           PARAM_FILE="infra/params/${ENV}.parameters.json"
 
           # Use parameter file if it exists, otherwise use inline parameters
@@ -278,7 +341,7 @@ jobs:
           echo "- **Frontend URL**: ${{ steps.deploy.outputs.frontendUrl }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment**: \`${{ github.event.inputs.environment || 'dev' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: \`${{ needs.resolve-target.outputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Committee Codes**: \`${{ steps.deploy.outputs.committeeCode || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Resource Group**: \`${{ steps.deploy.outputs.resourceGroup }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
