@@ -23,6 +23,14 @@ param committeeCodes string = ''
 @description('Use a public placeholder image for initial infra deployment (before real images are pushed to ACR)')
 param useDefaultImage bool = true
 
+@description('Shiftboard access key ID — written to Key Vault as sb-access-key. Leave empty to skip.')
+@secure()
+param sbAccessKey string = ''
+
+@description('Shiftboard signature key — written to Key Vault as sb-signature-key. Leave empty to skip.')
+@secure()
+param sbSignatureKey string = ''
+
 // Environment-specific configurations
 var environmentConfig = {
   dev: {
@@ -337,3 +345,13 @@ output frontendAppName string = frontendAppName
 output nameInfix string = nameInfix
 output backendPrincipalId string = backendApp.outputs.principalId
 output frontendPrincipalId string = frontendApp.outputs.principalId
+
+// Populate Key Vault secrets via ARM control plane (works even with publicNetworkAccess: Disabled)
+module keyVaultSecrets './modules/key-vault-secrets.bicep' = {
+  name: 'key-vault-secrets-deployment'
+  params: {
+    keyVaultName: keyVault.outputs.keyVaultName
+    sbAccessKey: sbAccessKey
+    sbSignatureKey: sbSignatureKey
+  }
+}
