@@ -85,9 +85,7 @@ jobs:
 
       - name: Ensure resource group exists
         run: |
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
-          PARAM_FILE="infra/params/${ENV}.parameters.json"
-          LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE" 2>/dev/null || echo 'eastus')
+          LOCATION="${{ vars.AZURE_LOCATION }}"
 
           if ! az group show --name "$RESOURCE_GROUP" &> /dev/null; then
             echo "Creating resource group: $RESOURCE_GROUP in $LOCATION"
@@ -106,13 +104,13 @@ jobs:
             az deployment group what-if \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE" committeeCodes="$COMMITTEE_CODES"
+              --parameters @"$PARAM_FILE" location="${{ vars.AZURE_LOCATION }}" committeeCodes="$COMMITTEE_CODES"
           else
             echo "Parameter file not found, using inline parameters"
             az deployment group what-if \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters environment="$ENV" committeeCodes="$COMMITTEE_CODES"
+              --parameters environment="$ENV" location="${{ vars.AZURE_LOCATION }}" committeeCodes="$COMMITTEE_CODES"
           fi
 
   deploy:
@@ -165,9 +163,7 @@ jobs:
 
       - name: Ensure resource group exists
         run: |
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
-          PARAM_FILE="infra/params/${ENV}.parameters.json"
-          LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE" 2>/dev/null || echo 'eastus')
+          LOCATION="${{ vars.AZURE_LOCATION }}"
 
           if ! az group show --name "$RESOURCE_GROUP" &> /dev/null; then
             echo "Creating resource group: $RESOURCE_GROUP in $LOCATION"
@@ -178,22 +174,16 @@ jobs:
 
       - name: Check Resource Location Conflicts
         run: |
-          ENV="${{ github.event.inputs.environment || 'dev' }}"
-          PARAM_FILE="infra/params/${ENV}.parameters.json"
-
-          # Read target location from parameter file, fallback to eastus
-          if [ -f "$PARAM_FILE" ]; then
-            LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAM_FILE")
-          else
-            LOCATION="eastus"
-          fi
+          LOCATION="${{ vars.AZURE_LOCATION }}"
           echo "Target location: $LOCATION"
 
           # Only check if the resource group already exists
           if az group show --name "$RESOURCE_GROUP" &> /dev/null; then
+            # Exclude resources in the 'global' pseudo-location (e.g. Smart Detector Alert Rules,
+            # Private DNS Zones) — Azure always places these in 'global' regardless of target region.
             CONFLICTING=$(az resource list \
               --resource-group "$RESOURCE_GROUP" \
-              --query "[?location!='${LOCATION}'].{name:name, location:location, type:type}" \
+              --query "[?location!='${LOCATION}' && location!='global'].{name:name, location:location, type:type}" \
               -o json)
             COUNT=$(echo "$CONFLICTING" | jq 'length')
             if [ "$COUNT" -gt 0 ]; then
@@ -223,7 +213,7 @@ jobs:
             output=$(az deployment group create \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters @"$PARAM_FILE" committeeCodes="$COMMITTEE_CODES" \
+              --parameters @"$PARAM_FILE" location="${{ vars.AZURE_LOCATION }}" committeeCodes="$COMMITTEE_CODES" \
               --query 'properties.outputs' \
               --output json)
           else
@@ -231,7 +221,7 @@ jobs:
             output=$(az deployment group create \
               --resource-group "$RESOURCE_GROUP" \
               --template-file infra/main.bicep \
-              --parameters environment="$ENV" committeeCodes="$COMMITTEE_CODES" \
+              --parameters environment="$ENV" location="${{ vars.AZURE_LOCATION }}" committeeCodes="$COMMITTEE_CODES" \
               --query 'properties.outputs' \
               --output json)
           fi
